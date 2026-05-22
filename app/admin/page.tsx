@@ -86,6 +86,8 @@ export default function AdminPage() {
     { id: string; message: string; alert_type: string; deal_id: string }[]
   >([]);
   const [message, setMessage] = useState("");
+  const [staffInviteEmail, setStaffInviteEmail] = useState("");
+  const [staffInviteLink, setStaffInviteLink] = useState("");
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -286,6 +288,33 @@ export default function AdminPage() {
       return;
     }
     window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const createStaffInvite = async () => {
+    const email = staffInviteEmail.trim().toLowerCase();
+    if (!email) {
+      setMessage("スタッフ招待のメールアドレスを入力してください。");
+      return;
+    }
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("admin_create_staff_invite", {
+      p_email: email,
+    });
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+    const r = data as { token?: string; email?: string; expires_at?: string };
+    if (!r?.token) {
+      setMessage("招待の作成に失敗しました。");
+      return;
+    }
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const link = `${origin}/signup/staff?token=${r.token}`;
+    setStaffInviteLink(link);
+    setMessage(
+      `スタッフ招待を作成しました（${r.email}・7日間有効）。リンクをコピーして本人にのみ送付してください。`,
+    );
   };
 
   const setMemberType = async (id: string, type: "dealer" | "staff") => {
@@ -607,6 +636,34 @@ export default function AdminPage() {
         ) : null}
 
         {tab === "members" ? (
+          <div className="space-y-4">
+          <div className="rounded-xl border border-border bg-card p-5">
+            <h2 className="font-semibold">運営スタッフ招待</h2>
+            <p className="mt-1 text-xs text-zinc-500">
+              ログイン画面にスタッフ登録は出しません。招待リンクを本人にだけ送ってください（7日間有効・1回限り）。
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <input
+                type="email"
+                value={staffInviteEmail}
+                onChange={(e) => setStaffInviteEmail(e.target.value)}
+                placeholder="staff@example.com"
+                className="min-w-[220px] flex-1 rounded-lg border border-border bg-zinc-950 px-3 py-2 text-sm"
+              />
+              <button
+                type="button"
+                onClick={createStaffInvite}
+                className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-black"
+              >
+                招待リンクを発行
+              </button>
+            </div>
+            {staffInviteLink ? (
+              <p className="mt-3 break-all rounded-lg border border-border bg-zinc-900/50 p-3 font-mono text-xs text-accent">
+                {staffInviteLink}
+              </p>
+            ) : null}
+          </div>
           <div className="overflow-x-auto rounded-xl border border-border">
             <table className="w-full min-w-[800px] text-left text-sm">
               <thead className="border-b border-border bg-zinc-900/80 text-muted">
@@ -699,6 +756,7 @@ export default function AdminPage() {
                 ))}
               </tbody>
             </table>
+          </div>
           </div>
         ) : null}
 

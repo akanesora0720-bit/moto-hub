@@ -91,12 +91,6 @@ function LoginForm() {
             こちら
           </Link>
         </p>
-        <p className="text-center text-xs text-zinc-500">
-          運営スタッフは{" "}
-          <Link href="/signup/staff" className="text-accent hover:underline">
-            スタッフ登録
-          </Link>
-        </p>
       </div>
     </AuthLayout>
   );

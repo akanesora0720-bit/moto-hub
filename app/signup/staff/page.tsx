@@ -1,20 +1,52 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { AuthLayout } from "@/components/AuthLayout";
 import { createClient } from "@/lib/supabase/client";
 
-export default function StaffSignupPage() {
+function StaffSignupForm() {
   const router = useRouter();
+  const params = useSearchParams();
+  const token = params.get("token")?.trim() ?? "";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [inviteValid, setInviteValid] = useState(false);
+
+  useEffect(() => {
+    if (!token) {
+      setChecking(false);
+      setInviteValid(false);
+      return;
+    }
+    const supabase = createClient();
+    supabase
+      .rpc("get_staff_invite_for_signup", { p_token: token })
+      .then(({ data, error }) => {
+        setChecking(false);
+        if (error) {
+          setInviteValid(false);
+          return;
+        }
+        const r = data as { valid?: boolean; email?: string };
+        if (r?.valid && r.email) {
+          setInviteValid(true);
+          setEmail(r.email);
+        }
+      });
+  }, [token]);
 
   const submit = async () => {
     setMessage("");
+    if (!inviteValid || !token) {
+      setMessage("招待リンクが無効です。運営にお問い合わせください。");
+      return;
+    }
     if (password.length < 8) {
       setMessage("パスワードは8文字以上にしてください。");
       return;
@@ -25,7 +57,7 @@ export default function StaffSignupPage() {
       email: email.trim(),
       password,
       options: {
-        data: { member_type: "staff" },
+        data: { member_type: "staff", staff_invite_token: token },
       },
     });
     setLoading(false);
@@ -40,26 +72,43 @@ export default function StaffSignupPage() {
     router.refresh();
   };
 
+  if (checking) {
+    return (
+      <AuthLayout title="運営スタッフ登録" subtitle="招待を確認しています…">
+        <p className="text-sm text-muted">しばらくお待ちください。</p>
+      </AuthLayout>
+    );
+  }
+
+  if (!token || !inviteValid) {
+    return (
+      <AuthLayout title="招待が必要です" subtitle="運営スタッフの登録">
+        <p className="rounded-lg border border-border bg-zinc-900/50 px-3 py-3 text-sm text-muted">
+          スタッフ登録は運営から送られた<strong className="text-foreground">招待リンク</strong>
+          からのみ行えます。公開登録はありません。
+        </p>
+        <p className="mt-4 text-center text-sm">
+          <Link href="/login" className="text-accent hover:underline">
+            ログインへ
+          </Link>
+        </p>
+      </AuthLayout>
+    );
+  }
+
   return (
     <AuthLayout
       title="運営スタッフ登録"
-      subtitle="RideWorks 社内の管理担当者向け（古物商不要）"
+      subtitle="招待されたメールアドレスでアカウントを作成"
     >
       <div className="space-y-4">
-        <p className="rounded-lg border border-border bg-zinc-900/50 px-3 py-2 text-xs text-muted">
-          業者としての会員登録は{" "}
-          <Link href="/signup" className="text-accent hover:underline">
-            こちら
-          </Link>
-          。スタッフ登録は管理者から案内された方のみ利用してください。
-        </p>
         <label className="block text-sm">
-          <span className="text-muted">メールアドレス</span>
+          <span className="text-muted">メールアドレス（招待済み）</span>
           <input
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-border bg-zinc-950 px-3 py-2.5 text-sm outline-none focus:border-accent"
+            readOnly
+            className="mt-1 w-full rounded-lg border border-border bg-zinc-900 px-3 py-2.5 text-sm text-muted"
           />
         </label>
         <label className="block text-sm">
@@ -94,5 +143,13 @@ export default function StaffSignupPage() {
         </p>
       </div>
     </AuthLayout>
+  );
+}
+
+export default function StaffSignupPage() {
+  return (
+    <Suspense>
+      <StaffSignupForm />
+    </Suspense>
   );
 }
