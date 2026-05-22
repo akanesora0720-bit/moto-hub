@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AppShell } from "@/components/AppShell";
+import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { CreditLicenseCard } from "@/components/credit/CreditLicenseCard";
 import { PenaltyHistoryList } from "@/components/credit/PenaltyHistoryList";
 import { YearlyTrend } from "@/components/credit/YearlyTrend";
@@ -9,6 +9,7 @@ import { TRUST_RANK_BANDS } from "@/lib/credit";
 import { fetchDealerCreditData } from "@/lib/credit-data";
 import { fetchMemberStats } from "@/lib/member-stats";
 import { createClient } from "@/lib/supabase/server";
+import { getViewer } from "@/lib/viewer";
 import type { TrustRank } from "@/lib/types";
 
 export default async function MemberProfilePage({
@@ -17,19 +18,12 @@ export default async function MemberProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const viewer = await getViewer();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = viewer!.id;
+  const isAdmin = viewer!.profile.is_admin;
 
-  const { data: me } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user!.id)
-    .single();
-
-  const isSelf = user!.id === id;
-  const isAdmin = !!me?.is_admin;
+  const isSelf = userId === id;
   const showPrivate = isSelf || isAdmin;
   const showCreditDetail = isSelf || isAdmin;
 
@@ -93,7 +87,7 @@ export default async function MemberProfilePage({
     privateProfile?.yearly_reset_at ?? null;
 
   return (
-    <AppShell isAdmin={isAdmin}>
+    <AuthenticatedShell>
       <div className="mx-auto max-w-lg space-y-8">
         <Link href="/" className="text-sm text-muted hover:text-accent">
           ← 在庫一覧
@@ -199,6 +193,6 @@ export default async function MemberProfilePage({
           </div>
         </dl>
       </div>
-    </AppShell>
+    </AuthenticatedShell>
   );
 }

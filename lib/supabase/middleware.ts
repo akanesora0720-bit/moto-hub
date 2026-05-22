@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { encodeProfile, type ViewerProfile } from "@/lib/viewer";
 
 export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
@@ -16,7 +17,10 @@ export async function updateSession(request: NextRequest) {
     );
   }
 
-  let supabaseResponse = NextResponse.next({ request });
+  const requestHeaders = new Headers(request.headers);
+  let supabaseResponse = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
 
   const supabase = createServerClient(
     supabaseUrl,
@@ -30,7 +34,9 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
-          supabaseResponse = NextResponse.next({ request });
+          supabaseResponse = NextResponse.next({
+            request: { headers: requestHeaders },
+          });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
           );
@@ -40,13 +46,8 @@ export async function updateSession(request: NextRequest) {
   );
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  let user = session?.user ?? null;
-  if (!user) {
-    const { data: userData } = await supabase.auth.getUser();
-    user = userData.user;
-  }
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
@@ -121,6 +122,12 @@ export async function updateSession(request: NextRequest) {
       url.pathname = "/admin";
       return NextResponse.redirect(url);
     }
+
+    requestHeaders.set("x-mh-uid", user.id);
+    requestHeaders.set(
+      "x-mh-profile",
+      encodeProfile(profile as ViewerProfile),
+    );
   }
 
   return supabaseResponse;

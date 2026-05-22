@@ -1,25 +1,17 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AppShell } from "@/components/AppShell";
+import { AuthenticatedShell } from "@/components/AuthenticatedShell";
+import { canAccessAdmin } from "@/lib/auth";
 import { fetchAdminKpi } from "@/lib/operations-kpi";
-import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/server-supabase";
+import { getViewer } from "@/lib/viewer";
+import type { Profile } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: me } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .single();
-  if (!me?.is_admin) redirect("/");
+  const viewer = await getViewer();
+  if (!viewer || !canAccessAdmin(viewer.profile as Profile)) redirect("/");
 
   let kpi;
   let kpiError: string | null = null;
@@ -52,7 +44,7 @@ export default async function AdminDashboardPage() {
     : [];
 
   return (
-    <AppShell isAdmin>
+    <AuthenticatedShell>
       <div className="mx-auto max-w-4xl space-y-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -125,7 +117,7 @@ export default async function AdminDashboardPage() {
           </ul>
         </section>
       </div>
-    </AppShell>
+    </AuthenticatedShell>
   );
 }
 

@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AppShell } from "@/components/AppShell";
+import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { DealActionPanel } from "@/components/DealActionPanel";
 import { DealCounterpartyContact } from "@/components/DealCounterpartyContact";
 import { canRevealDealContacts } from "@/lib/deal-contact";
 import { DEAL_STATUS_LABELS } from "@/lib/deal-flow";
 import { createClient } from "@/lib/supabase/server";
+import { getViewer } from "@/lib/viewer";
 import type { Deal, DealStatus } from "@/lib/types";
 
 export default async function DealDetailPage({
@@ -14,16 +15,10 @@ export default async function DealDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const viewer = await getViewer();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: me } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user!.id)
-    .single();
+  const userId = viewer!.id;
+  const isAdmin = viewer!.profile.is_admin;
 
   const { data: row } = await supabase
     .from("deals")
@@ -37,13 +32,13 @@ export default async function DealDetailPage({
     .maybeSingle();
 
   if (!row) notFound();
-  if (row.buyer_id !== user!.id && row.seller_id !== user!.id && !me?.is_admin) {
+  if (row.buyer_id !== userId && row.seller_id !== userId && !isAdmin) {
     notFound();
   }
 
   const listing = Array.isArray(row.listings) ? row.listings[0] : row.listings;
   const role =
-    row.buyer_id === user!.id ? "buyer" : row.seller_id === user!.id ? "seller" : "buyer";
+    row.buyer_id === userId ? "buyer" : row.seller_id === userId ? "seller" : "buyer";
 
   type PartyContact = {
     store_name: string | null;
@@ -97,7 +92,7 @@ export default async function DealDetailPage({
   };
 
   return (
-    <AppShell isAdmin={me?.is_admin}>
+    <AuthenticatedShell>
       <div className="mx-auto max-w-xl space-y-6">
         <Link href="/deals" className="text-sm text-muted hover:text-accent">
           ← 取引一覧
@@ -110,7 +105,7 @@ export default async function DealDetailPage({
           </h1>
           <p className="mt-1 text-sm text-muted">
             {DEAL_STATUS_LABELS[deal.status]}
-            {me?.is_admin ? (
+            {isAdmin ? (
               <>
                 {" "}
                 ·{" "}
@@ -122,7 +117,7 @@ export default async function DealDetailPage({
           </p>
         </div>
 
-        {me?.is_admin && row.buyer_id !== user!.id && row.seller_id !== user!.id ? (
+        {isAdmin && row.buyer_id !== userId && row.seller_id !== userId ? (
           <p className="rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted">
             管理者表示。ステータス変更は管理画面の取引タブから行ってください。
           </p>
@@ -150,6 +145,6 @@ export default async function DealDetailPage({
           </ol>
         </div>
       </div>
-    </AppShell>
+    </AuthenticatedShell>
   );
 }
