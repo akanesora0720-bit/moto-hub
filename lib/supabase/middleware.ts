@@ -2,11 +2,25 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  const publicPaths = ["/login", "/signup"];
+  const isPublic = publicPaths.some((p) => path.startsWith(p));
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  if (!supabaseUrl || !supabaseAnonKey) {
+    if (isPublic) return NextResponse.next({ request });
+    return new NextResponse(
+      "Server misconfigured: set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY on Vercel, then Redeploy.",
+      { status: 500 },
+    );
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {
@@ -25,13 +39,17 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const path = request.nextUrl.pathname;
-  const publicPaths = ["/login", "/signup"];
-  const isPublic = publicPaths.some((p) => path.startsWith(p));
+  let user: { id: string } | null = null;
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) throw error;
+    user = data.user;
+  } catch {
+    if (isPublic) return NextResponse.next({ request });
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
@@ -47,11 +65,15 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user && !isPublic && path !== "/onboarding") {
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("profile_completed, is_active, is_banned, is_admin, member_type")
       .eq("id", user.id)
       .maybeSingle();
+
+    if (profileError) {
+      return supabaseResponse;
+    }
 
     if (profile && (!profile.is_active || profile.is_banned)) {
       await supabase.auth.signOut();
