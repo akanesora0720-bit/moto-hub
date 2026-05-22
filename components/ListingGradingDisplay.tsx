@@ -1,0 +1,51 @@
+import { GRADING_ITEMS } from "@/lib/vehicle-grading";
+import type { ListingGradesStored } from "@/lib/types";
+
+export function ListingGradingDisplay({
+  grades,
+  inspectionRemaining,
+  compact = false,
+}: {
+  grades: ListingGradesStored;
+  inspectionRemaining: string | null;
+  compact?: boolean;
+}) {
+  const hasAny = GRADING_ITEMS.some((i) => grades[i.key] != null);
+  if (!hasAny && !inspectionRemaining) return null;
+
+  return (
+    <div
+      className={`rounded-xl border border-border bg-card ${compact ? "p-3" : "p-5"}`}
+    >
+      <h2 className={`font-semibold ${compact ? "text-sm" : ""}`}>車両評価</h2>
+      {hasAny ? (
+        <div className={`mt-3 grid grid-cols-4 gap-2 sm:grid-cols-7 ${compact ? "gap-1.5" : "gap-3"}`}>
+          {GRADING_ITEMS.map((item) => {
+            const score = grades[item.key];
+            return (
+              <div
+                key={item.key}
+                className="flex flex-col items-center rounded-lg border border-border/80 bg-zinc-950/80 py-2"
+              >
+                <span className="text-[10px] text-muted">{item.short}</span>
+                <span
+                  className={`font-serif font-semibold tabular-nums text-accent ${
+                    compact ? "text-xl" : "text-2xl sm:text-3xl"
+                  }`}
+                >
+                  {score ?? "—"}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+      {inspectionRemaining ? (
+        <p className={`text-muted ${hasAny ? "mt-3" : "mt-2"} ${compact ? "text-xs" : "text-sm"}`}>
+          <span className="text-zinc-500">車検残：</span>
+          {inspectionRemaining}
+        </p>
+      ) : null}
+    </div>
+  );
+}
