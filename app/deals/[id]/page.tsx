@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { DealActionPanel } from "@/components/DealActionPanel";
+import { DealCounterpartyContact } from "@/components/DealCounterpartyContact";
+import { canRevealDealContacts } from "@/lib/deal-contact";
 import { DEAL_STATUS_LABELS } from "@/lib/deal-flow";
 import { createClient } from "@/lib/supabase/server";
 import type { Deal, DealStatus } from "@/lib/types";
@@ -42,6 +44,27 @@ export default async function DealDetailPage({
   const listing = Array.isArray(row.listings) ? row.listings[0] : row.listings;
   const role =
     row.buyer_id === user!.id ? "buyer" : row.seller_id === user!.id ? "seller" : "buyer";
+
+  type PartyContact = {
+    store_name: string | null;
+    contact_name: string | null;
+    phone: string | null;
+    email: string | null;
+  };
+  type DealContactsPayload = {
+    revealed: boolean;
+    buyer?: PartyContact;
+    seller?: PartyContact;
+  };
+
+  let contactPayload: DealContactsPayload | null = null;
+
+  if (canRevealDealContacts(row.status as DealStatus)) {
+    const { data: contacts } = await supabase.rpc("get_deal_party_contacts", {
+      p_deal_id: id,
+    });
+    contactPayload = contacts as DealContactsPayload | null;
+  }
 
   const deal: Deal & {
     listing: { maker: string; model: string; inspection_remaining: string | null };
@@ -106,6 +129,14 @@ export default async function DealDetailPage({
         ) : (
           <DealActionPanel deal={deal} role={role} />
         )}
+
+        {contactPayload?.revealed && contactPayload.buyer && contactPayload.seller ? (
+          <DealCounterpartyContact
+            role={role}
+            buyer={contactPayload.buyer}
+            seller={contactPayload.seller}
+          />
+        ) : null}
 
         <div className="rounded-xl border border-border bg-zinc-950/50 p-4 text-xs leading-relaxed text-zinc-500">
           <p className="font-medium text-zinc-400">取引の流れ</p>

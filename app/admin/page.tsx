@@ -386,14 +386,21 @@ export default function AdminPage() {
 
   const checkTransferDeadlines = async () => {
     const supabase = createClient();
-    const { data, error } = await supabase.rpc("check_transfer_deadlines");
+    const { data, error } = await supabase.rpc("run_transfer_compliance_job");
     if (error) {
       setMessage(error.message);
       return;
     }
-    const r = data as { overdue_flagged?: number; due_soon_notified?: number };
+    const r = data as {
+      overdue?: number;
+      due_soon?: number;
+      due_today?: number;
+      penalty_3d?: number;
+      penalty_7d?: number;
+      review_14d?: number;
+    };
     setMessage(
-      `名変期限チェック: 超過 ${r.overdue_flagged ?? 0}件 / 間近通知 ${r.due_soon_notified ?? 0}件`,
+      `名変ジョブ: 超過 ${r.overdue ?? 0} / 3日前 ${r.due_soon ?? 0} / 当日 ${r.due_today ?? 0} / 減点3日 ${r.penalty_3d ?? 0} / 7日 ${r.penalty_7d ?? 0} / 要レビュー14日 ${r.review_14d ?? 0}`,
     );
     load();
   };
@@ -413,6 +420,12 @@ export default function AdminPage() {
               問い合わせ対応 / クレーム / 成約・名変期限
             </p>
           </div>
+          <Link
+            href="/admin/dashboard"
+            className="rounded-lg border border-border px-4 py-2 text-sm hover:border-accent/40"
+          >
+            KPIダッシュボード
+          </Link>
           <Link
             href="/admin/credit"
             className="rounded-lg border border-accent/40 px-4 py-2 text-sm text-accent hover:bg-accent/10"
