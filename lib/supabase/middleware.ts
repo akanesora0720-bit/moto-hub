@@ -39,16 +39,13 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  let user: { id: string } | null = null;
-  try {
-    const { data, error } = await supabase.auth.getUser();
-    if (error) throw error;
-    user = data.user;
-  } catch {
-    if (isPublic) return NextResponse.next({ request });
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  let user = session?.user ?? null;
+  if (!user) {
+    const { data: userData } = await supabase.auth.getUser();
+    user = userData.user;
   }
 
   if (!user && !isPublic) {
@@ -72,10 +69,22 @@ export async function updateSession(request: NextRequest) {
       .maybeSingle();
 
     if (profileError) {
+      if (path.startsWith("/admin") || path === "/") {
+        const url = request.nextUrl.clone();
+        url.pathname = "/login";
+        url.searchParams.set("error", "profile");
+        return NextResponse.redirect(url);
+      }
       return supabaseResponse;
     }
 
-    if (profile && (!profile.is_active || profile.is_banned)) {
+    if (!profile) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/onboarding";
+      return NextResponse.redirect(url);
+    }
+
+    if (!profile.is_active || profile.is_banned) {
       await supabase.auth.signOut();
       const url = request.nextUrl.clone();
       url.pathname = "/login";
@@ -83,7 +92,7 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    if (profile && !profile.profile_completed) {
+    if (!profile.profile_completed) {
       const url = request.nextUrl.clone();
       url.pathname = "/onboarding";
       return NextResponse.redirect(url);

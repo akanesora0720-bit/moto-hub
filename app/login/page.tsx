@@ -16,6 +16,7 @@ function LoginForm() {
 
   const suspended = params.get("suspended") === "1";
   const banned = params.get("banned") === "1";
+  const profileError = params.get("error") === "profile";
   const next = params.get("next") && params.get("next")!.startsWith("/") ? params.get("next")! : "/";
 
   const submit = async () => {
@@ -45,6 +46,11 @@ function LoginForm() {
       ) : suspended ? (
         <p className="mb-4 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
           アカウントが停止されています。運営にお問い合わせください。
+        </p>
+      ) : null}
+      {profileError ? (
+        <p className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+          会員情報の読み込みに失敗しました。再度ログインするか、運営にお問い合わせください。
         </p>
       ) : null}
 
