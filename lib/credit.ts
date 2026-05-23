@@ -41,8 +41,8 @@ export const TRUST_RANK_BANDS: Record<
   TrustRank,
   { min: number; max: number; label: string; description: string }
 > = {
-  GOLD: { min: 95, max: 100, label: "ゴールド", description: "優良加盟店" },
-  BLUE: { min: 70, max: 94, label: "ブルー", description: "通常加盟店" },
+  GOLD: { min: 90, max: 100, label: "ゴールド", description: "優良加盟店" },
+  BLUE: { min: 70, max: 89, label: "ブルー", description: "通常加盟店" },
   YELLOW: { min: 40, max: 69, label: "イエロー", description: "注意加盟店" },
   RED: { min: 0, max: 39, label: "レッド", description: "重大注意加盟店" },
 };
@@ -54,7 +54,7 @@ export function formatPenaltyCategory(cat: PenaltyCategory): string {
 }
 
 export function scoreToRank(score: number): TrustRank {
-  if (score >= 95) return "GOLD";
+  if (score >= 90) return "GOLD";
   if (score >= 70) return "BLUE";
   if (score >= 40) return "YELLOW";
   return "RED";
