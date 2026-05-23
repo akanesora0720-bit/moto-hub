@@ -13,6 +13,7 @@ const dealerNav = [
   { href: "/listings/new", label: "出品" },
   { href: "/listings/mine", label: "自分の出品" },
   { href: "/evaluation", label: "評価基準" },
+  { href: "/my/dashboard", label: "マイ統計" },
   { href: "/profile", label: "信用証" },
 ];
 
@@ -117,6 +118,19 @@ export function AppShell({
                   管理
                 </Link>
               </>
+            ) : null}
+            {showAdmin ? (
+              <Link
+                href="/admin/disputes"
+                prefetch={false}
+                className={`rounded-lg px-3 py-1.5 transition ${
+                  pathname === "/admin/disputes"
+                    ? "bg-zinc-800 text-foreground"
+                    : "text-muted hover:text-foreground"
+                }`}
+              >
+                Dispute
+              </Link>
             ) : null}
             {showAdmin ? (
               <Link

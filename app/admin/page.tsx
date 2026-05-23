@@ -427,6 +427,12 @@ export default function AdminPage() {
             KPIダッシュボード
           </Link>
           <Link
+            href="/admin/disputes"
+            className="rounded-lg border border-border px-4 py-2 text-sm hover:border-accent/40"
+          >
+            Dispute
+          </Link>
+          <Link
             href="/admin/credit"
             className="rounded-lg border border-accent/40 px-4 py-2 text-sm text-accent hover:bg-accent/10"
           >

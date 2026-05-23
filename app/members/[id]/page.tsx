@@ -71,13 +71,13 @@ export default async function MemberProfilePage({
 
   if (!profile) notFound();
 
-  const stats = await fetchMemberStats(id);
+  const stats = isSelf ? await fetchMemberStats(id) : null;
   const creditData = showCreditDetail
     ? await fetchDealerCreditData(id, isAdmin)
     : { penalties: [], snapshots: [], bans: [] };
 
   const inspectionRate =
-    stats.total_listings > 0
+    stats && stats.total_listings > 0
       ? Math.round((stats.inspected_listings / stats.total_listings) * 100)
       : 0;
 
@@ -180,18 +180,30 @@ export default async function MemberProfilePage({
             <dt className="text-muted">表示バッジ</dt>
             <dd className="mt-1 text-lg font-semibold">{TRUST_RANK_BANDS[rank].label}</dd>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <dt className="text-muted">成約数</dt>
-            <dd className="mt-1 text-2xl font-semibold tabular-nums">{stats.completed_deals}</dd>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <dt className="text-muted">査定済率</dt>
-            <dd className="mt-1 text-2xl font-semibold tabular-nums">{inspectionRate}%</dd>
-            <dd className="mt-1 text-xs text-muted">
-              {stats.inspected_listings} / {stats.total_listings} 台
-            </dd>
-          </div>
         </dl>
+
+        {isSelf ? (
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="text-sm text-muted">
+              成約率・売上等の統計は本人のみ閲覧できます。
+            </p>
+            <Link
+              href="/my/dashboard"
+              className="mt-3 inline-block text-sm text-accent hover:underline"
+            >
+              マイ統計ダッシュボード →
+            </Link>
+            {stats ? (
+              <p className="mt-2 text-xs text-zinc-500">
+                成約 {stats.completed_deals}台 · 査定済率 {inspectionRate}%
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-xs leading-relaxed text-zinc-500">
+            成約率・返信率等の数値は公開しません（業販市場型）。信用ランクと点数のみ参照してください。
+          </p>
+        )}
       </div>
     </AuthenticatedShell>
   );

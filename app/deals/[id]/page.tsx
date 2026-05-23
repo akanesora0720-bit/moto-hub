@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { canFileDispute } from "@/lib/disputes";
 import { notFound } from "next/navigation";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { DealActionPanel } from "@/components/DealActionPanel";
@@ -131,6 +132,17 @@ export default async function DealDetailPage({
             buyer={contactPayload.buyer}
             seller={contactPayload.seller}
           />
+        ) : null}
+
+        {canFileDispute(deal.status) &&
+        !isAdmin &&
+        (row.buyer_id === userId || row.seller_id === userId) ? (
+          <Link
+            href={`/disputes/new?deal=${id}`}
+            className="block rounded-lg border border-amber-500/30 bg-amber-950/20 px-4 py-3 text-sm text-amber-100 hover:border-amber-500/50"
+          >
+            トラブル申告（dispute）→ 書類・虚偽・瑕疵・不正など
+          </Link>
         ) : null}
 
         <div className="rounded-xl border border-border bg-zinc-950/50 p-4 text-xs leading-relaxed text-zinc-500">
