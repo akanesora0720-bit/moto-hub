@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { AppShell } from "@/components/AppShell";
+import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { ListingCard } from "@/components/ListingCard";
 import { ListingSearchForm } from "@/components/ListingSearchForm";
 import { mapListingRows } from "@/lib/listings";
@@ -27,14 +27,6 @@ export default async function HomePage({
   const sp = await searchParams;
   const search = parseListingSearch(sp);
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: profile } = user
-    ? await supabase.from("profiles").select("is_admin").eq("id", user.id).single()
-    : { data: null };
-
   const { data: rows, error, count } = await fetchActiveListings(supabase, search);
 
   const listings = mapListingRows((rows ?? []) as Parameters<typeof mapListingRows>[0]);
@@ -48,7 +40,7 @@ export default async function HomePage({
   );
 
   return (
-    <AppShell isAdmin={profile?.is_admin}>
+    <AuthenticatedShell>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-semibold">在庫一覧</h1>
@@ -112,6 +104,6 @@ export default async function HomePage({
           </nav>
         ) : null}
       </div>
-    </AppShell>
+    </AuthenticatedShell>
   );
 }

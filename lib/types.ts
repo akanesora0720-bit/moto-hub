@@ -161,6 +161,49 @@ export type Complaint = {
   created_at: string;
 };
 
+export type DisputeCategory =
+  | "doc_delay"
+  | "transfer_delay"
+  | "false_claim"
+  | "defect"
+  | "no_contact"
+  | "fraud";
+
+export type DisputeStatus = "open" | "reviewing" | "resolved" | "rejected";
+
+export type Dispute = {
+  id: string;
+  deal_id: string;
+  reporter_id: string;
+  target_user_id: string;
+  category: DisputeCategory;
+  message: string;
+  images: string[];
+  status: DisputeStatus;
+  resolution: string | null;
+  penalty_points: number | null;
+  created_at: string;
+};
+
+export type PenaltyLog = {
+  id: string;
+  user_id: string;
+  reason: string;
+  score_delta: number;
+  deal_id: string | null;
+  created_at: string;
+};
+
+export type DealerDashboardStats = {
+  listing_count: number;
+  completed_count: number;
+  completion_rate: number;
+  avg_completed_price: number;
+  inspected_count: number;
+  avg_listing_days: number;
+  monthly_sales_ex_tax: number;
+};
+
 export type MemberStats = {
   completed_deals: number;
   total_listings: number;

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AppShell } from "@/components/AppShell";
+import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import {
   DEAL_STATUS_LABELS,
   buyerDealLabel,
@@ -8,19 +8,13 @@ import {
 } from "@/lib/deal-flow";
 import { formatYen } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
+import { getViewer } from "@/lib/viewer";
 import type { DealStatus } from "@/lib/types";
 
 export default async function DealsPage() {
+  const viewer = await getViewer();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user!.id)
-    .single();
+  const userId = viewer!.id;
 
   const { data: rows } = await supabase
     .from("deals")
@@ -30,12 +24,12 @@ export default async function DealsPage() {
       listings ( maker, model )
     `,
     )
-    .or(`buyer_id.eq.${user!.id},seller_id.eq.${user!.id}`)
+    .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
     .order("updated_at", { ascending: false });
 
   const deals = (rows ?? []).map((row) => {
     const listing = Array.isArray(row.listings) ? row.listings[0] : row.listings;
-    const isBuyer = row.buyer_id === user!.id;
+    const isBuyer = row.buyer_id === userId;
     const status = row.status as DealStatus;
     return {
       id: row.id,
@@ -53,7 +47,7 @@ export default async function DealsPage() {
   const closed = deals.filter((d) => !d.active);
 
   return (
-    <AppShell isAdmin={profile?.is_admin}>
+    <AuthenticatedShell>
       <div className="mx-auto max-w-2xl space-y-8">
         <div>
           <h1 className="text-2xl font-semibold">取引</h1>
@@ -104,6 +98,6 @@ export default async function DealsPage() {
           </section>
         ) : null}
       </div>
-    </AppShell>
+    </AuthenticatedShell>
   );
 }

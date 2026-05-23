@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AppShell } from "@/components/AppShell";
+import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { InspectionBadge } from "@/components/InspectionBadge";
 import { InquiryForm } from "@/components/InquiryForm";
 import { MileageRollbackBadge } from "@/components/MileageRollbackBadge";
@@ -12,6 +12,7 @@ import { parseGradesFromListing } from "@/lib/listing-grades";
 import { formatKm, formatYear, formatYen } from "@/lib/format";
 import { LISTING_SELLER_PUBLIC_SELECT, normalizeSellerPublicRow } from "@/lib/seller-public";
 import { createClient } from "@/lib/supabase/server";
+import { getViewer } from "@/lib/viewer";
 import type { MileageRollbackStatus } from "@/lib/types";
 import { MILEAGE_ROLLBACK_OPTIONS, VEHICLE_CLASS_LABELS } from "@/lib/constants";
 import type { VehicleClass } from "@/lib/constants";
@@ -22,16 +23,10 @@ export default async function ListingDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const viewer = await getViewer();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: me } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user!.id)
-    .single();
+  const userId = viewer!.id;
+  const isAdmin = viewer!.profile.is_admin;
 
   const { data: listing } = await supabase
     .from("listings")
@@ -54,11 +49,11 @@ export default async function ListingDetailPage({
     listing.profiles_public as Parameters<typeof normalizeSellerPublicRow>[0],
   );
   const title = `${listing.maker} ${listing.model}`;
-  const isOwner = listing.seller_id === user!.id;
+  const isOwner = listing.seller_id === userId;
   const grades = parseGradesFromListing(listing);
 
   return (
-    <AppShell isAdmin={me?.is_admin}>
+    <AuthenticatedShell>
       <div className="space-y-8">
         <div className="flex flex-wrap items-center gap-4">
           <Link href="/" className="text-sm text-muted hover:text-accent">
@@ -173,6 +168,6 @@ export default async function ListingDetailPage({
           </div>
         </div>
       </div>
-    </AppShell>
+    </AuthenticatedShell>
   );
 }

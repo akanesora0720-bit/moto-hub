@@ -1,21 +1,15 @@
 import Link from "next/link";
-import { AppShell } from "@/components/AppShell";
+import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { ListingCard } from "@/components/ListingCard";
 import { mapListingRows } from "@/lib/listings";
 import { LISTING_SELLER_PUBLIC_SELECT } from "@/lib/seller-public";
 import { createClient } from "@/lib/supabase/server";
+import { getViewer } from "@/lib/viewer";
 
 export default async function MyListingsPage() {
+  const viewer = await getViewer();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user!.id)
-    .single();
+  const userId = viewer!.id;
 
   const { data: rows } = await supabase
     .from("listings")
@@ -26,14 +20,14 @@ export default async function MyListingsPage() {
       listing_images ( storage_path, sort_order )
     `,
     )
-    .eq("seller_id", user!.id)
+    .eq("seller_id", userId)
     .neq("status", "removed")
     .order("created_at", { ascending: false });
 
   const listings = mapListingRows((rows ?? []) as Parameters<typeof mapListingRows>[0]);
 
   return (
-    <AppShell isAdmin={profile?.is_admin}>
+    <AuthenticatedShell>
       <div className="space-y-6">
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl font-semibold">自分の出品</h1>
@@ -59,6 +53,6 @@ export default async function MyListingsPage() {
           ))}
         </div>
       </div>
-    </AppShell>
+    </AuthenticatedShell>
   );
 }
