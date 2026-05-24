@@ -8,7 +8,9 @@ import { ConfirmStatusSelect } from "@/components/ConfirmStatusSelect";
 import { TrustBadge } from "@/components/TrustBadge";
 import { VerificationBadge } from "@/components/VerificationBadge";
 import { formatYen } from "@/lib/format";
-import { FEE_RATE, VERIFICATION_STATUS_LABELS } from "@/lib/constants";
+import { VERIFICATION_STATUS_LABELS } from "@/lib/constants";
+import { SELLER_FEE_RATE } from "@/lib/billing";
+import { pickPrimaryDealForInquiry } from "@/lib/admin-inquiry-deal";
 import { DEAL_STATUSES, DEAL_STATUS_LABELS, formatTransferDeadline } from "@/lib/deal-flow";
 import { COMPLAINT_TYPES } from "@/lib/trust";
 import type { ComplaintType, DealStatus, TrustRank, VerificationStatus } from "@/lib/types";
@@ -26,6 +28,8 @@ type InquiryRow = {
   listing: { id: string; maker: string; model: string; price_ex_tax: number } | null;
   buyer: { store_name: string | null; email: string | null } | null;
   deal_id: string | null;
+  deal_status: DealStatus | null;
+  linked_deal_count: number;
 };
 
 type ComplaintRow = {
@@ -103,6 +107,7 @@ export default function AdminPage() {
   const [message, setMessage] = useState("");
   const [staffInviteEmail, setStaffInviteEmail] = useState("");
   const [staffInviteLink, setStaffInviteLink] = useState("");
+  const [hideCancelledDeals, setHideCancelledDeals] = useState(true);
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -114,7 +119,7 @@ export default function AdminPage() {
           id, buyer_id, message, status, created_at,
           listings ( id, maker, model, price_ex_tax ),
           buyer:profiles!inquiries_buyer_id_fkey ( store_name, email ),
-          deals ( id )
+          deals ( id, status, created_at )
         `,
         )
         .order("created_at", { ascending: false })
@@ -174,7 +179,12 @@ export default function AdminPage() {
       (inq.data ?? []).map((row) => {
         const listing = Array.isArray(row.listings) ? row.listings[0] : row.listings;
         const buyer = Array.isArray(row.buyer) ? row.buyer[0] : row.buyer;
-        const dealRow = Array.isArray(row.deals) ? row.deals[0] : row.deals;
+        const dealRows = (Array.isArray(row.deals) ? row.deals : row.deals ? [row.deals] : []) as {
+          id: string;
+          status: DealStatus;
+          created_at: string;
+        }[];
+        const primary = pickPrimaryDealForInquiry(dealRows);
         return {
           id: row.id,
           buyer_id: row.buyer_id,
@@ -183,7 +193,9 @@ export default function AdminPage() {
           created_at: row.created_at,
           listing: listing as InquiryRow["listing"],
           buyer: buyer as InquiryRow["buyer"],
-          deal_id: (dealRow as { id?: string } | null)?.id ?? null,
+          deal_id: primary?.id ?? null,
+          deal_status: primary?.status ?? null,
+          linked_deal_count: dealRows.length,
         };
       }),
     );
@@ -456,7 +468,7 @@ export default function AdminPage() {
   const complaintLabel = (t: ComplaintType) =>
     COMPLAINT_TYPES.find((x) => x.value === t)?.label ?? t;
 
-  const fee = (price: number) => formatYen(Math.round(price * FEE_RATE));
+  const sellerFee = (price: number) => formatYen(Math.round(price * SELLER_FEE_RATE));
 
   return (
     <AppShell isAdmin>
@@ -576,13 +588,21 @@ export default function AdminPage() {
                   </p>
                   {row.status === "open" ? (
                     <div className="mt-3 flex flex-wrap gap-3">
-                      {row.deal_id ? (
+                      {row.deal_id && row.deal_status ? (
                         <Link
                           href={`/deals/${row.deal_id}`}
-                          className="text-emerald-300 hover:underline"
+                          className={
+                            row.deal_status === "cancelled"
+                              ? "text-muted hover:underline"
+                              : "text-emerald-300 hover:underline"
+                          }
                         >
-                          商談中（取引を見る）
+                          {DEAL_STATUS_LABELS[row.deal_status]}（取引を見る）
                         </Link>
+                      ) : row.linked_deal_count > 0 ? (
+                        <span className="text-xs text-amber-200">
+                          紐づく取引 {row.linked_deal_count} 件（有効な取引がありません）
+                        </span>
                       ) : (
                         <button
                           type="button"
@@ -860,7 +880,7 @@ export default function AdminPage() {
 
         {tab === "deals" ? (
           <div className="space-y-6">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={checkTransferDeadlines}
@@ -868,6 +888,15 @@ export default function AdminPage() {
               >
                 名変期限をチェック
               </button>
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-muted">
+                <input
+                  type="checkbox"
+                  checked={hideCancelledDeals}
+                  onChange={(e) => setHideCancelledDeals(e.target.checked)}
+                  className="rounded border-border"
+                />
+                取消済みを非表示
+              </label>
             </div>
 
             {dealAlerts.length > 0 ? (
@@ -896,7 +925,9 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {deals.map((row) => (
+                  {deals
+                    .filter((row) => !hideCancelledDeals || row.status !== "cancelled")
+                    .map((row) => (
                     <tr key={row.id} className="border-b border-border/60 align-top">
                       <td className="px-4 py-3">
                         {row.listing ? `${row.listing.maker} ${row.listing.model}` : "—"}
@@ -911,7 +942,7 @@ export default function AdminPage() {
                       <td className="px-4 py-3">{row.buyer?.store_name ?? "—"}</td>
                       <td className="px-4 py-3">
                         {formatYen(row.agreed_price_ex_tax)}
-                        <span className="block text-xs text-muted">{fee(row.agreed_price_ex_tax)}/側</span>
+                        <span className="block text-xs text-muted">売手数料5% {sellerFee(row.agreed_price_ex_tax)}</span>
                       </td>
                       <td className="px-4 py-3">
                         <ConfirmStatusSelect
@@ -1008,7 +1039,7 @@ export default function AdminPage() {
               </table>
             </div>
             <p className="text-xs text-muted">
-              新規取引は SQL の admin_create_deal または今後の問い合わせ連携から作成。振込は双方確認（payout_ready）後のみ。
+              同一車両に取引が複数ある場合は、取消済みを除いた1件が正です。問い合わせタブのリンクは有効な取引（未完了・未取消）を優先表示します。
             </p>
           </div>
         ) : null}

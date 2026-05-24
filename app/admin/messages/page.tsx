@@ -69,11 +69,11 @@ export default function AdminMessagesPage() {
       sent?: number;
       failed?: number;
     };
-    if (!res.ok) {
+    if (!res.ok || data.error) {
       return { error: data.error ?? "メール送信処理に失敗しました。" };
     }
     if ((data.failed ?? 0) > 0) {
-      return { error: `メール ${data.failed} 件が送信できませんでした（SMTP設定を確認）。` };
+      return { error: data.error ?? `メール ${data.failed} 件が送信できませんでした。` };
     }
     return { sent: data.sent ?? 0, failed: data.failed ?? 0 };
   };

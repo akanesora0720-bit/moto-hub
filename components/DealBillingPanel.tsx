@@ -57,7 +57,14 @@ export async function DealBillingPanel({
       {role === "buyer" ? (
         <div className="space-y-1 text-sm">
           <p>車両価格（税抜）: {formatYen(summary.vehiclePriceExTax)}</p>
-          <p>買い手手数料 4%（最低 ¥5,000）: {formatYen(summary.buyerFeeExTax)} + 税 {formatYen(summary.buyerFeeTax)}</p>
+          {summary.buyerFeeExTax > 0 ? (
+            <p>
+              買い手手数料: {formatYen(summary.buyerFeeExTax)} + 税{" "}
+              {formatYen(summary.buyerFeeTax)}
+            </p>
+          ) : (
+            <p className="text-muted">買い手手数料: なし</p>
+          )}
           <p className="font-semibold">合計請求: {formatYen(summary.buyerTotalIncTax)}</p>
           {buyerInv ? (
             <p className="text-xs text-muted">
@@ -84,7 +91,7 @@ export async function DealBillingPanel({
       ) : (
         <div className="space-y-1 text-sm">
           <p>売却価格（税抜）: {formatYen(summary.vehiclePriceExTax)}</p>
-          <p>売り手手数料 5%（最低 ¥5,000）: −{formatYen(summary.sellerFeeExTax)} − 税 {formatYen(summary.sellerFeeTax)}</p>
+          <p>売り手手数料 5%: −{formatYen(summary.sellerFeeExTax)} − 税 {formatYen(summary.sellerFeeTax)}</p>
           <p className="font-semibold">差引振込予定: {formatYen(summary.sellerPayoutAmount)}</p>
           {sellerInv ? (
             <p className="text-xs text-muted">精算書: {INVOICE_STATUS_LABELS[sellerInv.status]}</p>

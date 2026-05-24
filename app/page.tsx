@@ -45,7 +45,7 @@ export default async function HomePage({
         <div>
           <h1 className="text-2xl font-semibold">在庫一覧</h1>
           <p className="mt-1 text-sm text-muted">
-            メーカー・車種区分・車名・車台番号で絞り込み。業販価格（税抜）・仲介手数料は成約時に売買各5%。
+            メーカー・車種区分・車名・車台番号で絞り込み。業販価格（税抜）・仲介手数料は成約時に売り手5%（買い手0%）。
           </p>
         </div>
 

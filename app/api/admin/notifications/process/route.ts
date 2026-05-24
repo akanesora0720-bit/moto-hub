@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { canAccessAdmin } from "@/lib/auth";
 import { processNotificationQueue } from "@/lib/notifications/process-queue";
+import { createServiceClient } from "@/lib/server-supabase";
 import { getViewer } from "@/lib/viewer";
 import type { Profile } from "@/lib/types";
 
@@ -39,6 +40,25 @@ export async function POST() {
       { error: lastError, sent, failed, processed },
       { status: 500 },
     );
+  }
+
+  if (failed > 0) {
+    const supabase = createServiceClient();
+    const { data: lastLog } = await supabase
+      .from("notification_logs")
+      .select("error_message")
+      .eq("status", "failed")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const detail = (lastLog as { error_message?: string } | null)?.error_message;
+    return NextResponse.json({
+      ok: false,
+      sent,
+      failed,
+      processed,
+      error: detail ?? "メール送信に失敗しました。",
+    });
   }
 
   return NextResponse.json({ ok: true, sent, failed, processed });

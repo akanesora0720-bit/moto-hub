@@ -30,22 +30,20 @@ export function InquiryForm({
     if (!userData.user || userData.user.id === sellerId) {
       return { error: "自分の出品には問い合わせできません。" };
     }
-    const { data, error } = await supabase.rpc("submit_listing_inquiry", {
-      p_listing_id: listingId,
-      p_message: message.trim(),
+
+    const res = await fetch(`/api/listings/${listingId}/inquiry`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: message.trim() }),
     });
-    if (error) {
-      const m = error.message.toLowerCase();
-      if (m.includes("negotiation") || m.includes("under negotiation")) {
-        return { error: "この車両は現在商談中です。" };
-      }
-      if (m.includes("not available")) {
-        return { error: "この車両は問い合わせできません。" };
-      }
-      return { error: error.message };
+    const payload = (await res.json()) as { error?: string; deal_id?: string };
+
+    if (!res.ok) {
+      return { error: payload.error ?? "問い合わせに失敗しました。" };
     }
+
     setMessage("");
-    const dealId = (data as { deal_id?: string })?.deal_id;
+    const dealId = payload.deal_id;
     return {
       okMessage: dealId
         ? `問い合わせを送信しました。商談を開始しました（取引: ${dealId.slice(0, 8)}…）。運営からのご連絡をお待ちください。`
