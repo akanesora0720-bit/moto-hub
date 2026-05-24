@@ -21,27 +21,54 @@ export default function SignupPage() {
     }
     setLoading(true);
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/login?next=/onboarding`,
+      },
     });
     setLoading(false);
 
     if (error) {
-      setMessage(error.message);
+      const m = error.message.toLowerCase();
+      if (m.includes("already registered") || m.includes("already been registered")) {
+        setMessage("このメールは登録済みです。ログイン画面からサインインしてください。");
+      } else if (m.includes("signup") && m.includes("disabled")) {
+        setMessage("現在新規登録を受け付けていません。運営にお問い合わせください。");
+      } else {
+        setMessage(error.message);
+      }
       return;
     }
 
-    setMessage(
-      "登録しました。確認メールが有効な場合はリンクを開いてください。続けて店舗情報を入力します。",
-    );
+    if (!data.session) {
+      setMessage(
+        "登録を受け付けました。確認メールのリンクを開いてからログインしてください。届かない場合は迷惑メールもご確認ください。",
+      );
+      return;
+    }
+
     router.replace("/onboarding");
     router.refresh();
   };
 
   return (
-    <AuthLayout title="会員登録" subtitle="古物商として業販取引を行う店舗向け">
+    <AuthLayout title="加盟店登録" subtitle="古物商として業販取引を行う店舗向け（スタッフは招待制）">
       <div className="space-y-4">
+        <ol className="list-decimal space-y-1 pl-5 text-xs text-muted">
+          <li>メールアドレス・パスワードで登録</li>
+          <li>確認メールのリンクからログイン</li>
+          <li>初回プロフィール登録</li>
+          <li>運営確認後に利用開始</li>
+        </ol>
+        <p className="rounded-lg border border-border bg-zinc-900/50 px-3 py-2 text-xs text-muted">
+          運営スタッフの登録は{" "}
+          <Link href="/signup/staff" className="text-accent hover:underline">
+            招待リンク
+          </Link>
+          からのみ可能です。
+        </p>
         <label className="block text-sm">
           <span className="text-muted">メールアドレス</span>
           <input

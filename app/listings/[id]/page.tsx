@@ -9,11 +9,12 @@ import { EngineVideoSection } from "@/components/EngineVideoSection";
 import { ListingGradingDisplay } from "@/components/ListingGradingDisplay";
 import { ListingImage } from "@/components/ListingImage";
 import { parseGradesFromListing } from "@/lib/listing-grades";
+import { LISTING_STATUS_LABELS } from "@/lib/listing-status";
 import { formatKm, formatYear, formatYen } from "@/lib/format";
 import { LISTING_SELLER_PUBLIC_SELECT, normalizeSellerPublicRow } from "@/lib/seller-public";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/viewer";
-import type { MileageRollbackStatus } from "@/lib/types";
+import type { MileageRollbackStatus, ListingStatus } from "@/lib/types";
 import { MILEAGE_ROLLBACK_OPTIONS, VEHICLE_CLASS_LABELS } from "@/lib/constants";
 import type { VehicleClass } from "@/lib/constants";
 
@@ -86,6 +87,11 @@ export default async function ListingDetailPage({
 
           <div className="space-y-6">
             <div>
+              {listing.status !== "active" ? (
+                <span className="mb-2 inline-block rounded border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-100">
+                  {LISTING_STATUS_LABELS[listing.status as ListingStatus]}
+                </span>
+              ) : null}
               <p className="text-sm text-muted">{listing.maker}</p>
               <h1 className="text-3xl font-semibold">{listing.model}</h1>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -162,7 +168,11 @@ export default async function ListingDetailPage({
 
             {!isOwner ? (
               <div id="inquiry" className="scroll-mt-6">
-                <InquiryForm listingId={listing.id} sellerId={listing.seller_id} />
+                <InquiryForm
+                  listingId={listing.id}
+                  sellerId={listing.seller_id}
+                  listingStatus={listing.status as ListingStatus}
+                />
               </div>
             ) : null}
           </div>

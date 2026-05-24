@@ -22,6 +22,14 @@ type QueueRow = {
   max_retries: number;
 };
 
+function resolveRecipients(item: QueueRow): string[] {
+  const direct = item.payload?.recipient_email;
+  if (typeof direct === "string" && direct.trim()) {
+    return [direct.trim()];
+  }
+  return adminRecipients();
+}
+
 export async function processNotificationQueue(limit = 30) {
   const supabase = createServiceClient();
   const now = new Date().toISOString();
@@ -46,6 +54,28 @@ export async function processNotificationQueue(limit = 30) {
       .update({ status: "processing" })
       .eq("id", item.id);
 
+    if (item.channel === "in_app") {
+      const userId = item.payload?.user_id;
+      if (typeof userId === "string") {
+        await supabase.from("user_notifications").insert({
+          user_id: userId,
+          title: String(item.payload?.title ?? item.event_type),
+          body: String(item.payload?.body ?? ""),
+          importance: "normal",
+          link_url:
+            typeof item.payload?.link_url === "string"
+              ? item.payload.link_url
+              : null,
+        });
+      }
+      await supabase
+        .from("notification_queue")
+        .update({ status: "sent", processed_at: now, last_error: null })
+        .eq("id", item.id);
+      sent++;
+      continue;
+    }
+
     const { data: tpl } = await supabase
       .from("notification_templates")
       .select("subject_template, body_template, enabled")
@@ -62,14 +92,17 @@ export async function processNotificationQueue(limit = 30) {
 
     const bodyVars: Record<string, string> = {
       body: String(item.payload?.body ?? ""),
+      subject: String(item.payload?.subject ?? ""),
     };
-    const subject = renderTemplate(tpl.subject_template, bodyVars);
+    const subject =
+      bodyVars.subject || renderTemplate(tpl.subject_template, bodyVars);
     const body = renderTemplate(tpl.body_template, bodyVars);
+    const recipients = resolveRecipients(item);
 
     try {
       if (item.channel === "email") {
         await sendMailMessage({
-          to: adminRecipients(),
+          to: recipients,
           subject,
           text: body,
         });
@@ -81,7 +114,7 @@ export async function processNotificationQueue(limit = 30) {
         queue_id: item.id,
         event_type: item.event_type,
         channel: item.channel,
-        recipient: adminRecipients().join(","),
+        recipient: recipients.join(", "),
         subject,
         body,
         status: "sent",
@@ -102,7 +135,7 @@ export async function processNotificationQueue(limit = 30) {
         queue_id: item.id,
         event_type: item.event_type,
         channel: item.channel,
-        recipient: adminRecipients().join(","),
+        recipient: recipients.join(", "),
         subject,
         body,
         status: "failed",

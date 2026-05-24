@@ -8,6 +8,7 @@ import { VEHICLE_CLASS_LABELS } from "@/lib/constants";
 import type { VehicleClass } from "@/lib/constants";
 import { formatYear, formatYen } from "@/lib/format";
 import { formatGradesCompact, parseGradesFromListing } from "@/lib/listing-grades";
+import { isListingInquirable } from "@/lib/listing-status";
 import type { ListingCard as ListingCardType } from "@/lib/types";
 
 export function ListingCard({
@@ -32,6 +33,13 @@ export function ListingCard({
         {listing.inspection_status ? (
           <div className="absolute left-2 top-2">
             <InspectionBadge />
+          </div>
+        ) : null}
+        {listing.status === "negotiating" ? (
+          <div className="absolute right-2 top-2">
+            <span className="rounded border border-amber-500/50 bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-100">
+              商談中
+            </span>
           </div>
         ) : null}
       </div>
@@ -83,7 +91,7 @@ export function ListingCard({
             編集
           </Link>
         </div>
-      ) : showInquiryLink ? (
+      ) : showInquiryLink && isListingInquirable(listing.status) ? (
         <div className="flex border-t border-border text-sm">
           <Link
             href={`/listings/${listing.id}`}
@@ -97,6 +105,10 @@ export function ListingCard({
           >
             問い合わせ
           </Link>
+        </div>
+      ) : showInquiryLink ? (
+        <div className="border-t border-border px-4 py-2.5 text-center text-xs text-muted">
+          {listing.status === "negotiating" ? "商談中" : "問い合わせ不可"}
         </div>
       ) : null}
     </div>

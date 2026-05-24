@@ -14,6 +14,9 @@ const dealerNav = [
   { href: "/listings/mine", label: "自分の出品" },
   { href: "/evaluation", label: "評価基準" },
   { href: "/my/dashboard", label: "マイ統計" },
+  { href: "/support", label: "運営サポート" },
+  { href: "/notifications", label: "通知" },
+  { href: "/my/payments", label: "月額入金" },
   { href: "/profile", label: "信用証" },
 ];
 
@@ -118,6 +121,45 @@ export function AppShell({
                   管理
                 </Link>
               </>
+            ) : null}
+            {showAdmin ? (
+              <Link
+                href="/admin/support"
+                prefetch={false}
+                className={`rounded-lg px-3 py-1.5 transition ${
+                  pathname === "/admin/support"
+                    ? "bg-zinc-800 text-foreground"
+                    : "text-muted hover:text-foreground"
+                }`}
+              >
+                サポート
+              </Link>
+            ) : null}
+            {showAdmin ? (
+              <Link
+                href="/admin/messages"
+                prefetch={false}
+                className={`rounded-lg px-3 py-1.5 transition ${
+                  pathname === "/admin/messages"
+                    ? "bg-zinc-800 text-foreground"
+                    : "text-muted hover:text-foreground"
+                }`}
+              >
+                メール
+              </Link>
+            ) : null}
+            {showAdmin ? (
+              <Link
+                href="/admin/billing"
+                prefetch={false}
+                className={`rounded-lg px-3 py-1.5 transition ${
+                  pathname === "/admin/billing"
+                    ? "bg-zinc-800 text-foreground"
+                    : "text-muted hover:text-foreground"
+                }`}
+              >
+                請求
+              </Link>
             ) : null}
             {showAdmin ? (
               <Link
