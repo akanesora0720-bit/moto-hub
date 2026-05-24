@@ -8,6 +8,8 @@ type InvoicePdfInput = {
   qualifiedInvoiceNumber: string;
   vehicleLabel: string;
   items: { label: string; amountIncTax: number }[];
+  totalExTax?: number;
+  totalTax?: number;
   totalIncTax: number;
   issuedAt: string;
 };
@@ -31,13 +33,12 @@ export async function buildInvoicePdf(input: InvoicePdfInput): Promise<Uint8Arra
   };
 
   draw("MotoHub", 20, true);
-  draw("請求書 / 精算書", 14, true);
+  draw(input.partyLabel, 14, true);
   y -= 8;
   draw(`適格請求書番号: ${input.qualifiedInvoiceNumber}`);
   draw(`請求書ID: ${input.invoiceId.slice(0, 8)}`);
   draw(`取引ID: ${input.dealId.slice(0, 8)}`);
-  draw(`区分: ${input.partyLabel}`);
-  draw(`加盟店: ${input.storeName}`);
+  draw(`請求先: ${input.storeName}`);
   draw(`車両: ${input.vehicleLabel}`);
   draw(`発行日: ${input.issuedAt}`);
   y -= 10;
@@ -46,8 +47,15 @@ export async function buildInvoicePdf(input: InvoicePdfInput): Promise<Uint8Arra
     draw(`${item.label}  ¥${item.amountIncTax.toLocaleString("ja-JP")}`);
   }
 
+  if (input.totalExTax != null && input.totalTax != null) {
+    y -= 4;
+    draw(`税抜合計  ¥${input.totalExTax.toLocaleString("ja-JP")}`);
+    draw(`消費税  ¥${input.totalTax.toLocaleString("ja-JP")}`);
+  }
+
   y -= 8;
-  draw(`合計  ¥${input.totalIncTax.toLocaleString("ja-JP")}`, 13, true);
+  draw(`請求総額（税込）  ¥${input.totalIncTax.toLocaleString("ja-JP")}`, 13, true);
+  draw("お振込先は別途MotoHub運営よりご案内します。", 10);
 
   return doc.save();
 }

@@ -29,6 +29,13 @@ export type Profile = {
   verification_status: VerificationStatus;
   antique_dealer_doc_path: string | null;
   invoice_doc_path: string | null;
+  trade_name: string | null;
+  address: string | null;
+  bank_name: string | null;
+  bank_branch: string | null;
+  bank_account_type: string | null;
+  bank_account_number: string | null;
+  bank_account_holder: string | null;
 };
 
 export type { MileageRollbackStatus };
@@ -136,6 +143,8 @@ export type Deal = {
   completed_at: string | null;
   seller_intent_confirmed: boolean;
   buyer_intent_confirmed: boolean;
+  payment_due_at: string | null;
+  seller_payment_confirmed_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -266,11 +275,14 @@ export type MonthlyPaymentReport = {
 export type InvoiceParty = "buyer" | "seller";
 export type InvoiceStatus = "draft" | "review_pending" | "issued" | "paid" | "cancelled";
 
+export type InvoiceDocumentKind = "legacy" | "payment_instruction" | "platform_fee";
+
 export type Invoice = {
   id: string;
   deal_id: string;
   user_id: string;
   party: InvoiceParty;
+  document_kind?: InvoiceDocumentKind;
   status: InvoiceStatus;
   total_ex_tax: number;
   total_tax: number;

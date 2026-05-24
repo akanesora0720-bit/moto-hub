@@ -16,11 +16,18 @@ import type { MemberType, VerificationStatus } from "@/lib/types";
 
 const emptyDealer: DealerProfileInput = {
   store_name: "",
+  trade_name: "",
   contact_name: "",
   antique_dealer_number: "",
   invoice_number: "",
   prefecture: PREFECTURES[12],
+  address: "",
   phone: "",
+  bank_name: "",
+  bank_branch: "",
+  bank_account_type: "普通",
+  bank_account_number: "",
+  bank_account_holder: "",
 };
 
 const emptyStaff: StaffProfileInput = {
@@ -73,11 +80,18 @@ export default function OnboardingPage() {
         setExistingInvoicePath(profile.invoice_doc_path);
         setDealerForm({
           store_name: profile.store_name ?? "",
+          trade_name: profile.trade_name ?? "",
           contact_name: profile.contact_name ?? "",
           antique_dealer_number: profile.antique_dealer_number ?? "",
           invoice_number: profile.invoice_number ?? "",
           prefecture: profile.prefecture ?? PREFECTURES[12],
+          address: profile.address ?? "",
           phone: profile.phone ?? "",
+          bank_name: profile.bank_name ?? "",
+          bank_branch: profile.bank_branch ?? "",
+          bank_account_type: profile.bank_account_type ?? "普通",
+          bank_account_number: profile.bank_account_number ?? "",
+          bank_account_holder: profile.bank_account_holder ?? "",
         });
         setStaffForm({
           contact_name: profile.contact_name ?? "",
@@ -116,12 +130,17 @@ export default function OnboardingPage() {
   const submitDealer = async () => {
     if (
       !dealerForm.store_name.trim() ||
+      !dealerForm.trade_name.trim() ||
       !dealerForm.contact_name.trim() ||
       !dealerForm.antique_dealer_number.trim() ||
       !dealerForm.invoice_number.trim() ||
-      !dealerForm.phone.trim()
+      !dealerForm.address.trim() ||
+      !dealerForm.phone.trim() ||
+      !dealerForm.bank_name.trim() ||
+      !dealerForm.bank_account_number.trim() ||
+      !dealerForm.bank_account_holder.trim()
     ) {
-      setMessage("必須項目を入力してください。");
+      setMessage("必須項目（会社情報・振込口座含む）を入力してください。");
       return;
     }
     if (!antiqueFile && !existingAntiquePath) {
@@ -238,7 +257,7 @@ export default function OnboardingPage() {
         <div>
           <h1 className="text-2xl font-semibold">店舗情報</h1>
           <p className="mt-1 text-sm text-muted">
-            古物商・インボイスを登録後、閲覧・出品ができます。
+            インボイス登録事業者として、古物商・振込口座を登録してください。
           </p>
           <div className="mt-3">
             <VerificationBadge status={verificationStatus} />
@@ -249,7 +268,8 @@ export default function OnboardingPage() {
         </div>
 
         <div className="space-y-4 rounded-xl border border-border bg-card p-5">
-          {dealerField("store_name", "店舗名", true)}
+          {dealerField("store_name", "会社名（店舗名）", true)}
+          {dealerField("trade_name", "屋号", true)}
           {dealerField("contact_name", "担当者名", true)}
           {dealerField("antique_dealer_number", "古物商番号", true)}
           <label className="block text-sm">
@@ -291,7 +311,14 @@ export default function OnboardingPage() {
               ))}
             </select>
           </label>
+          {dealerField("address", "住所", true)}
           {dealerField("phone", "電話番号", true)}
+          <p className="text-xs font-medium text-muted">振込先口座（買い手への入金指示に使用）</p>
+          {dealerField("bank_name", "金融機関名", true)}
+          {dealerField("bank_branch", "支店名", true)}
+          {dealerField("bank_account_type", "口座種別（普通/当座）", true)}
+          {dealerField("bank_account_number", "口座番号", true)}
+          {dealerField("bank_account_holder", "口座名義", true)}
         </div>
 
         {message ? (

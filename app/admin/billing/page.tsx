@@ -26,6 +26,13 @@ type PayoutRow = Payout & {
   seller: { store_name: string | null; email: string } | null;
 };
 
+function docLabel(inv: InvoiceRow) {
+  const kind = (inv as Invoice & { document_kind?: string }).document_kind;
+  if (kind === "payment_instruction") return "入金指示書";
+  if (kind === "platform_fee") return "MotoHub手数料請求";
+  return inv.party === "buyer" ? "買い手" : "売り手";
+}
+
 function listingLabel(inv: InvoiceRow) {
   const li = inv.deal?.listings;
   const listing = Array.isArray(li) ? li[0] : li;
@@ -144,7 +151,13 @@ export default function AdminBillingPage() {
   const reviewDealIds = [
     ...new Set(
       invoices
-        .filter((i) => i.status === "review_pending" || i.status === "draft")
+        .filter(
+          (i) =>
+            (i.status === "review_pending" || i.status === "draft") &&
+            ((i as Invoice & { document_kind?: string }).document_kind ===
+              "payment_instruction" ||
+              !(i as Invoice & { document_kind?: string }).document_kind),
+        )
         .map((i) => i.deal_id),
     ),
   ];
@@ -155,7 +168,7 @@ export default function AdminBillingPage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold">請求・入出金</h1>
-            <p className="mt-1 text-sm text-muted">月額入金報告 / 請求確認 / 振込</p>
+            <p className="mt-1 text-sm text-muted">入金指示書 / MotoHub手数料 / 月額入金報告</p>
           </div>
           <Link href="/admin" className="text-sm text-accent hover:underline">
             管理画面
@@ -174,7 +187,7 @@ export default function AdminBillingPage() {
 
         <section className="space-y-3">
           <h2 className="font-medium">
-            請求書確認待ち
+            入金指示書 確認待ち
             {reviewDealIds.length > 0 ? (
               <span className="ml-2 text-sm text-amber-200">({reviewDealIds.length} 件)</span>
             ) : null}
@@ -202,7 +215,7 @@ export default function AdminBillingPage() {
                   </div>
                   {buyer ? (
                     <p>
-                      買い手請求: {formatYen(buyer.total_inc_tax)} ·{" "}
+                      {docLabel(buyer)}: {formatYen(buyer.total_inc_tax)}（税込） ·{" "}
                       {INVOICE_STATUS_LABELS[buyer.status]}{" "}
                       <a
                         href={`/api/invoices/${buyer.id}/pdf`}
@@ -214,9 +227,12 @@ export default function AdminBillingPage() {
                       </a>
                     </p>
                   ) : null}
-                  {seller ? (
+                  {seller &&
+                  (seller as Invoice & { document_kind?: string }).document_kind ===
+                    "platform_fee" &&
+                  seller.status !== "draft" ? (
                     <p>
-                      売り手精算: {formatYen(seller.total_inc_tax)} ·{" "}
+                      {docLabel(seller)}: {formatYen(seller.total_inc_tax)} ·{" "}
                       {INVOICE_STATUS_LABELS[seller.status]}{" "}
                       <a
                         href={`/api/invoices/${seller.id}/pdf`}
@@ -299,7 +315,7 @@ export default function AdminBillingPage() {
               className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border px-4 py-3 text-sm"
             >
               <span>
-                {inv.party === "buyer" ? "買い手" : "売り手"} · {listingLabel(inv)} ·{" "}
+                {docLabel(inv)} · {listingLabel(inv)} ·{" "}
                 {formatYen(inv.total_inc_tax)} · {INVOICE_STATUS_LABELS[inv.status]}
               </span>
               <span className="flex gap-2">

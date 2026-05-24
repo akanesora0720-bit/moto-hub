@@ -74,17 +74,16 @@ npm run dev
 | ステータス | 意味 |
 |-----------|------|
 | inquiry → negotiating → agreed | 問い合わせ・商談・合意（運営） |
-| awaiting_payment → funded | 買い手入金 → 運営入金確認 |
+| awaiting_payment → funded | 買い手が売り手へ直接振込 → 売り手が入金確認 |
 | handover_done / transfer_pending | 車両＋書類同時引渡。車検残ありは名変待ち（引渡後・翌週金曜まで） |
 | payout_ready | 双方が「取引完了確認」済み |
-| payout_done → completed | 運営振込 → 全処理終了 |
+| completed | 取引完了。MotoHub手数料は売り手へ別途請求 |
 
 - 業者 UI: `/deals`（購入側・販売側の進捗表示）
 - 管理: 成約タブでステータス変更・名変コンプライアンスジョブ（超過3日−5 / 7日−10 / 14日要レビュー）
 - 運営 KPI: `/admin/dashboard`
 - 通知: 日次 cron → `docs/OPERATIONS.md`
-- funded 後: 取引詳細で取引先連絡先（店舗・担当・電話）を開示
-- 振込は **payout_ready のみ**（双方確認後）
+- 成約後: 取引詳細で売り手振込先・連絡先を開示（入金指示書PDFあり）
 
 ## Phase4（業販市場型・信用可視化）
 
@@ -108,7 +107,8 @@ npm run dev
 | 月額会費 | `/my/payments` — 入金報告 |
 | 管理者メール | `/admin/messages` — 個別・一括・条件指定 |
 | 請求・振込 | `/admin/billing` — 月額確認・請求書発行・振込完了 |
-| 手数料 | 買い手 0% / 売り手 5%（売り手のみ・最低手数料なし） |
+| 手数料 | 買い手 0% / 売り手 5%（税抜成約価格ベース・別途消費税） |
+| 車両代 | 税抜成約価格＋消費税10%を買い手が売り手へ直接支払 |
 | PDF | `/api/invoices/[id]/pdf` |
 
 環境変数（任意）: `MOTOHUB_QUALIFIED_INVOICE_NUMBER`（適格請求書番号）

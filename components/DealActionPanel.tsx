@@ -11,6 +11,7 @@ import {
   sellerDealLabel,
 } from "@/lib/deal-flow";
 import { formatYen } from "@/lib/format";
+import { calcVehiclePriceIncTax, calcTax } from "@/lib/billing";
 import { createClient } from "@/lib/supabase/client";
 import type { Deal } from "@/lib/types";
 
@@ -68,6 +69,18 @@ export function DealActionPanel({
       return { error };
     });
 
+  const sellerConfirmPayment = () =>
+    run(async () => {
+      const supabase = createClient();
+      const { error } = await supabase.rpc("seller_confirm_buyer_payment", {
+        p_deal_id: deal.id,
+      });
+      return { error };
+    });
+
+  const vehicleTax = calcTax(deal.agreed_price_ex_tax);
+  const buyerTotalIncTax = calcVehiclePriceIncTax(deal.agreed_price_ex_tax);
+
   const canBuyerConfirm =
     role === "buyer" &&
     (deal.status === "handover_done" || deal.status === "transfer_pending") &&
@@ -79,6 +92,8 @@ export function DealActionPanel({
     !deal.seller_confirmed_at;
 
   const canMarkHandover = role === "seller" && deal.status === "funded";
+  const canSellerConfirmPayment =
+    role === "seller" && deal.status === "awaiting_payment";
   const showComplaintLink = role === "buyer" && canBuyerFileComplaint(deal.status);
 
   return (
@@ -98,9 +113,17 @@ export function DealActionPanel({
           <dt className="text-muted">合意価格（税抜）</dt>
           <dd className="font-medium">{formatYen(deal.agreed_price_ex_tax)}</dd>
         </div>
+        <div className="flex justify-between gap-4">
+          <dt className="text-muted">消費税（10%）</dt>
+          <dd className="font-medium">{formatYen(vehicleTax)}</dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt className="text-muted">支払総額（税込）</dt>
+          <dd className="font-semibold text-accent">{formatYen(buyerTotalIncTax)}</dd>
+        </div>
         {deal.status === "awaiting_payment" && role === "buyer" ? (
           <p className="text-xs text-amber-200/90">
-            運営指定口座へ入金後、入金確認までお待ちください。
+            入金指示書の売り手口座へ、税込総額を直接お振込みください。MotoHubは資金を預かりません。
           </p>
         ) : null}
         {deal.funded_at ? (
@@ -142,11 +165,21 @@ export function DealActionPanel({
 
       {deal.status === "payout_ready" ? (
         <p className="text-xs text-emerald-200/90">
-          双方の確認が揃いました。運営による売り手への振込手続きを行います。
+          双方の確認が揃いました。取引完了処理へ進みます。
         </p>
       ) : null}
 
       <div className="flex flex-col gap-2">
+        {canSellerConfirmPayment ? (
+          <button
+            type="button"
+            disabled={loading}
+            onClick={sellerConfirmPayment}
+            className="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60"
+          >
+            {loading ? "処理中…" : "買い手からの入金を確認"}
+          </button>
+        ) : null}
         {canMarkHandover ? (
           <button
             type="button"

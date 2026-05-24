@@ -1,7 +1,8 @@
 export const BUYER_FEE_RATE = 0;
 export const SELLER_FEE_RATE = 0.05;
-export const MIN_FEE_EX_TAX = 5000;
+export const MIN_FEE_EX_TAX = 0;
 export const CONSUMPTION_TAX_RATE = 0.1;
+export const PAYMENT_DUE_DAYS = 7;
 
 export function calcFeeExTax(
   amountExTax: number,
@@ -18,40 +19,64 @@ export function calcTax(amountExTax: number): number {
   return Math.round(amountExTax * CONSUMPTION_TAX_RATE);
 }
 
+export function calcVehiclePriceIncTax(vehiclePriceExTax: number): number {
+  return vehiclePriceExTax + calcTax(vehiclePriceExTax);
+}
+
 export type DealBillingSummary = {
   vehiclePriceExTax: number;
-  buyerFeeExTax: number;
-  buyerFeeTax: number;
+  vehicleTax: number;
   buyerTotalIncTax: number;
-  sellerFeeExTax: number;
-  sellerFeeTax: number;
-  sellerPayoutAmount: number;
+  platformFeeExTax: number;
+  platformFeeTax: number;
+  platformFeeIncTax: number;
+  sellerReceivesIncTax: number;
 };
 
 export function summarizeDealBilling(
   vehiclePriceExTax: number,
-  buyerFeeRate = BUYER_FEE_RATE,
   sellerFeeRate = SELLER_FEE_RATE,
 ): DealBillingSummary {
-  const buyerFeeExTax = calcFeeExTax(vehiclePriceExTax, buyerFeeRate, 0);
-  const sellerFeeExTax = calcFeeExTax(vehiclePriceExTax, sellerFeeRate, 0);
-  const buyerFeeTax = calcTax(buyerFeeExTax);
-  const sellerFeeTax = calcTax(sellerFeeExTax);
+  const vehicleTax = calcTax(vehiclePriceExTax);
+  const platformFeeExTax = calcFeeExTax(vehiclePriceExTax, sellerFeeRate, 0);
+  const platformFeeTax = calcTax(platformFeeExTax);
 
   return {
     vehiclePriceExTax,
-    buyerFeeExTax,
-    buyerFeeTax,
-    buyerTotalIncTax: vehiclePriceExTax + buyerFeeExTax + buyerFeeTax,
-    sellerFeeExTax,
-    sellerFeeTax,
-    sellerPayoutAmount: vehiclePriceExTax - sellerFeeExTax - sellerFeeTax,
+    vehicleTax,
+    buyerTotalIncTax: vehiclePriceExTax + vehicleTax,
+    platformFeeExTax,
+    platformFeeTax,
+    platformFeeIncTax: platformFeeExTax + platformFeeTax,
+    sellerReceivesIncTax: vehiclePriceExTax + vehicleTax,
   };
 }
 
 export function formatYen(n: number): string {
   return `¥${n.toLocaleString("ja-JP")}`;
 }
+
+export function formatBankAccount(profile: {
+  bank_name?: string | null;
+  bank_branch?: string | null;
+  bank_account_type?: string | null;
+  bank_account_number?: string | null;
+  bank_account_holder?: string | null;
+}): string | null {
+  if (!profile.bank_name || !profile.bank_account_number) return null;
+  const type = profile.bank_account_type ?? "普通";
+  const branch = profile.bank_branch ? ` ${profile.bank_branch}支店` : "";
+  return `${profile.bank_name}${branch} ${type} ${profile.bank_account_number} ${profile.bank_account_holder ?? ""}`.trim();
+}
+
+export const DOCUMENT_KIND_LABELS: Record<
+  "legacy" | "payment_instruction" | "platform_fee",
+  string
+> = {
+  legacy: "請求書",
+  payment_instruction: "入金指示書",
+  platform_fee: "MotoHub手数料請求書",
+};
 
 export const MONTHLY_PAYMENT_STATUS_LABELS: Record<
   "reported" | "unconfirmed" | "confirmed" | "rejected",

@@ -86,6 +86,8 @@ export default async function DealDetailPage({
     completed_at: row.completed_at ?? null,
     seller_intent_confirmed: row.seller_intent_confirmed ?? false,
     buyer_intent_confirmed: row.buyer_intent_confirmed ?? false,
+    payment_due_at: row.payment_due_at ?? null,
+    seller_payment_confirmed_at: row.seller_payment_confirmed_at ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
     listing: {
@@ -143,6 +145,7 @@ export default async function DealDetailPage({
           role={role}
           status={deal.status}
           agreedPriceExTax={deal.agreed_price_ex_tax}
+          paymentDueAt={deal.payment_due_at}
         />
 
         <Link
@@ -167,11 +170,11 @@ export default async function DealDetailPage({
           <p className="font-medium text-zinc-400">取引の流れ</p>
           <ol className="mt-2 list-decimal space-y-1 pl-4">
             <li>問い合わせ・商談・合意（運営）</li>
-            <li>買い手入金 → 運営が入金確認</li>
-            <li>売り手が車両と書類を同時に引渡</li>
+            <li>買い手が売り手へ直接振込（税込）</li>
+            <li>売り手が入金確認 → 車両・書類引渡し</li>
             <li>車検残ありの場合は翌週金曜まで名義変更</li>
             <li>双方が取引完了を確認</li>
-            <li>運営が売り手へ振込 → 完了</li>
+            <li>MotoHub手数料請求（売り手5%）→ 完了</li>
           </ol>
         </div>
       </div>

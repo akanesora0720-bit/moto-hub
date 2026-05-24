@@ -2,11 +2,18 @@ import type { MemberType, Profile, VerificationStatus } from "@/lib/types";
 
 export type DealerProfileInput = {
   store_name: string;
+  trade_name: string;
   contact_name: string;
   antique_dealer_number: string;
   invoice_number: string;
   prefecture: string;
+  address: string;
   phone: string;
+  bank_name: string;
+  bank_branch: string;
+  bank_account_type: string;
+  bank_account_number: string;
+  bank_account_holder: string;
 };
 
 export type StaffProfileInput = {
@@ -24,13 +31,18 @@ export function isProfileComplete(profile: Profile | null): boolean {
 
   return (
     !!profile.store_name &&
+    !!profile.trade_name &&
     !!profile.contact_name &&
     !!profile.antique_dealer_number &&
     !!profile.antique_dealer_doc_path &&
     !!profile.invoice_number &&
     !!profile.invoice_doc_path &&
     !!profile.prefecture &&
-    !!profile.phone
+    !!profile.address &&
+    !!profile.phone &&
+    !!profile.bank_name &&
+    !!profile.bank_account_number &&
+    !!profile.bank_account_holder
   );
 }
 
@@ -49,11 +61,18 @@ export function buildDealerProfilePayload(
 ) {
   const base = {
     store_name: input.store_name.trim(),
+    trade_name: input.trade_name.trim(),
     contact_name: input.contact_name.trim(),
     antique_dealer_number: input.antique_dealer_number.trim(),
     invoice_number: input.invoice_number.trim(),
     prefecture: input.prefecture,
+    address: input.address.trim(),
     phone: input.phone.trim(),
+    bank_name: input.bank_name.trim(),
+    bank_branch: input.bank_branch.trim(),
+    bank_account_type: input.bank_account_type.trim() || "普通",
+    bank_account_number: input.bank_account_number.trim(),
+    bank_account_holder: input.bank_account_holder.trim(),
     antique_dealer_doc_path: docs.antique_dealer_doc_path,
     invoice_doc_path: docs.invoice_doc_path,
     profile_completed: true,
