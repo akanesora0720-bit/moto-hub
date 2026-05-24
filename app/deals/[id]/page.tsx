@@ -143,8 +143,6 @@ export default async function DealDetailPage({
           role={role}
           status={deal.status}
           agreedPriceExTax={deal.agreed_price_ex_tax}
-          buyerFeeRate={Number(deal.buyer_fee_rate)}
-          sellerFeeRate={Number(deal.seller_fee_rate)}
         />
 
         <Link

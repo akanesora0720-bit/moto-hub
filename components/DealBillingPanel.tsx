@@ -15,19 +15,15 @@ export async function DealBillingPanel({
   role,
   status,
   agreedPriceExTax,
-  buyerFeeRate,
-  sellerFeeRate,
 }: {
   dealId: string;
   userId: string;
   role: "buyer" | "seller";
   status: DealStatus;
   agreedPriceExTax: number;
-  buyerFeeRate: number;
-  sellerFeeRate: number;
 }) {
   const supabase = await createClient();
-  const summary = summarizeDealBilling(agreedPriceExTax, buyerFeeRate, sellerFeeRate);
+  const summary = summarizeDealBilling(agreedPriceExTax);
 
   const [{ data: invoices }, { data: payout }] = await Promise.all([
     supabase.from("invoices").select("*").eq("deal_id", dealId),
@@ -49,23 +45,23 @@ export async function DealBillingPanel({
 
   if (!showBilling) return null;
 
+  const sellerNetExTax = summary.vehiclePriceExTax - summary.sellerFeeExTax;
+
   return (
     <section className="space-y-4 rounded-xl border border-border bg-card p-4">
       <h2 className="font-medium">請求・精算</h2>
       <p className="text-xs text-muted">取引ステータス: {DEAL_STATUS_LABELS[status]}</p>
 
       {role === "buyer" ? (
-        <div className="space-y-1 text-sm">
-          <p>車両価格（税抜）: {formatYen(summary.vehiclePriceExTax)}</p>
-          {summary.buyerFeeExTax > 0 ? (
-            <p>
-              買い手手数料: {formatYen(summary.buyerFeeExTax)} + 税{" "}
-              {formatYen(summary.buyerFeeTax)}
-            </p>
-          ) : (
-            <p className="text-muted">買い手手数料: なし</p>
-          )}
-          <p className="font-semibold">合計請求: {formatYen(summary.buyerTotalIncTax)}</p>
+        <div className="space-y-2 text-sm">
+          <Row label="落札価格" value={formatYen(summary.vehiclePriceExTax)} />
+          <Row label="手数料" value="¥0" valueClass="font-semibold text-accent" />
+          <Row
+            label="お支払い総額"
+            value={formatYen(summary.vehiclePriceExTax)}
+            bold
+          />
+          <p className="text-xs text-emerald-300/90">買い手手数料0円 — 落札価格のみお支払い</p>
           {buyerInv ? (
             <p className="text-xs text-muted">
               請求書: {INVOICE_STATUS_LABELS[buyerInv.status]}
@@ -73,26 +69,34 @@ export async function DealBillingPanel({
                 <>
                   {" "}
                   ·{" "}
-                  <Link href={`/api/invoices/${buyerInv.id}/pdf`} className="text-accent hover:underline" target="_blank">
+                  <Link
+                    href={`/api/invoices/${buyerInv.id}/pdf`}
+                    className="text-accent hover:underline"
+                    target="_blank"
+                  >
                     PDF
                   </Link>
                 </>
               ) : null}
             </p>
           ) : null}
-          <p className="text-xs text-zinc-500">
-            {status === "awaiting_payment"
-              ? "入金待ち"
-              : ["funded", "handover_done", "transfer_pending", "payout_ready", "payout_done", "completed"].includes(status)
-                ? "入金確認済"
-                : "—"}
-          </p>
+          <PaymentHint status={status} />
         </div>
       ) : (
-        <div className="space-y-1 text-sm">
-          <p>売却価格（税抜）: {formatYen(summary.vehiclePriceExTax)}</p>
-          <p>売り手手数料 5%: −{formatYen(summary.sellerFeeExTax)} − 税 {formatYen(summary.sellerFeeTax)}</p>
-          <p className="font-semibold">差引振込予定: {formatYen(summary.sellerPayoutAmount)}</p>
+        <div className="space-y-2 text-sm">
+          <Row label="成約価格" value={formatYen(summary.vehiclePriceExTax)} />
+          <Row
+            label="売り手手数料（5%）"
+            value={`−${formatYen(summary.sellerFeeExTax)}`}
+            valueClass="text-rose-300"
+          />
+          <Row label="精算予定額" value={formatYen(sellerNetExTax)} bold />
+          {summary.sellerFeeTax > 0 ? (
+            <p className="text-xs text-muted">
+              手数料消費税 {formatYen(summary.sellerFeeTax)} 差引後の実振込{" "}
+              {formatYen(summary.sellerPayoutAmount)}
+            </p>
+          ) : null}
           {sellerInv ? (
             <p className="text-xs text-muted">精算書: {INVOICE_STATUS_LABELS[sellerInv.status]}</p>
           ) : null}
@@ -112,4 +116,43 @@ export async function DealBillingPanel({
       </Link>
     </section>
   );
+}
+
+function Row({
+  label,
+  value,
+  bold,
+  valueClass,
+}: {
+  label: string;
+  value: string;
+  bold?: boolean;
+  valueClass?: string;
+}) {
+  return (
+    <div
+      className={`flex justify-between gap-4 border-b border-border/60 pb-2 last:border-0 ${
+        bold ? "pt-1 font-medium" : ""
+      }`}
+    >
+      <span className={bold ? "" : "text-muted"}>{label}</span>
+      <span
+        className={`tabular-nums ${bold ? "text-lg font-semibold text-accent" : "font-medium"} ${valueClass ?? ""}`}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function PaymentHint({ status }: { status: DealStatus }) {
+  const text =
+    status === "awaiting_payment"
+      ? "入金待ち"
+      : ["funded", "handover_done", "transfer_pending", "payout_ready", "payout_done", "completed"].includes(
+            status,
+          )
+        ? "入金確認済"
+        : "—";
+  return <p className="text-xs text-zinc-500">{text}</p>;
 }

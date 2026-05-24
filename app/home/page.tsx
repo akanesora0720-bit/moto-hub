@@ -35,6 +35,9 @@ export default async function DealerHomePage() {
           <p className="mt-1 text-sm text-muted">
             {storeName} さん、今日の業務状況です。
           </p>
+          <p className="mt-2 inline-block rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-200">
+            買い手手数料0円 · 成約時は売り手5% · ゴールド会員 月額¥15,000
+          </p>
         </div>
 
         <section>

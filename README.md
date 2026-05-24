@@ -108,7 +108,7 @@ npm run dev
 | 月額会費 | `/my/payments` — 入金報告 |
 | 管理者メール | `/admin/messages` — 個別・一括・条件指定 |
 | 請求・振込 | `/admin/billing` — 月額確認・請求書発行・振込完了 |
-| 手数料 | 買い手 4% / 売り手 5%（最低 ¥5,000 税抜） |
+| 手数料 | 買い手 0% / 売り手 5%（売り手のみ・最低手数料なし） |
 | PDF | `/api/invoices/[id]/pdf` |
 
 環境変数（任意）: `MOTOHUB_QUALIFIED_INVOICE_NUMBER`（適格請求書番号）
