@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { canAccessAdmin } from "@/lib/auth";
+import { fetchAdminPendingCounts } from "@/lib/admin-pending-counts";
 import { fetchAdminKpi } from "@/lib/operations-kpi";
 import { createServiceClient } from "@/lib/server-supabase";
 import { getViewer } from "@/lib/viewer";
@@ -14,9 +15,11 @@ export default async function AdminDashboardPage() {
   if (!viewer || !canAccessAdmin(viewer.profile as Profile)) redirect("/");
 
   let kpi;
+  let pending;
   let kpiError: string | null = null;
   try {
     kpi = await fetchAdminKpi();
+    pending = await fetchAdminPendingCounts();
   } catch (e) {
     kpiError = e instanceof Error ? e.message : String(e);
   }
@@ -89,6 +92,21 @@ export default async function AdminDashboardPage() {
               <TrendBlock title="出品（月次）" rows={kpi.monthlyListings} />
               <TrendBlock title="成約（月次）" rows={kpi.monthlyDeals} />
             </div>
+
+            {pending ? (
+              <section className="rounded-xl border border-border bg-card p-4">
+                <h2 className="font-medium">未処理一覧</h2>
+                <ul className="mt-3 space-y-2 text-sm">
+                  <PendingRow label="新規問い合わせ" count={pending.openInquiries} href="/admin" />
+                  <PendingRow label="運営サポート" count={pending.openSupport} href="/admin/support" />
+                  <PendingRow label="トラブル申告" count={pending.openDisputes} href="/admin/disputes" />
+                  <PendingRow label="入金報告" count={pending.paymentReportsPending} href="/admin/billing" />
+                  <PendingRow label="請求書確認待ち" count={pending.invoicesReviewPending} href="/admin/billing" />
+                  <PendingRow label="振込待ち" count={pending.payoutsAwaiting} href="/admin/billing" />
+                  <PendingRow label="名変期限超過" count={pending.transferOverdue} href="/admin" />
+                </ul>
+              </section>
+            ) : null}
           </>
         ) : null}
 
@@ -118,6 +136,25 @@ export default async function AdminDashboardPage() {
         </section>
       </div>
     </AuthenticatedShell>
+  );
+}
+
+function PendingRow({
+  label,
+  count,
+  href,
+}: {
+  label: string;
+  count: number;
+  href: string;
+}) {
+  return (
+    <li className="flex items-center justify-between gap-2">
+      <Link href={href} className={count > 0 ? "text-amber-100 hover:underline" : "text-muted"}>
+        {label}
+      </Link>
+      <span className={count > 0 ? "font-semibold text-amber-200" : "text-muted"}>{count}</span>
+    </li>
   );
 }
 

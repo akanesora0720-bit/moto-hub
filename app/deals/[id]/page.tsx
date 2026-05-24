@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DealBillingPanel } from "@/components/DealBillingPanel";
 import { canFileDispute } from "@/lib/disputes";
 import { notFound } from "next/navigation";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
@@ -83,6 +84,8 @@ export default async function DealDetailPage({
     payout_at: row.payout_at ?? null,
     transfer_overdue: row.transfer_overdue ?? false,
     completed_at: row.completed_at ?? null,
+    seller_intent_confirmed: row.seller_intent_confirmed ?? false,
+    buyer_intent_confirmed: row.buyer_intent_confirmed ?? false,
     created_at: row.created_at,
     updated_at: row.updated_at,
     listing: {
@@ -133,6 +136,23 @@ export default async function DealDetailPage({
             seller={contactPayload.seller}
           />
         ) : null}
+
+        <DealBillingPanel
+          dealId={id}
+          userId={userId}
+          role={role}
+          status={deal.status}
+          agreedPriceExTax={deal.agreed_price_ex_tax}
+          buyerFeeRate={Number(deal.buyer_fee_rate)}
+          sellerFeeRate={Number(deal.seller_fee_rate)}
+        />
+
+        <Link
+          href={`/support/new?deal=${id}`}
+          className="block rounded-lg border border-border px-4 py-3 text-sm hover:border-accent/40"
+        >
+          運営サポート（書類・入金・名変などの相談）
+        </Link>
 
         {canFileDispute(deal.status) &&
         !isAdmin &&

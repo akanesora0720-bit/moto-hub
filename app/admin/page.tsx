@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { AdminDealFinalizePanel } from "@/components/AdminDealFinalizePanel";
+import { ConfirmStatusSelect } from "@/components/ConfirmStatusSelect";
 import { TrustBadge } from "@/components/TrustBadge";
 import { VerificationBadge } from "@/components/VerificationBadge";
 import { formatYen } from "@/lib/format";
@@ -23,6 +25,7 @@ type InquiryRow = {
   created_at: string;
   listing: { id: string; maker: string; model: string; price_ex_tax: number } | null;
   buyer: { store_name: string | null; email: string | null } | null;
+  deal_id: string | null;
 };
 
 type ComplaintRow = {
@@ -77,11 +80,23 @@ export default function AdminPage() {
       transfer_deadline_at: string | null;
       buyer_confirmed_at: string | null;
       seller_confirmed_at: string | null;
+      seller_intent_confirmed: boolean;
+      buyer_intent_confirmed: boolean;
       listing: { maker: string; model: string } | null;
       buyer: { store_name: string | null } | null;
       seller: { store_name: string | null } | null;
     }[]
   >([]);
+  const [pending, setPending] = useState({
+    openInquiries: 0,
+    openSupport: 0,
+    openDisputes: 0,
+    paymentReportsPending: 0,
+    invoicesReviewPending: 0,
+    payoutsAwaiting: 0,
+    transferOverdue: 0,
+  });
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [dealAlerts, setDealAlerts] = useState<
     { id: string; message: string; alert_type: string; deal_id: string }[]
   >([]);
@@ -91,14 +106,15 @@ export default function AdminPage() {
 
   const load = useCallback(async () => {
     const supabase = createClient();
-    const [inq, l, m, c, d, a] = await Promise.all([
+    const [inq, l, m, c, d, a, pcInq, pcSup, pcDisp, pcPay, pcInv, pcPo, pcTr] = await Promise.all([
       supabase
         .from("inquiries")
         .select(
           `
           id, buyer_id, message, status, created_at,
           listings ( id, maker, model, price_ex_tax ),
-          buyer:profiles!inquiries_buyer_id_fkey ( store_name, email )
+          buyer:profiles!inquiries_buyer_id_fkey ( store_name, email ),
+          deals ( id )
         `,
         )
         .order("created_at", { ascending: false })
@@ -133,7 +149,7 @@ export default function AdminPage() {
         .select(
           `
           id, status, agreed_price_ex_tax, transfer_overdue, transfer_deadline_at,
-          buyer_confirmed_at, seller_confirmed_at,
+          buyer_confirmed_at, seller_confirmed_at, seller_intent_confirmed, buyer_intent_confirmed,
           listings ( maker, model ),
           buyer:profiles!deals_buyer_id_fkey ( store_name ),
           seller:profiles!deals_seller_id_fkey ( store_name )
@@ -146,11 +162,19 @@ export default function AdminPage() {
         .eq("resolved", false)
         .order("created_at", { ascending: false })
         .limit(30),
+      supabase.from("inquiries").select("id", { count: "exact", head: true }).eq("status", "open"),
+      supabase.from("support_tickets").select("id", { count: "exact", head: true }).in("status", ["open", "reviewing"]),
+      supabase.from("disputes").select("id", { count: "exact", head: true }).in("status", ["open", "reviewing"]),
+      supabase.from("monthly_payment_reports").select("id", { count: "exact", head: true }).in("status", ["reported", "unconfirmed"]),
+      supabase.from("invoices").select("id", { count: "exact", head: true }).eq("status", "review_pending"),
+      supabase.from("payouts").select("id", { count: "exact", head: true }).in("status", ["awaiting", "ready"]),
+      supabase.from("deals").select("id", { count: "exact", head: true }).eq("transfer_overdue", true).neq("status", "completed"),
     ]);
     setInquiries(
       (inq.data ?? []).map((row) => {
         const listing = Array.isArray(row.listings) ? row.listings[0] : row.listings;
         const buyer = Array.isArray(row.buyer) ? row.buyer[0] : row.buyer;
+        const dealRow = Array.isArray(row.deals) ? row.deals[0] : row.deals;
         return {
           id: row.id,
           buyer_id: row.buyer_id,
@@ -159,6 +183,7 @@ export default function AdminPage() {
           created_at: row.created_at,
           listing: listing as InquiryRow["listing"],
           buyer: buyer as InquiryRow["buyer"],
+          deal_id: (dealRow as { id?: string } | null)?.id ?? null,
         };
       }),
     );
@@ -213,6 +238,8 @@ export default function AdminPage() {
           transfer_deadline_at: row.transfer_deadline_at ?? null,
           buyer_confirmed_at: row.buyer_confirmed_at ?? null,
           seller_confirmed_at: row.seller_confirmed_at ?? null,
+          seller_intent_confirmed: row.seller_intent_confirmed ?? false,
+          buyer_intent_confirmed: row.buyer_intent_confirmed ?? false,
           listing: listing as { maker: string; model: string } | null,
           buyer: buyer as { store_name: string | null } | null,
           seller: seller as { store_name: string | null } | null,
@@ -220,6 +247,15 @@ export default function AdminPage() {
       }),
     );
     setDealAlerts((a.data ?? []) as typeof dealAlerts);
+    setPending({
+      openInquiries: pcInq.count ?? 0,
+      openSupport: pcSup.count ?? 0,
+      openDisputes: pcDisp.count ?? 0,
+      paymentReportsPending: pcPay.count ?? 0,
+      invoicesReviewPending: pcInv.count ?? 0,
+      payoutsAwaiting: pcPo.count ?? 0,
+      transferOverdue: pcTr.count ?? 0,
+    });
   }, []);
 
   useEffect(() => {
@@ -351,10 +387,20 @@ export default function AdminPage() {
       p_deal_id: id,
       p_status: status,
     });
-    setMessage(
-      error ? error.message : `取引を「${DEAL_STATUS_LABELS[status]}」に更新しました。`,
-    );
+    if (error) return { error: error.message };
+    setMessage(`取引を「${DEAL_STATUS_LABELS[status]}」に更新しました。`);
     load();
+    return { okMessage: "更新しました。" };
+  };
+
+  const runDealAction = async (key: string, fn: () => Promise<void>) => {
+    if (actionLoading) return;
+    setActionLoading(key);
+    try {
+      await fn();
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const closeInquiry = async (id: string) => {
@@ -405,6 +451,8 @@ export default function AdminPage() {
     load();
   };
 
+  const badge = (n: number) => (n > 0 ? ` (${n})` : "");
+
   const complaintLabel = (t: ComplaintType) =>
     COMPLAINT_TYPES.find((x) => x.value === t)?.label ?? t;
 
@@ -427,10 +475,32 @@ export default function AdminPage() {
             KPIダッシュボード
           </Link>
           <Link
+            href="/admin/support"
+            className="rounded-lg border border-border px-4 py-2 text-sm hover:border-accent/40"
+          >
+            サポート{badge(pending.openSupport)}
+          </Link>
+          <Link
+            href="/admin/messages"
+            className="rounded-lg border border-border px-4 py-2 text-sm hover:border-accent/40"
+          >
+            メール送信
+          </Link>
+          <Link
+            href="/admin/billing"
+            className={`rounded-lg border px-4 py-2 text-sm hover:border-accent/40 ${
+              pending.invoicesReviewPending > 0
+                ? "border-amber-500/50 text-amber-100"
+                : "border-border"
+            }`}
+          >
+            請求・入金{badge(pending.invoicesReviewPending + pending.paymentReportsPending)}
+          </Link>
+          <Link
             href="/admin/disputes"
             className="rounded-lg border border-border px-4 py-2 text-sm hover:border-accent/40"
           >
-            Dispute
+            トラブル{badge(pending.openDisputes)}
           </Link>
           <Link
             href="/admin/credit"
@@ -443,11 +513,11 @@ export default function AdminPage() {
         <div className="flex flex-wrap gap-2">
           {(
             [
-              ["inquiries", "問い合わせ"],
+              ["inquiries", `問い合わせ${badge(pending.openInquiries)}`],
               ["complaints", "クレーム"],
               ["listings", "出品"],
               ["members", "会員"],
-              ["deals", "取引"],
+              ["deals", `取引${badge(pending.transferOverdue)}`],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -506,13 +576,22 @@ export default function AdminPage() {
                   </p>
                   {row.status === "open" ? (
                     <div className="mt-3 flex flex-wrap gap-3">
-                      <button
-                        type="button"
-                        onClick={() => startDealFromInquiry(row)}
-                        className="text-emerald-300 hover:underline"
-                      >
-                        取引を作成
-                      </button>
+                      {row.deal_id ? (
+                        <Link
+                          href={`/deals/${row.deal_id}`}
+                          className="text-emerald-300 hover:underline"
+                        >
+                          商談中（取引を見る）
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => startDealFromInquiry(row)}
+                          className="text-emerald-300 hover:underline"
+                        >
+                          取引を作成（レガシー）
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => closeInquiry(row.id)}
@@ -835,17 +914,21 @@ export default function AdminPage() {
                         <span className="block text-xs text-muted">{fee(row.agreed_price_ex_tax)}/側</span>
                       </td>
                       <td className="px-4 py-3">
-                        <select
+                        <ConfirmStatusSelect
                           value={row.status}
-                          onChange={(e) => advanceDeal(row.id, e.target.value as DealStatus)}
-                          className="rounded border border-border bg-zinc-950 px-2 py-1 text-xs"
-                        >
-                          {DEAL_STATUSES.map((s) => (
-                            <option key={s} value={s}>
-                              {DEAL_STATUS_LABELS[s]}
-                            </option>
-                          ))}
-                        </select>
+                          options={DEAL_STATUSES.map((s) => ({
+                            value: s,
+                            label: DEAL_STATUS_LABELS[s],
+                          }))}
+                          onConfirm={(next) => advanceDeal(row.id, next)}
+                        />
+                        <AdminDealFinalizePanel
+                          dealId={row.id}
+                          sellerIntent={row.seller_intent_confirmed}
+                          buyerIntent={row.buyer_intent_confirmed}
+                          status={row.status}
+                          onUpdated={load}
+                        />
                       </td>
                       <td className="px-4 py-3 text-xs">
                         買 {row.buyer_confirmed_at ? "済" : "未"}
@@ -864,37 +947,58 @@ export default function AdminPage() {
                         {row.status === "awaiting_payment" ? (
                           <button
                             type="button"
-                            onClick={() => advanceDeal(row.id, "funded")}
-                            className="block text-emerald-300 hover:underline"
+                            disabled={!!actionLoading}
+                            onClick={() =>
+                              runDealAction(`${row.id}:funded`, async () => {
+                                await advanceDeal(row.id, "funded");
+                              })
+                            }
+                            className="block text-emerald-300 hover:underline disabled:opacity-50"
                           >
-                            入金確認
+                            {actionLoading === `${row.id}:funded` ? "処理中…" : "入金確認"}
                           </button>
                         ) : null}
                         {row.status === "payout_ready" ? (
                           <button
                             type="button"
-                            onClick={() => advanceDeal(row.id, "payout_done")}
-                            className="block text-emerald-300 hover:underline"
+                            disabled={!!actionLoading}
+                            onClick={() =>
+                              runDealAction(`${row.id}:payout`, async () => {
+                                await advanceDeal(row.id, "payout_done");
+                              })
+                            }
+                            className="block text-emerald-300 hover:underline disabled:opacity-50"
                           >
-                            振込完了
+                            {actionLoading === `${row.id}:payout` ? "処理中…" : "振込完了"}
                           </button>
                         ) : null}
                         {row.status === "payout_done" ? (
                           <button
                             type="button"
-                            onClick={() => advanceDeal(row.id, "completed")}
-                            className="block text-emerald-300 hover:underline"
+                            disabled={!!actionLoading}
+                            onClick={() =>
+                              runDealAction(`${row.id}:complete`, async () => {
+                                await advanceDeal(row.id, "completed");
+                              })
+                            }
+                            className="block text-emerald-300 hover:underline disabled:opacity-50"
                           >
-                            完了
+                            {actionLoading === `${row.id}:complete` ? "処理中…" : "完了"}
                           </button>
                         ) : null}
                         {row.status !== "cancelled" && row.status !== "completed" ? (
                           <button
                             type="button"
-                            onClick={() => advanceDeal(row.id, "cancelled")}
-                            className="block text-muted hover:underline"
+                            disabled={!!actionLoading}
+                            onClick={() =>
+                              runDealAction(`${row.id}:cancel`, async () => {
+                                if (!window.confirm("この取引を取消しますか？")) return;
+                                await advanceDeal(row.id, "cancelled");
+                              })
+                            }
+                            className="block text-muted hover:underline disabled:opacity-50"
                           >
-                            取消
+                            {actionLoading === `${row.id}:cancel` ? "処理中…" : "取消"}
                           </button>
                         ) : null}
                       </td>

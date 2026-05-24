@@ -154,7 +154,7 @@ export function DealActionPanel({
             onClick={markHandover}
             className="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60"
           >
-            車両・書類の引渡完了
+            {loading ? "処理中…" : "車両・書類の引渡完了"}
           </button>
         ) : null}
         {canBuyerConfirm ? (
@@ -164,7 +164,7 @@ export function DealActionPanel({
             onClick={buyerConfirm}
             className="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60"
           >
-            取引完了を確認（買い手）
+            {loading ? "処理中…" : "取引完了を確認（買い手）"}
           </button>
         ) : null}
         {canSellerConfirm ? (
@@ -174,7 +174,7 @@ export function DealActionPanel({
             onClick={sellerConfirm}
             className="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60"
           >
-            取引完了を確認（売り手）
+            {loading ? "処理中…" : "取引完了を確認（売り手）"}
           </button>
         ) : null}
       </div>

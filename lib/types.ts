@@ -33,7 +33,7 @@ export type Profile = {
 
 export type { MileageRollbackStatus };
 
-export type ListingStatus = "active" | "sold" | "removed";
+export type ListingStatus = "active" | "negotiating" | "sold" | "removed";
 
 export type ListingGradeKey =
   | "total"
@@ -134,6 +134,8 @@ export type Deal = {
   payout_at: string | null;
   transfer_overdue: boolean;
   completed_at: string | null;
+  seller_intent_confirmed: boolean;
+  buyer_intent_confirmed: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -202,6 +204,93 @@ export type DealerDashboardStats = {
   inspected_count: number;
   avg_listing_days: number;
   monthly_sales_ex_tax: number;
+};
+
+export type SupportTicketCategory =
+  | "name_transfer"
+  | "documents"
+  | "payment"
+  | "deal"
+  | "billing"
+  | "system"
+  | "other";
+
+export type SupportTicketStatus = "open" | "reviewing" | "answered" | "closed";
+
+export type SupportTicket = {
+  id: string;
+  user_id: string;
+  deal_id: string | null;
+  category: SupportTicketCategory;
+  subject: string;
+  message: string;
+  status: SupportTicketStatus;
+  admin_reply: string | null;
+  created_at: string;
+  updated_at: string;
+  answered_at: string | null;
+};
+
+export type MessageImportance = "normal" | "important" | "urgent";
+
+export type UserNotification = {
+  id: string;
+  user_id: string;
+  title: string;
+  body: string;
+  importance: MessageImportance;
+  link_url: string | null;
+  read_at: string | null;
+  created_at: string;
+};
+
+export type MonthlyPaymentStatus =
+  | "reported"
+  | "unconfirmed"
+  | "confirmed"
+  | "rejected";
+
+export type MonthlyPaymentReport = {
+  id: string;
+  user_id: string;
+  billing_month: string;
+  reported_amount: number;
+  paid_at: string;
+  payer_name: string;
+  note: string | null;
+  status: MonthlyPaymentStatus;
+  admin_note: string | null;
+  created_at: string;
+};
+
+export type InvoiceParty = "buyer" | "seller";
+export type InvoiceStatus = "draft" | "review_pending" | "issued" | "paid" | "cancelled";
+
+export type Invoice = {
+  id: string;
+  deal_id: string;
+  user_id: string;
+  party: InvoiceParty;
+  status: InvoiceStatus;
+  total_ex_tax: number;
+  total_tax: number;
+  total_inc_tax: number;
+  issued_at: string | null;
+  paid_at: string | null;
+};
+
+export type PayoutStatus = "awaiting" | "ready" | "paid" | "cancelled";
+
+export type Payout = {
+  id: string;
+  deal_id: string;
+  seller_id: string;
+  gross_vehicle_price: number;
+  seller_fee_ex_tax: number;
+  seller_fee_tax: number;
+  payout_amount: number;
+  status: PayoutStatus;
+  paid_at: string | null;
 };
 
 export type MemberStats = {
