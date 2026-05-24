@@ -276,7 +276,9 @@ export default function AdminPage() {
 
   const removeListing = async (id: string) => {
     const supabase = createClient();
-    const { error } = await supabase.from("listings").update({ status: "removed" }).eq("id", id);
+    const { error } = await supabase.rpc("admin_remove_listing", {
+      p_listing_id: id,
+    });
     setMessage(error ? error.message : "出品を削除（非表示）にしました。");
     load();
   };
