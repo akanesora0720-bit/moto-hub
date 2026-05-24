@@ -40,7 +40,10 @@ export function escapeIlikePattern(value: string): string {
   return value.replace(/[%_\\]/g, (c) => `\\${c}`);
 }
 
-export function listingSearchHref(params: ParsedListingSearch & { page?: number }): string {
+export function listingSearchHref(
+  params: ParsedListingSearch & { page?: number },
+  basePath = "/search",
+): string {
   const sp = new URLSearchParams();
   if (params.maker) sp.set("maker", params.maker);
   if (params.vehicleClass) sp.set("vehicle_class", params.vehicleClass);
@@ -49,5 +52,5 @@ export function listingSearchHref(params: ParsedListingSearch & { page?: number 
   const page = params.page ?? 1;
   if (page > 1) sp.set("page", String(page));
   const q = sp.toString();
-  return q ? `/?${q}` : "/";
+  return q ? `${basePath}?${q}` : basePath;
 }

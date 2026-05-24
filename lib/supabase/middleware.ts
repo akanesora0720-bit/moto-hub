@@ -58,7 +58,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && (path === "/login" || path === "/signup" || path === "/signup/staff")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/home";
     return NextResponse.redirect(url);
   }
 
@@ -120,6 +120,12 @@ export async function updateSession(request: NextRequest) {
     if (profile?.member_type === "staff" && path === "/") {
       const url = request.nextUrl.clone();
       url.pathname = "/admin";
+      return NextResponse.redirect(url);
+    }
+
+    if (profile?.member_type === "dealer" && path === "/") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/home";
       return NextResponse.redirect(url);
     }
 

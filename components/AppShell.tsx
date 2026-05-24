@@ -3,34 +3,24 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { SidebarNav } from "@/components/layout/SidebarNav";
 import { canAccessAdmin } from "@/lib/auth";
+import { adminNavItems, dealerNavItems, staffNavItems } from "@/lib/nav-config";
 import { createClient } from "@/lib/supabase/client";
 import type { MemberType, Profile } from "@/lib/types";
-
-const dealerNav = [
-  { href: "/", label: "在庫" },
-  { href: "/deals", label: "取引" },
-  { href: "/listings/new", label: "出品" },
-  { href: "/listings/mine", label: "自分の出品" },
-  { href: "/evaluation", label: "評価基準" },
-  { href: "/my/dashboard", label: "マイ統計" },
-  { href: "/support", label: "運営サポート" },
-  { href: "/notifications", label: "通知" },
-  { href: "/my/payments", label: "月額入金" },
-  { href: "/profile", label: "信用証" },
-];
 
 export function AppShell({
   children,
   isAdmin: isAdminProp,
   memberType: memberTypeProp,
   showAdminNav: showAdminNavProp,
+  mode,
 }: {
   children: React.ReactNode;
   isAdmin?: boolean;
-  /** サーバーから渡すとクライアント側の再取得をスキップ */
   memberType?: MemberType;
   showAdminNav?: boolean;
+  mode?: "dealer" | "admin";
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -40,6 +30,11 @@ export function AppShell({
   const [showAdmin, setShowAdmin] = useState(
     showAdminNavProp ?? !!isAdminProp,
   );
+  const [badges, setBadges] = useState<Record<string, number>>({});
+
+  const isAdminRoute = pathname.startsWith("/admin");
+  const isStaff = memberType === "staff";
+  const useAdminShell = mode === "admin" || isAdminRoute || isStaff;
 
   useEffect(() => {
     if (memberTypeProp !== undefined) {
@@ -64,6 +59,14 @@ export function AppShell({
     });
   }, [isAdminProp, memberTypeProp, showAdminNavProp]);
 
+  useEffect(() => {
+    const scope = useAdminShell ? "admin" : "dealer";
+    fetch(`/api/dashboard/badges?scope=${scope}`)
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((data) => setBadges(data as Record<string, number>))
+      .catch(() => {});
+  }, [pathname, useAdminShell]);
+
   const logout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -71,150 +74,68 @@ export function AppShell({
     router.refresh();
   };
 
-  const isStaff = memberType === "staff";
-  const nav = isStaff
-    ? [
-        { href: "/admin", label: "管理" },
-        { href: "/admin/credit", label: "信用" },
-        { href: "/evaluation", label: "評価基準" },
-      ]
-    : dealerNav;
-  const homeHref = isStaff ? "/admin" : "/";
+  const navItems = useAdminShell
+    ? isStaff
+      ? staffNavItems
+      : adminNavItems
+    : dealerNavItems;
+  const homeHref = useAdminShell ? "/admin" : "/home";
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-          <Link
-            href={homeHref}
-            prefetch={false}
-            className="text-lg font-semibold tracking-wide text-accent"
-          >
+      <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur md:hidden">
+        <div className="flex items-center justify-between px-4 py-3">
+          <Link href={homeHref} prefetch={false} className="text-lg font-semibold text-accent">
             MotoHub
           </Link>
-          <nav className="flex flex-wrap items-center gap-1 text-sm">
-            {nav.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                prefetch={false}
-                className={`rounded-lg px-3 py-1.5 transition ${
-                  pathname === item.href || (item.href === "/admin" && pathname.startsWith("/admin"))
-                    ? "bg-zinc-800 text-foreground"
-                    : "text-muted hover:text-foreground"
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-            {showAdmin && !isStaff ? (
-              <>
-                <Link
-                  href="/admin"
-                  prefetch={false}
-                  className={`rounded-lg px-3 py-1.5 transition ${
-                    pathname.startsWith("/admin")
-                      ? "bg-zinc-800 text-foreground"
-                      : "text-muted hover:text-foreground"
-                  }`}
-                >
-                  管理
-                </Link>
-              </>
-            ) : null}
-            {showAdmin ? (
-              <Link
-                href="/admin/support"
-                prefetch={false}
-                className={`rounded-lg px-3 py-1.5 transition ${
-                  pathname === "/admin/support"
-                    ? "bg-zinc-800 text-foreground"
-                    : "text-muted hover:text-foreground"
-                }`}
-              >
-                サポート
-              </Link>
-            ) : null}
-            {showAdmin ? (
-              <Link
-                href="/admin/messages"
-                prefetch={false}
-                className={`rounded-lg px-3 py-1.5 transition ${
-                  pathname === "/admin/messages"
-                    ? "bg-zinc-800 text-foreground"
-                    : "text-muted hover:text-foreground"
-                }`}
-              >
-                メール
-              </Link>
-            ) : null}
-            {showAdmin ? (
-              <Link
-                href="/admin/billing"
-                prefetch={false}
-                className={`rounded-lg px-3 py-1.5 transition ${
-                  pathname === "/admin/billing"
-                    ? "bg-zinc-800 text-foreground"
-                    : "text-muted hover:text-foreground"
-                }`}
-              >
-                請求
-              </Link>
-            ) : null}
-            {showAdmin ? (
-              <Link
-                href="/admin/disputes"
-                prefetch={false}
-                className={`rounded-lg px-3 py-1.5 transition ${
-                  pathname === "/admin/disputes"
-                    ? "bg-zinc-800 text-foreground"
-                    : "text-muted hover:text-foreground"
-                }`}
-              >
-                Dispute
-              </Link>
-            ) : null}
-            {showAdmin ? (
-              <Link
-                href="/admin/credit"
-                prefetch={false}
-                className={`rounded-lg px-3 py-1.5 transition ${
-                  pathname === "/admin/credit"
-                    ? "bg-zinc-800 text-foreground"
-                    : "text-muted hover:text-foreground"
-                }`}
-              >
-                信用
-              </Link>
-            ) : null}
-            {!isStaff ? (
-              <Link
-                href="/onboarding"
-                prefetch={false}
-                className="rounded-lg px-3 py-1.5 text-muted hover:text-foreground"
-              >
-                店舗情報
-              </Link>
-            ) : (
-              <Link
-                href="/onboarding"
-                prefetch={false}
-                className="rounded-lg px-3 py-1.5 text-muted hover:text-foreground"
-              >
-                スタッフ情報
-              </Link>
-            )}
-            <button
-              type="button"
-              onClick={logout}
-              className="rounded-lg px-3 py-1.5 text-muted hover:text-foreground"
-            >
-              ログアウト
-            </button>
-          </nav>
+          <button
+            type="button"
+            onClick={logout}
+            className="text-sm text-muted hover:text-foreground"
+          >
+            ログアウト
+          </button>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+
+      <div className="mx-auto flex max-w-7xl flex-col md:flex-row">
+        <SidebarNav items={navItems} badges={badges} homeHref={homeHref} />
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="hidden border-b border-border bg-background/90 px-6 py-3 md:flex md:items-center md:justify-between">
+            <p className="text-sm text-muted">
+              {useAdminShell ? "運営管理センター" : "加盟店ダッシュボード"}
+            </p>
+            <div className="flex items-center gap-3 text-sm">
+              {!useAdminShell && showAdmin && !isStaff ? (
+                <Link href="/admin" className="text-accent hover:underline">
+                  運営画面へ
+                </Link>
+              ) : null}
+              {useAdminShell && !isStaff ? (
+                <Link href="/home" className="text-muted hover:text-foreground">
+                  加盟店画面へ
+                </Link>
+              ) : null}
+              <Link href="/notifications" className="text-muted hover:text-foreground">
+                通知
+                {badges.unreadNotifications ? (
+                  <span className="ml-1 text-rose-400">({badges.unreadNotifications})</span>
+                ) : null}
+              </Link>
+              <button
+                type="button"
+                onClick={logout}
+                className="text-muted hover:text-foreground"
+              >
+                ログアウト
+              </button>
+            </div>
+          </header>
+
+          <main className="flex-1 px-4 py-6 md:px-6">{children}</main>
+        </div>
+      </div>
     </div>
   );
 }

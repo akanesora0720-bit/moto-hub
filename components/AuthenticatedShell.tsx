@@ -6,8 +6,10 @@ import type { Profile } from "@/lib/types";
 /** サーバーページ用: ナビ表示に必要な viewer を1回だけ解決 */
 export async function AuthenticatedShell({
   children,
+  mode,
 }: {
   children: React.ReactNode;
+  mode?: "dealer" | "admin";
 }) {
   const viewer = await getViewer();
   const profile = viewer?.profile;
@@ -18,6 +20,7 @@ export async function AuthenticatedShell({
       memberType={profile?.member_type ?? "dealer"}
       showAdminNav={showAdminNav}
       isAdmin={profile?.is_admin}
+      mode={mode}
     >
       {children}
     </AppShell>

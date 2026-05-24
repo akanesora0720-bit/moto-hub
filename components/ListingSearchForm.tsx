@@ -6,7 +6,7 @@ import { MAKERS, VEHICLE_CLASSES } from "@/lib/constants";
 import type { VehicleClass } from "@/lib/constants";
 import { parseListingSearch } from "@/lib/listing-search";
 
-export function ListingSearchForm() {
+export function ListingSearchForm({ action = "/search" }: { action?: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const parsed = parseListingSearch({
@@ -29,7 +29,7 @@ export function ListingSearchForm() {
     if (frame.trim()) sp.set("frame", frame.trim());
     if (vehicleClass) sp.set("vehicle_class", vehicleClass);
     const q = sp.toString();
-    router.push(q ? `/?${q}` : "/");
+    router.push(q ? `${action}?${q}` : action);
   };
 
   const clear = () => {
@@ -37,7 +37,7 @@ export function ListingSearchForm() {
     setModel("");
     setFrame("");
     setVehicleClass("");
-    router.push("/");
+    router.push(action);
   };
 
   return (
