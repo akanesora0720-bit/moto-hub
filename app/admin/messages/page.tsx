@@ -6,6 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { TrustBadge } from "@/components/TrustBadge";
 import { BULK_FILTER_PRESETS, MESSAGE_IMPORTANCE_OPTIONS } from "@/lib/messages";
 import { PREFECTURES } from "@/lib/constants";
+import { useAsyncAction } from "@/lib/use-async-action";
 import { createClient } from "@/lib/supabase/client";
 import type { MessageImportance, TrustRank } from "@/lib/types";
 
@@ -31,7 +32,7 @@ export default function AdminMessagesPage() {
   const [bulkPreset, setBulkPreset] = useState("all");
   const [bulkTitle, setBulkTitle] = useState("");
   const [prefecture, setPrefecture] = useState("");
-  const [msg, setMsg] = useState("");
+  const { loading, message: msg, success, run, setMessage: setMsg } = useAsyncAction();
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -60,44 +61,83 @@ export default function AdminMessagesPage() {
       .slice(0, 25);
   }, [members, query]);
 
-  const sendIndividual = async () => {
-    if (!targetId || !subject.trim() || !body.trim()) {
-      setMsg("送信先・件名・本文を入力してください。");
-      return;
+  const flushEmailQueue = async () => {
+    if (!sendEmail) return { sent: 0, failed: 0 };
+    const res = await fetch("/api/admin/notifications/process", { method: "POST" });
+    const data = (await res.json()) as {
+      error?: string;
+      sent?: number;
+      failed?: number;
+    };
+    if (!res.ok) {
+      return { error: data.error ?? "メール送信処理に失敗しました。" };
     }
-    const supabase = createClient();
-    const { error } = await supabase.rpc("admin_send_message", {
-      p_target_user_id: targetId,
-      p_subject: subject.trim(),
-      p_body: body.trim(),
-      p_importance: importance,
-      p_send_email: sendEmail,
-      p_send_in_app: sendInApp,
-    });
-    setMsg(error ? error.message : "送信しました。");
+    if ((data.failed ?? 0) > 0) {
+      return { error: `メール ${data.failed} 件が送信できませんでした（SMTP設定を確認）。` };
+    }
+    return { sent: data.sent ?? 0, failed: data.failed ?? 0 };
   };
 
-  const sendBulk = async () => {
-    if (!bulkTitle.trim() || !subject.trim() || !body.trim()) {
-      setMsg("一括タイトル・件名・本文を入力してください。");
-      return;
-    }
-    const preset = BULK_FILTER_PRESETS.find((p) => p.id === bulkPreset);
-    const filter = { ...(preset?.filter ?? {}) } as Record<string, unknown>;
-    if (prefecture) filter.prefecture = prefecture;
+  const sendIndividual = () =>
+    run(async () => {
+      if (!targetId || !subject.trim() || !body.trim()) {
+        return { error: "送信先・件名・本文を入力してください。" };
+      }
+      const supabase = createClient();
+      const { error } = await supabase.rpc("admin_send_message", {
+        p_target_user_id: targetId,
+        p_subject: subject.trim(),
+        p_body: body.trim(),
+        p_importance: importance,
+        p_send_email: sendEmail,
+        p_send_in_app: sendInApp,
+      });
+      if (error) return { error: error.message };
 
-    const supabase = createClient();
-    const { data, error } = await supabase.rpc("admin_create_bulk_message_batch", {
-      p_title: bulkTitle.trim(),
-      p_subject: subject.trim(),
-      p_body: body.trim(),
-      p_filter_json: filter,
-      p_importance: importance,
-      p_send_email: sendEmail,
-      p_send_in_app: sendInApp,
+      const mail = await flushEmailQueue();
+      if (mail.error) return { error: mail.error };
+
+      if (sendEmail && sendInApp) {
+        return { okMessage: `送信しました（メール・通知）。` };
+      }
+      if (sendEmail) {
+        return { okMessage: `メールを送信しました（${mail.sent} 件）。` };
+      }
+      return { okMessage: "システム通知を送信しました。" };
     });
-    setMsg(error ? error.message : `一括送信完了 (${String(data).slice(0, 8)}…)`);
-  };
+
+  const sendBulk = () =>
+    run(async () => {
+      if (!bulkTitle.trim() || !subject.trim() || !body.trim()) {
+        return { error: "一括タイトル・件名・本文を入力してください。" };
+      }
+      const preset = BULK_FILTER_PRESETS.find((p) => p.id === bulkPreset);
+      const filter = { ...(preset?.filter ?? {}) } as Record<string, unknown>;
+      if (prefecture) filter.prefecture = prefecture;
+
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc("admin_create_bulk_message_batch", {
+        p_title: bulkTitle.trim(),
+        p_subject: subject.trim(),
+        p_body: body.trim(),
+        p_filter_json: filter,
+        p_importance: importance,
+        p_send_email: sendEmail,
+        p_send_in_app: sendInApp,
+      });
+      if (error) return { error: error.message };
+
+      const mail = await flushEmailQueue();
+      if (mail.error) return { error: mail.error };
+
+      const batchId = String(data).slice(0, 8);
+      if (sendEmail) {
+        return {
+          okMessage: `一括送信完了（${batchId}…・メール ${mail.sent} 件）。`,
+        };
+      }
+      return { okMessage: `一括通知を送信しました（${batchId}…）。` };
+    });
 
   return (
     <AppShell isAdmin>
@@ -113,7 +153,13 @@ export default function AdminMessagesPage() {
         </div>
 
         {msg ? (
-          <p className="rounded-lg border border-border bg-card px-4 py-3 text-sm">{msg}</p>
+          <p
+            className={`rounded-lg border px-4 py-3 text-sm ${
+              success ? "border-emerald-500/30 text-emerald-200" : "border-border"
+            }`}
+          >
+            {msg}
+          </p>
         ) : null}
 
         <section className="grid gap-4 md:grid-cols-2">
@@ -188,10 +234,11 @@ export default function AdminMessagesPage() {
           </ul>
           <button
             type="button"
+            disabled={loading}
             onClick={sendIndividual}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-black"
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-black disabled:opacity-60"
           >
-            個別送信
+            {loading ? "送信中…" : "個別送信"}
           </button>
         </section>
 
@@ -228,10 +275,11 @@ export default function AdminMessagesPage() {
           </select>
           <button
             type="button"
+            disabled={loading}
             onClick={sendBulk}
-            className="rounded-lg border border-accent/40 px-4 py-2 text-sm text-accent"
+            className="rounded-lg border border-accent/40 px-4 py-2 text-sm text-accent disabled:opacity-60"
           >
-            一括送信実行
+            {loading ? "送信中…" : "一括送信実行"}
           </button>
         </section>
       </div>
