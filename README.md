@@ -111,7 +111,17 @@ npm run dev
 | 車両代 | 税抜成約価格＋消費税10%を買い手が売り手へ直接支払 |
 | PDF | `/api/invoices/[id]/pdf` |
 
-環境変数（任意）: `MOTOHUB_QUALIFIED_INVOICE_NUMBER`（適格請求書番号）
+手数料請求書PDFの発行元・振込先（Vercel 環境変数、任意）:
+
+| 変数 | 内容 |
+|------|------|
+| `MOTOHUB_ISSUER_NAME` | 発行元社名（既定: 株式会社RideWorks） |
+| `MOTOHUB_QUALIFIED_INVOICE_NUMBER` | 適格請求書番号 |
+| `MOTOHUB_ISSUER_ADDRESS` / `MOTOHUB_ISSUER_PHONE` | 発行元住所・電話 |
+| `MOTOHUB_BANK_*` | 振込先（金融機関・支店・口座種別・番号・名義） |
+| `MOTOHUB_OPERATOR_EMAIL` | 口座未設定時に参照する運営プロフィール（既定: info@moto-hub.jp） |
+
+`MOTOHUB_BANK_*` が未設定のときのみ、上記メールの `profiles` 登録口座をPDFに表示します。
 
 ```sql
 select public.admin_create_deal(

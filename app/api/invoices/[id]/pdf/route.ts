@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { formatBankAccount } from "@/lib/billing";
 import { buildInvoicePdf } from "@/lib/invoice-pdf";
+import { getMotohubIssuer } from "@/lib/motohub-issuer";
 import { buildPaymentInstructionPdf } from "@/lib/payment-instruction-pdf";
 import { createClient } from "@/lib/supabase/server";
 
@@ -50,7 +51,7 @@ export async function GET(
 
   const { data: items, error: itemsError } = await supabase
     .from("invoice_items")
-    .select("label, amount_inc_tax, sort_order")
+    .select("label, amount_ex_tax, tax_amount, amount_inc_tax, sort_order")
     .eq("invoice_id", id)
     .order("sort_order");
 
@@ -129,22 +130,39 @@ export async function GET(
           ? "買い手請求書"
           : "売り手精算書";
 
+    const issuer =
+      documentKind === "platform_fee" ? await getMotohubIssuer(supabase) : undefined;
+
+    let paymentDueAt: string | null = null;
+    if (documentKind === "platform_fee") {
+      const dueRes = await supabase
+        .from("deals")
+        .select("payment_due_at")
+        .eq("id", invoice.deal_id)
+        .maybeSingle();
+      if (dueRes.data?.payment_due_at) {
+        paymentDueAt = new Date(dueRes.data.payment_due_at).toLocaleDateString("ja-JP");
+      }
+    }
+
     const pdfBytes = await buildInvoicePdf({
       invoiceId: invoice.id,
       dealId: invoice.deal_id,
       partyLabel,
-      storeName: profile?.store_name ?? profile?.email ?? "—",
-      qualifiedInvoiceNumber:
-        process.env.MOTOHUB_QUALIFIED_INVOICE_NUMBER?.trim() ?? "T0000000000000",
+      billToName: profile?.store_name ?? profile?.email ?? "—",
       vehicleLabel,
       items: (items ?? []).map((i) => ({
         label: i.label,
+        amountExTax: i.amount_ex_tax,
+        taxAmount: i.tax_amount,
         amountIncTax: i.amount_inc_tax,
       })),
       totalExTax: invoice.total_ex_tax,
       totalTax: invoice.total_tax,
       totalIncTax: invoice.total_inc_tax,
       issuedAt,
+      issuer,
+      paymentDueAt,
     });
 
     return pdfResponse(pdfBytes, `invoice-${invoice.id.slice(0, 8)}.pdf`);
