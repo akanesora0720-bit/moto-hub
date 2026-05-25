@@ -1,12 +1,5 @@
--- 通知: 自分の分だけ表示、既読の確実化、削除
+-- 047 が途中で失敗した場合用: mark_notification_read の戻り値変更のみ
 
-drop policy if exists user_notifications_self on public.user_notifications;
-
-create policy user_notifications_self on public.user_notifications
-  for select to authenticated
-  using (user_id = auth.uid());
-
--- 戻り値 void → boolean へ変更するため DROP が必要
 drop function if exists public.mark_notification_read(uuid);
 
 create or replace function public.mark_notification_read(p_notification_id uuid)
