@@ -1,8 +1,5 @@
--- Fix stale 商談 badge: unread only on actionable deals; close inquiries when deal ends
+-- Fix 037: inquiries has no updated_at column
 
--- ---------------------------------------------------------------------------
--- Unread deal board: exclude terminal / admin-wait statuses
--- ---------------------------------------------------------------------------
 create or replace function public.count_unread_deal_messages(p_user_id uuid default auth.uid())
 returns int
 language sql
@@ -29,9 +26,6 @@ as $$
     );
 $$;
 
--- ---------------------------------------------------------------------------
--- Close open inquiries when all linked deals are completed or cancelled
--- ---------------------------------------------------------------------------
 update public.inquiries i
 set status = 'closed'
 where i.status = 'open'
@@ -65,7 +59,6 @@ begin
 end;
 $$;
 
--- admin_advance_deal: close inquiry on completed / cancelled
 create or replace function public.admin_advance_deal(p_deal_id uuid, p_status public.deal_status)
 returns public.deals
 language plpgsql
@@ -104,7 +97,6 @@ begin
 end;
 $$;
 
--- Any deal → completed / cancelled closes inquiry when no other active deal
 create or replace function public.trg_deals_close_inquiry_on_terminal()
 returns trigger
 language plpgsql
