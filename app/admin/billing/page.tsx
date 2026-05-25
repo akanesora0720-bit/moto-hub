@@ -19,7 +19,11 @@ type PaymentRow = MonthlyPaymentReport & {
 
 type InvoiceRow = Invoice & {
   user: { store_name: string | null; email: string } | null;
-  deal: { id: string; listings: { maker: string; model: string } | null } | null;
+  deal: {
+    id: string;
+    status: string;
+    listings: { maker: string; model: string } | null;
+  } | null;
 };
 
 type PayoutRow = Payout & {
@@ -65,7 +69,7 @@ export default function AdminBillingPage() {
         .from("invoices")
         .select(
           `*, user:profiles!invoices_user_id_fkey ( store_name, email ),
-           deal:deals ( id, listings ( maker, model ) )`,
+           deal:deals ( id, status, listings ( maker, model ) )`,
         )
         .order("created_at", { ascending: false })
         .limit(50),
@@ -159,15 +163,19 @@ export default function AdminBillingPage() {
   const reviewDealIds = [
     ...new Set(
       invoices
-        .filter(
-          (i) =>
+        .filter((i) => {
+          const kind = (i as Invoice & { document_kind?: string }).document_kind;
+          const isPaymentInstruction =
+            kind === "payment_instruction" || !kind || kind === "legacy";
+          const dealStatus = i.deal?.status;
+          return (
+            isPaymentInstruction &&
             (i.status === "review_pending" || i.status === "draft") &&
-            ((i as Invoice & { document_kind?: string }).document_kind ===
-              "payment_instruction" ||
-              !(i as Invoice & { document_kind?: string }).document_kind),
-        )
-        .map((i) => i.deal_id)
-        .filter((id): id is string => id != null),
+            dealStatus === "awaiting_payment" &&
+            i.deal_id != null
+          );
+        })
+        .map((i) => i.deal_id as string),
     ),
   ];
 

@@ -21,20 +21,30 @@ import type { DealStatus, InvoiceStatus } from "@/lib/types";
 
 function StepRow({ step }: { step: AdminOpsStep }) {
   const icon =
-    step.state === "done" ? "✓" : step.state === "current" ? "▶" : "○";
+    step.state === "done"
+      ? "✓"
+      : step.state === "skipped"
+        ? "!"
+        : step.state === "current"
+          ? "▶"
+          : "○";
   const tone =
     step.state === "done"
       ? "text-emerald-300"
-      : step.state === "current"
-        ? "text-amber-200"
-        : "text-muted";
+      : step.state === "skipped"
+        ? "text-amber-300"
+        : step.state === "current"
+          ? "text-amber-200"
+          : "text-muted";
 
   return (
     <li
       className={`rounded-lg border px-3 py-2 ${
         step.state === "current"
           ? "border-amber-500/40 bg-amber-950/30"
-          : "border-border/60 bg-card/40"
+          : step.state === "skipped"
+            ? "border-amber-500/25 bg-amber-950/15"
+            : "border-border/60 bg-card/40"
       }`}
     >
       <div className="flex gap-2">
@@ -200,13 +210,15 @@ export function AdminDealOpsPanel({
         </p>
       )}
 
-      {opsInput.paymentInstructionStatus ? (
+      {opsInput.paymentInstructionStatus || opsInput.platformFeeStatus ? (
         <p className="text-xs text-muted">
-          入金指示書: {INVOICE_STATUS_LABELS[opsInput.paymentInstructionStatus]}
+          {opsInput.paymentInstructionStatus
+            ? `入金指示書: ${INVOICE_STATUS_LABELS[opsInput.paymentInstructionStatus]}`
+            : null}
           {!feeWaived && opsInput.platformFeeStatus
-            ? ` · 手数料請求: ${INVOICE_STATUS_LABELS[opsInput.platformFeeStatus]}（${formatYen(billing.platformFeeIncTax)}）`
+            ? `${opsInput.paymentInstructionStatus ? " · " : ""}手数料請求: ${INVOICE_STATUS_LABELS[opsInput.platformFeeStatus]}（${formatYen(billing.platformFeeIncTax)}）`
             : feeWaived
-              ? " · 手数料: 対象外"
+              ? `${opsInput.paymentInstructionStatus ? " · " : ""}手数料: 対象外`
               : null}
         </p>
       ) : null}

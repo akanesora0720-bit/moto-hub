@@ -27,13 +27,17 @@ export type AdminOpsStep = {
   number: number;
   title: string;
   summary: string;
-  state: "done" | "current" | "upcoming";
+  state: "done" | "current" | "upcoming" | "skipped";
   primaryAction: AdminOpsPrimaryAction | null;
   primaryButtonLabel: string | null;
 };
 
 function paymentInstructionNeedsApproval(status: InvoiceStatus | null): boolean {
   return status === "draft" || status === "review_pending";
+}
+
+function paymentInstructionWasIssued(status: InvoiceStatus | null): boolean {
+  return status === "issued" || status === "paid";
 }
 
 function platformFeeNeedsPayment(
@@ -47,9 +51,13 @@ function platformFeeNeedsPayment(
 export function buildAdminDealOpsSteps(input: AdminDealOpsInput): AdminOpsStep[] {
   const { feeWaived } = resolveDealFeeRates(input.agreedPriceExTax);
 
-  const step1Done =
-    input.status !== "awaiting_payment" ||
-    !paymentInstructionNeedsApproval(input.paymentInstructionStatus);
+  const step1Issued = paymentInstructionWasIssued(input.paymentInstructionStatus);
+  const step1Skipped =
+    !step1Issued &&
+    paymentInstructionNeedsApproval(input.paymentInstructionStatus) &&
+    input.status !== "awaiting_payment" &&
+    !["inquiry", "negotiating", "agreed", "cancelled"].includes(input.status);
+  const step1Done = step1Issued || step1Skipped;
   const step1Current =
     input.status === "awaiting_payment" &&
     paymentInstructionNeedsApproval(input.paymentInstructionStatus);
@@ -95,10 +103,18 @@ export function buildAdminDealOpsSteps(input: AdminDealOpsInput): AdminOpsStep[]
     {
       id: "approve_invoices",
       title: "入金指示書を承認して送る",
-      summary: step1Done
+      summary: step1Issued
         ? "買い手へ入金指示を送信済み。車両代金は買い手→売り手へ直接振込。"
-        : "成約後、買い手が売り手へ振込できるよう入金指示書を承認します。",
-      state: step1Done ? "done" : step1Current ? "current" : "upcoming",
+        : step1Skipped
+          ? "※書類は未送信のままですが、取引は既に進行済みです。④⑤の記録を優先してください。"
+          : "成約後、買い手が売り手へ振込できるよう入金指示書を承認します。",
+      state: step1Skipped
+        ? "skipped"
+        : step1Issued
+          ? "done"
+          : step1Current
+            ? "current"
+            : "upcoming",
       primaryAction: step1Current ? "approve_invoices" : null,
       primaryButtonLabel: step1Current ? "入金指示書を承認して送信" : null,
     },
