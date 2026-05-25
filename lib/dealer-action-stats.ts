@@ -1,3 +1,4 @@
+import { countDealsNeedingDealerAttention } from "@/lib/dealer-deal-attention";
 import { createClient } from "@/lib/supabase/server";
 import type { DealStatus } from "@/lib/types";
 
@@ -6,6 +7,8 @@ export type DealerActionStats = {
   negotiating: number;
   awaitingPayment: number;
   handoverPending: number;
+  /** 商談タブバッジ用（要対応の取引のみ） */
+  dealsNeedingAttention: number;
   unreadNotifications: number;
   unreadDealBoard: number;
   openSupport: number;
@@ -37,7 +40,9 @@ export async function fetchDealerActionStats(userId: string): Promise<DealerActi
       supabase.from("listings").select("id").eq("seller_id", userId),
       supabase
         .from("deals")
-        .select("id, status, buyer_id, seller_id, inquiry_id, listing_id")
+        .select(
+          "id, status, buyer_id, seller_id, inquiry_id, listing_id, buyer_payment_reported_at, pickup_scheduled_at, buyer_confirmed_at, seller_confirmed_at",
+        )
         .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
         .in("status", ACTIVE_DEAL_STATUSES),
       supabase
@@ -61,8 +66,12 @@ export async function fetchDealerActionStats(userId: string): Promise<DealerActi
   const listingIds = (listingsRes.data ?? []).map((l) => l.id);
   const deals = dealsRes.data ?? [];
 
-  const inquiryIdsWithActiveDeal = new Set(
-    deals.map((d) => d.inquiry_id).filter((id): id is string => !!id),
+  /** 進行中の取引に紐づく open 問い合わせのみ（完了・取消のみの問い合わせは除外） */
+  const inquiryIdsWithOpenDeal = new Set(
+    deals
+      .filter((d) => NEGOTIATION_PHASE_STATUSES.includes(d.status as DealStatus))
+      .map((d) => d.inquiry_id)
+      .filter((id): id is string => !!id),
   );
 
   let newInquiries = 0;
@@ -74,7 +83,7 @@ export async function fetchDealerActionStats(userId: string): Promise<DealerActi
       .in("listing_id", listingIds);
 
     newInquiries = (openInquiries ?? []).filter(
-      (inq) => !inquiryIdsWithActiveDeal.has(inq.id),
+      (inq) => !inquiryIdsWithOpenDeal.has(inq.id),
     ).length;
   }
 
@@ -94,18 +103,34 @@ export async function fetchDealerActionStats(userId: string): Promise<DealerActi
     return false;
   }).length;
 
+  const dealsNeedingAttention = countDealsNeedingDealerAttention(
+    deals.map((d) => ({
+      status: d.status as DealStatus,
+      buyer_id: d.buyer_id,
+      seller_id: d.seller_id,
+      buyer_payment_reported_at: d.buyer_payment_reported_at ?? null,
+      pickup_scheduled_at: d.pickup_scheduled_at ?? null,
+      buyer_confirmed_at: d.buyer_confirmed_at ?? null,
+      seller_confirmed_at: d.seller_confirmed_at ?? null,
+    })),
+    userId,
+  );
+
   const boardUnread =
-    typeof boardUnreadRes.data === "number"
-      ? boardUnreadRes.data
-      : Number(boardUnreadRes.data ?? 0);
+    boardUnreadRes.error || typeof boardUnreadRes.data !== "number"
+      ? 0
+      : dealsNeedingAttention > 0
+        ? boardUnreadRes.data
+        : 0;
 
   return {
     newInquiries,
     negotiating,
     awaitingPayment,
     handoverPending,
+    dealsNeedingAttention,
     unreadNotifications: notificationsRes.count ?? 0,
-    unreadDealBoard: boardUnreadRes.error ? 0 : boardUnread,
+    unreadDealBoard: boardUnread,
     openSupport: supportRes.count ?? 0,
     openDisputes: disputesRes.count ?? 0,
   };

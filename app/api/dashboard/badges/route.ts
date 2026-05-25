@@ -50,15 +50,13 @@ export async function GET(req: NextRequest) {
   try {
     const stats = await fetchDealerActionStats(user.id);
     const dealsAttention =
-      stats.negotiating +
-      stats.awaitingPayment +
-      stats.handoverPending;
+      stats.dealsNeedingAttention +
+      (stats.dealsNeedingAttention > 0 ? stats.unreadDealBoard : 0);
 
     return NextResponse.json({
-      /** 商談タブ: 商談フェーズの取引のみ（連絡板未読は含めない） */
       negotiating: stats.negotiating,
-      /** 取引の要対応（入金・引取・商談） */
       dealsAttention,
+      dealsNeedingAttention: stats.dealsNeedingAttention,
       newInquiries: stats.newInquiries,
       unreadNotifications: stats.unreadNotifications,
       unreadDealBoard: stats.unreadDealBoard,
