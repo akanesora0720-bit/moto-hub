@@ -26,7 +26,8 @@ export default function NotificationsPage() {
   const markRead = async (id: string) => {
     const supabase = createClient();
     await supabase.rpc("mark_notification_read", { p_notification_id: id });
-    load();
+    await load();
+    window.dispatchEvent(new Event("motohub:refresh-badges"));
   };
 
   return (

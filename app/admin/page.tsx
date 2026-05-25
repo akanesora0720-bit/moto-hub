@@ -126,9 +126,25 @@ export default async function AdminHubPage() {
                     href: "/admin/inspections",
                   },
                   {
-                    label: "未対応問い合わせ",
-                    count: pending.openInquiries,
-                    href: "/admin/workspace",
+                    label: "商談・新規リード",
+                    count: pending.adminNegotiationPending,
+                    href: "/admin/workspace?tab=inquiries",
+                    note: "商談中の取引＋未紐づき問い合わせ",
+                  },
+                  {
+                    label: "買い手振込報告",
+                    count: pending.buyerPaymentReportedPending,
+                    href: "/admin/workspace?tab=deals",
+                  },
+                  {
+                    label: "引渡・名変フェーズ",
+                    count: pending.handoverPhasePending,
+                    href: "/admin/workspace?tab=deals",
+                  },
+                  {
+                    label: "取引完了待ち",
+                    count: pending.dealsClosurePending,
+                    href: "/admin/workspace?tab=deals",
                   },
                   {
                     label: "トラブル案件",

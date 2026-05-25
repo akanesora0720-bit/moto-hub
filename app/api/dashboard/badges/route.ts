@@ -33,16 +33,18 @@ export async function GET(req: NextRequest) {
         openDisputes: pending.openDisputes,
         openInspectionRequests: pending.openInspectionRequests,
         unreadDealBoard: pending.unreadDealBoard,
+        unreadNotifications: pending.unreadNotifications,
         invoicesReviewPending: pending.invoicesReviewPending,
         payoutsAwaiting: pending.payoutsAwaiting,
         dealsClosurePending: pending.dealsClosurePending,
         negotiationDeals: pending.negotiationDeals,
         adminNegotiationPending: pending.adminNegotiationPending,
-        adminWorkspacePending:
-          pending.openInquiries +
-          pending.dealsClosurePending +
-          pending.pickupSchedulePending +
-          pending.transferOverdue,
+        buyerPaymentReportedPending: pending.buyerPaymentReportedPending,
+        unresolvedDealAlerts: pending.unresolvedDealAlerts,
+        handoverPhasePending: pending.handoverPhasePending,
+        adminHubPending: pending.adminHubPending,
+        adminWorkspacePending: pending.adminWorkspacePending,
+        adminDealsPending: pending.adminDealsPending,
       });
     } catch {
       return NextResponse.json({});
@@ -52,7 +54,6 @@ export async function GET(req: NextRequest) {
   try {
     const stats = await fetchDealerActionStats(user.id);
     return NextResponse.json({
-      /** 商談タブ: 商談フェーズの取引のみ */
       negotiating: stats.negotiating,
       dealsAttention: stats.negotiating,
       dealsNeedingAttention: stats.dealsNeedingAttention,

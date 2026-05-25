@@ -123,6 +123,9 @@ export default function AdminPage() {
     pickupSchedulePending: 0,
     dealsClosurePending: 0,
     buyerPaymentReportedPending: 0,
+    handoverPhasePending: 0,
+    unresolvedDealAlerts: 0,
+    adminNegotiationPending: 0,
   });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [dealAlerts, setDealAlerts] = useState<
@@ -153,6 +156,8 @@ export default function AdminPage() {
       pcPayoutReady,
       pcPayoutDone,
       pcBuyerPaymentReported,
+      pcNegotiation,
+      pcHandover,
     ] = await Promise.all([
       supabase
         .from("inquiries")
@@ -225,6 +230,14 @@ export default function AdminPage() {
         .select("id", { count: "exact", head: true })
         .eq("status", "awaiting_payment")
         .not("buyer_payment_reported_at", "is", null),
+      supabase
+        .from("deals")
+        .select("id", { count: "exact", head: true })
+        .in("status", ["inquiry", "negotiating"]),
+      supabase
+        .from("deals")
+        .select("id", { count: "exact", head: true })
+        .in("status", ["handover_done", "transfer_pending"]),
     ]);
     setInquiries(
       (inq.data ?? []).map((row) => {
@@ -325,6 +338,9 @@ export default function AdminPage() {
       pickupSchedulePending: pcPickup.count ?? 0,
       dealsClosurePending: (pcPayoutReady.count ?? 0) + (pcPayoutDone.count ?? 0),
       buyerPaymentReportedPending: pcBuyerPaymentReported.count ?? 0,
+      handoverPhasePending: pcHandover.count ?? 0,
+      unresolvedDealAlerts: (a.data ?? []).length,
+      adminNegotiationPending: pcNegotiation.count ?? 0,
     });
   }, []);
 
@@ -585,8 +601,8 @@ export default function AdminPage() {
               {
                 key: "inquiries" as const,
                 label: "問い合わせ",
-                count: pending.openInquiries,
-                highlight: pending.openInquiries > 0,
+                count: pending.adminNegotiationPending,
+                highlight: pending.adminNegotiationPending > 0,
               },
               { key: "complaints" as const, label: "クレーム", count: 0, highlight: false },
               { key: "listings" as const, label: "出品", count: 0, highlight: false },
@@ -597,11 +613,15 @@ export default function AdminPage() {
                 count:
                   pending.dealsClosurePending +
                   pending.buyerPaymentReportedPending +
+                  pending.handoverPhasePending +
+                  pending.unresolvedDealAlerts +
                   pending.pickupSchedulePending +
                   pending.transferOverdue,
                 highlight:
                   pending.dealsClosurePending > 0 ||
-                  pending.buyerPaymentReportedPending > 0,
+                  pending.buyerPaymentReportedPending > 0 ||
+                  pending.handoverPhasePending > 0 ||
+                  pending.unresolvedDealAlerts > 0,
               },
             ] as const
           ).map(({ key, label, count, highlight }) => (

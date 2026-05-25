@@ -69,12 +69,19 @@ export function AppShell({
 
   useEffect(() => {
     refreshBadges();
+    const interval = window.setInterval(refreshBadges, 30_000);
+    return () => window.clearInterval(interval);
   }, [pathname, refreshBadges]);
 
   useEffect(() => {
     const onFocus = () => refreshBadges();
+    const onBadgeRefresh = () => refreshBadges();
     window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
+    window.addEventListener("motohub:refresh-badges", onBadgeRefresh);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("motohub:refresh-badges", onBadgeRefresh);
+    };
   }, [refreshBadges]);
 
   const logout = async () => {

@@ -24,17 +24,22 @@ export const dealerNavItems: NavItem[] = [
 ];
 
 export const adminNavItems: NavItem[] = [
-  { href: "/admin", label: "管理センター", matchPrefix: true },
+  {
+    href: "/admin",
+    label: "管理センター",
+    badgeKey: "adminHubPending",
+    matchPrefix: true,
+  },
   {
     href: "/admin/workspace",
     label: "商談・取引",
-    badgeKey: "adminNegotiationPending",
+    badgeKey: "adminWorkspacePending",
     matchPrefix: true,
   },
   {
     href: "/deals",
     label: "取引連絡",
-    badgeKey: "unreadDealBoard",
+    badgeKey: "adminDealsPending",
     matchPrefix: true,
   },
   { href: "/admin/billing", label: "精算", matchPrefix: true },

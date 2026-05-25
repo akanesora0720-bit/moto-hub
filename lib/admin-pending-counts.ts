@@ -12,22 +12,31 @@ export type AdminPendingCounts = {
   openDisputes: number;
   openInspectionRequests: number;
   unreadDealBoard: number;
+  unreadNotifications: number;
   paymentReportsPending: number;
   invoicesReviewPending: number;
   payoutsAwaiting: number;
   transferOverdue: number;
   pickupSchedulePending: number;
-  /** 運営が「取引を完了」にする必要がある件数 */
   dealsClosurePending: number;
-  /** 買い手振込報告済み・売り手入金確認待ち */
   buyerPaymentReportedPending: number;
-  /** 商談フェーズの取引件数 */
+  unresolvedDealAlerts: number;
+  /** 引渡〜名変〜完了確認フェーズの取引 */
+  handoverPhasePending: number;
   negotiationDeals: number;
-  /** 商談タブ用（商談取引 + 要対応の open 問い合わせ） */
   adminNegotiationPending: number;
-  /** 取引未作成の open 問い合わせ */
   orphanInquiries: number;
+  /** サイドバー「管理センター」用の合計 */
+  adminHubPending: number;
+  /** サイドバー「商談・取引」タブ */
+  adminWorkspacePending: number;
+  /** サイドバー「取引連絡」 */
+  adminDealsPending: number;
 };
+
+function sum(...values: number[]): number {
+  return values.reduce((a, b) => a + b, 0);
+}
 
 export async function fetchAdminPendingCounts(
   adminUserId?: string,
@@ -46,6 +55,9 @@ export async function fetchAdminPendingCounts(
     payoutReady,
     payoutDone,
     buyerPaymentReported,
+    dealAlerts,
+    handoverPhase,
+    unreadNotif,
   ] = await Promise.all([
     supabase
       .from("support_tickets")
@@ -97,6 +109,21 @@ export async function fetchAdminPendingCounts(
       .select("id", { count: "exact", head: true })
       .eq("status", "awaiting_payment")
       .not("buyer_payment_reported_at", "is", null),
+    supabase
+      .from("deal_alerts")
+      .select("id", { count: "exact", head: true })
+      .eq("resolved", false),
+    supabase
+      .from("deals")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["handover_done", "transfer_pending"]),
+    adminUserId
+      ? supabase
+          .from("user_notifications")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", adminUserId)
+          .is("read_at", null)
+      : Promise.resolve({ count: 0, error: null }),
   ]);
 
   const unreadBoard =
@@ -112,6 +139,40 @@ export async function fetchAdminPendingCounts(
       countOrphanOpenInquiries(supabase),
     ]);
 
+  const dealsClosurePending = (payoutReady.count ?? 0) + (payoutDone.count ?? 0);
+  const buyerPaymentReportedPending = buyerPaymentReported.count ?? 0;
+  const unresolvedDealAlerts = dealAlerts.count ?? 0;
+  const handoverPhasePending = handoverPhase.count ?? 0;
+  const unreadNotifications = unreadNotif.count ?? 0;
+
+  const adminWorkspacePending = sum(
+    adminNegotiationPending,
+    buyerPaymentReportedPending,
+    dealsClosurePending,
+    unresolvedDealAlerts,
+    handoverPhasePending,
+    pickupPending.count ?? 0,
+    overdue.count ?? 0,
+  );
+
+  const adminDealsPending = sum(
+    unreadBoard,
+    buyerPaymentReportedPending,
+    dealsClosurePending,
+    unresolvedDealAlerts,
+    handoverPhasePending,
+  );
+
+  const adminHubPending = sum(
+    adminWorkspacePending,
+    unreadNotifications,
+    support.count ?? 0,
+    disputes.count ?? 0,
+    inspections.count ?? 0,
+    invoices.count ?? 0,
+    payments.count ?? 0,
+  );
+
   return {
     openInquiries,
     negotiationDeals,
@@ -121,12 +182,18 @@ export async function fetchAdminPendingCounts(
     openDisputes: disputes.count ?? 0,
     openInspectionRequests: inspections.count ?? 0,
     unreadDealBoard: boardUnread.error ? 0 : unreadBoard,
+    unreadNotifications,
     paymentReportsPending: payments.count ?? 0,
     invoicesReviewPending: invoices.count ?? 0,
     payoutsAwaiting: payouts.count ?? 0,
     transferOverdue: overdue.count ?? 0,
     pickupSchedulePending: pickupPending.count ?? 0,
-    dealsClosurePending: (payoutReady.count ?? 0) + (payoutDone.count ?? 0),
-    buyerPaymentReportedPending: buyerPaymentReported.count ?? 0,
+    dealsClosurePending,
+    buyerPaymentReportedPending,
+    unresolvedDealAlerts,
+    handoverPhasePending,
+    adminHubPending,
+    adminWorkspacePending,
+    adminDealsPending,
   };
 };
