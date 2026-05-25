@@ -145,6 +145,7 @@ export type Deal = {
   buyer_intent_confirmed: boolean;
   payment_due_at: string | null;
   seller_payment_confirmed_at: string | null;
+  pickup_scheduled_at: string | null;
   created_at: string;
   updated_at: string;
 };

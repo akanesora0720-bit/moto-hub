@@ -40,7 +40,7 @@ export function buyerDealLabel(status: DealStatus): string {
     case "awaiting_payment":
       return "入金待ち";
     case "funded":
-      return "引渡待ち";
+      return "引取日時の入力";
     case "handover_done":
       return "完了確認待ち";
     case "transfer_pending":
@@ -68,7 +68,7 @@ export function sellerDealLabel(status: DealStatus): string {
     case "awaiting_payment":
       return "入金確認中";
     case "funded":
-      return "引渡待ち";
+      return "引取予定待ち";
     case "handover_done":
     case "transfer_pending":
       return "名変・確認待ち";
@@ -84,6 +84,19 @@ export function sellerDealLabel(status: DealStatus): string {
     default:
       return DEAL_STATUS_LABELS[status];
   }
+}
+
+export function formatPickupSchedule(iso: string | null): string {
+  if (!iso) return "未登録";
+  return new Date(iso).toLocaleString("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export function formatTransferDeadline(iso: string | null): string {

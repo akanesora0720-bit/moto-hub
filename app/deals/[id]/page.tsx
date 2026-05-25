@@ -4,6 +4,7 @@ import { canFileDispute } from "@/lib/disputes";
 import { notFound } from "next/navigation";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { DealActionPanel } from "@/components/DealActionPanel";
+import { DealPickupSchedulePanel } from "@/components/DealPickupSchedulePanel";
 import { DealCounterpartyContact } from "@/components/DealCounterpartyContact";
 import { canRevealDealContacts } from "@/lib/deal-contact";
 import { DEAL_STATUS_LABELS } from "@/lib/deal-flow";
@@ -88,6 +89,7 @@ export default async function DealDetailPage({
     buyer_intent_confirmed: row.buyer_intent_confirmed ?? false,
     payment_due_at: row.payment_due_at ?? null,
     seller_payment_confirmed_at: row.seller_payment_confirmed_at ?? null,
+    pickup_scheduled_at: row.pickup_scheduled_at ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
     listing: {
@@ -128,7 +130,15 @@ export default async function DealDetailPage({
             管理者表示。ステータス変更は管理画面の取引タブから行ってください。
           </p>
         ) : (
-          <DealActionPanel deal={deal} role={role} />
+          <>
+            <DealActionPanel deal={deal} role={role} />
+            <DealPickupSchedulePanel
+              dealId={id}
+              role={role}
+              status={deal.status}
+              pickupScheduledAt={deal.pickup_scheduled_at}
+            />
+          </>
         )}
 
         {contactPayload?.revealed && contactPayload.buyer && contactPayload.seller ? (
@@ -171,7 +181,8 @@ export default async function DealDetailPage({
           <ol className="mt-2 list-decimal space-y-1 pl-4">
             <li>問い合わせ・商談・合意（運営）</li>
             <li>買い手が売り手へ直接振込（税込）</li>
-            <li>売り手が入金確認 → 車両・書類引渡し</li>
+            <li>売り手が入金確認 → 買い手が引取予定日時を登録</li>
+            <li>売り手が車両・書類を引渡し</li>
             <li>車検残ありの場合は翌週金曜まで名義変更</li>
             <li>双方が取引完了を確認</li>
             <li>MotoHub手数料請求（売り手5%）→ 完了</li>

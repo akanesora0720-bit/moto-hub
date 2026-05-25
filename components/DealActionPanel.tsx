@@ -7,6 +7,7 @@ import { canBuyerFileComplaint } from "@/lib/complaint-eligibility";
 import {
   DEAL_STATUS_LABELS,
   buyerDealLabel,
+  formatPickupSchedule,
   formatTransferDeadline,
   sellerDealLabel,
 } from "@/lib/deal-flow";
@@ -132,6 +133,18 @@ export function DealActionPanel({
             <dd>{new Date(deal.funded_at).toLocaleDateString("ja-JP")}</dd>
           </div>
         ) : null}
+        {deal.pickup_scheduled_at ? (
+          <div className="flex justify-between gap-4">
+            <dt className="text-muted">引取予定</dt>
+            <dd>{formatPickupSchedule(deal.pickup_scheduled_at)}</dd>
+          </div>
+        ) : deal.status === "funded" ? (
+          <p className="text-xs text-amber-200/90">
+            {role === "buyer"
+              ? "引取予定日時を登録してください（下のフォーム）"
+              : "買い手の引取予定日時登録をお待ちください"}
+          </p>
+        ) : null}
         {deal.handover_at ? (
           <div className="flex justify-between gap-4">
             <dt className="text-muted">引渡完了</dt>
@@ -187,7 +200,7 @@ export function DealActionPanel({
             onClick={markHandover}
             className="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60"
           >
-            {loading ? "処理中…" : "車両・書類の引渡完了"}
+            {loading ? "処理中…" : "車両・書類の引渡完了（引取予定日登録後）"}
           </button>
         ) : null}
         {canBuyerConfirm ? (
