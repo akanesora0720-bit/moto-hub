@@ -4,6 +4,7 @@ export type AdminPendingCounts = {
   openInquiries: number;
   openSupport: number;
   openDisputes: number;
+  openInspectionRequests: number;
   unreadDealBoard: number;
   paymentReportsPending: number;
   invoicesReviewPending: number;
@@ -20,6 +21,7 @@ export async function fetchAdminPendingCounts(
     inquiries,
     support,
     disputes,
+    inspections,
     boardUnread,
     payments,
     invoices,
@@ -39,6 +41,10 @@ export async function fetchAdminPendingCounts(
       .from("disputes")
       .select("id", { count: "exact", head: true })
       .in("status", ["open", "reviewing"]),
+    supabase
+      .from("inspection_requests")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["requested", "scheduled", "in_progress"]),
     adminUserId
       ? supabase.rpc("count_unread_deal_messages", { p_user_id: adminUserId })
       : Promise.resolve({ data: 0, error: null }),
@@ -75,6 +81,7 @@ export async function fetchAdminPendingCounts(
     openInquiries: inquiries.count ?? 0,
     openSupport: support.count ?? 0,
     openDisputes: disputes.count ?? 0,
+    openInspectionRequests: inspections.count ?? 0,
     unreadDealBoard: boardUnread.error ? 0 : unreadBoard,
     paymentReportsPending: payments.count ?? 0,
     invoicesReviewPending: invoices.count ?? 0,

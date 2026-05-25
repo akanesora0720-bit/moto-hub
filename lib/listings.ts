@@ -18,6 +18,7 @@ type ListingRow = {
   created_at: string;
   mileage_rollback: string;
   inspection_status: boolean;
+  inspection_badge_type: string;
   grade_total: number | null;
   grade_engine: number | null;
   grade_front: number | null;
@@ -58,6 +59,7 @@ export function mapListingRows(rows: ListingRow[]): ListingCard[] {
       condition_comment: row.condition_comment,
       status: row.status as ListingCard["status"],
       inspection_status: row.inspection_status ?? false,
+      inspection_badge_type: (row.inspection_badge_type ?? "none") as ListingCard["inspection_badge_type"],
       grade_total: row.grade_total ?? null,
       grade_engine: row.grade_engine ?? null,
       grade_front: row.grade_front ?? null,

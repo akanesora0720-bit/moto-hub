@@ -5,7 +5,7 @@ import {
   formatYen,
   summarizeDealBilling,
 } from "@/lib/billing";
-import { DEAL_STATUS_LABELS } from "@/lib/deal-flow";
+import { partyDealStatusBadge } from "@/lib/deal-flow";
 import { createClient } from "@/lib/supabase/server";
 import type { DealStatus, Invoice } from "@/lib/types";
 
@@ -52,7 +52,7 @@ export async function DealBillingPanel({
   return (
     <section className="space-y-4 rounded-xl border border-border bg-card p-4">
       <h2 className="font-medium">請求・入金</h2>
-      <p className="text-xs text-muted">取引ステータス: {DEAL_STATUS_LABELS[status]}</p>
+      <p className="text-xs text-muted">取引ステータス: {partyDealStatusBadge(status, role)}</p>
 
       {role === "buyer" ? (
         <BuyerBilling
@@ -229,24 +229,32 @@ function PaymentHint({
   if (role === "buyer") {
     const text =
       status === "awaiting_payment"
-        ? "売り手へ振込後、売り手の入金確認をお待ちください"
-        : ["funded", "handover_done", "transfer_pending", "payout_ready", "payout_done", "completed"].includes(
-              status,
-            )
-          ? "入金確認済"
-          : status === "agreed"
-            ? "入金指示書の発行をお待ちください"
-            : "—";
+        ? "売り手へ振込後、取引画面の「振込した」ボタンで報告してください"
+        : status === "funded"
+          ? "入金確認済 — 引取日時の登録へ進んでください"
+          : ["handover_done", "transfer_pending"].includes(status)
+            ? "入金・引渡済 — 取引完了の確認をお願いします"
+            : status === "payout_ready"
+              ? "入金・確認済 — 運営が取引を完了にするまでお待ちください（ご入金は不要です）"
+              : ["payout_done", "completed"].includes(status)
+                ? "お取引の決済・確認は完了しています"
+                : status === "agreed"
+                  ? "入金指示書の発行をお待ちください"
+                  : "—";
     return <p className="text-xs text-zinc-500">{text}</p>;
   }
 
   const text =
     status === "awaiting_payment"
-      ? "買い手からの入金を確認してください"
-      : ["funded", "handover_done", "transfer_pending", "payout_ready", "payout_done", "completed"].includes(
-            status,
-          )
+      ? "買い手からの入金を確認してください（確認後に手数料請求書を発行）"
+      : status === "funded"
         ? "入金確認済 — 引渡しへ進めます"
-        : "—";
+        : ["handover_done", "transfer_pending"].includes(status)
+          ? "引渡後、取引完了の確認をお願いします"
+          : status === "payout_ready"
+            ? "双方確認済 — 運営が取引を完了にします（車両代金は買い手から入金済み）"
+            : ["payout_done", "completed"].includes(status)
+              ? "振込・取引処理完了"
+              : "—";
   return <p className="text-xs text-zinc-500">{text}</p>;
 }

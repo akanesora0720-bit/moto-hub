@@ -7,6 +7,7 @@ export type ListingSearchQuery = {
   model?: string;
   frame?: string;
   vehicle_class?: string;
+  motohub_only?: string;
   page?: string;
 };
 
@@ -16,6 +17,7 @@ export type ParsedListingSearch = {
   vehicleClass?: VehicleClass;
   model?: string;
   frameNumber?: string;
+  motohubOnly?: boolean;
 };
 
 export function parseListingSearch(query: ListingSearchQuery): ParsedListingSearch {
@@ -32,7 +34,12 @@ export function parseListingSearch(query: ListingSearchQuery): ParsedListingSear
       ? (vcRaw as VehicleClass)
       : undefined;
 
-  return { page, maker, vehicleClass, model, frameNumber };
+  const motohubOnly =
+    query.motohub_only === "1" ||
+    query.motohub_only === "true" ||
+    query.motohub_only === "on";
+
+  return { page, maker, vehicleClass, model, frameNumber, motohubOnly };
 }
 
 /** PostgREST ilike 用（% _ をエスケープ） */
@@ -49,6 +56,7 @@ export function listingSearchHref(
   if (params.vehicleClass) sp.set("vehicle_class", params.vehicleClass);
   if (params.model) sp.set("model", params.model);
   if (params.frameNumber) sp.set("frame", params.frameNumber);
+  if (params.motohubOnly) sp.set("motohub_only", "1");
   const page = params.page ?? 1;
   if (page > 1) sp.set("page", String(page));
   const q = sp.toString();

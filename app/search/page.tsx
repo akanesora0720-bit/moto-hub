@@ -36,7 +36,8 @@ export default async function SearchPage({
     search.maker ||
     search.vehicleClass ||
     search.model ||
-    search.frameNumber
+    search.frameNumber ||
+    search.motohubOnly
   );
 
   return (

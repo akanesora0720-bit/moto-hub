@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { ListingGradingInput } from "@/components/ListingGradingInput";
+import { MobilePicker } from "@/components/MobilePicker";
 import { MAKERS, MILEAGE_ROLLBACK_OPTIONS, VEHICLE_CLASSES } from "@/lib/constants";
 import type { MileageRollbackStatus, VehicleClass } from "@/lib/constants";
 import {
@@ -34,13 +35,27 @@ type Props = {
   listingId?: string;
   initial?: ListingEditorInitial;
   cancelHref?: string;
+  /** スタッフ出品代行: 出品者を加盟店にする */
+  sellerIdOverride?: string;
+  /** 完了時に complete_motohub_inspection を呼ぶ */
+  inspectionRequestId?: string;
+  /** 親レイアウトに AppShell を含める場合 */
+  embedded?: boolean;
 };
 
 function preventWheelChange(e: React.WheelEvent<HTMLInputElement>) {
   e.currentTarget.blur();
 }
 
-export function ListingEditorForm({ mode, listingId, initial, cancelHref }: Props) {
+export function ListingEditorForm({
+  mode,
+  listingId,
+  initial,
+  cancelHref,
+  sellerIdOverride,
+  inspectionRequestId,
+  embedded = false,
+}: Props) {
   const router = useRouter();
   const [maker, setMaker] = useState(initial?.maker ?? MAKERS[0]);
   const [model, setModel] = useState(initial?.model ?? "");
@@ -138,9 +153,10 @@ export function ListingEditorForm({ mode, listingId, initial, cancelHref }: Prop
     };
 
     if (isCreate) {
+      const sellerId = sellerIdOverride ?? userData.user.id;
       const { data: listing, error: listingError } = await supabase
         .from("listings")
-        .insert({ seller_id: userData.user.id, ...payload })
+        .insert({ seller_id: sellerId, ...payload })
         .select("id")
         .single();
 
@@ -153,7 +169,7 @@ export function ListingEditorForm({ mode, listingId, initial, cancelHref }: Prop
       for (let i = 0; i < files!.length; i++) {
         const file = files![i];
         const ext = file.name.split(".").pop() ?? "jpg";
-        const path = `${userData.user.id}/${listing.id}/${i}.${ext}`;
+        const path = `${sellerId}/${listing.id}/${i}.${ext}`;
         const { error: uploadError } = await supabase.storage
           .from("listing-images")
           .upload(path, file, { upsert: true });
@@ -169,8 +185,20 @@ export function ListingEditorForm({ mode, listingId, initial, cancelHref }: Prop
         });
       }
 
+      if (inspectionRequestId) {
+        const { error: completeError } = await supabase.rpc("complete_motohub_inspection", {
+          p_request_id: inspectionRequestId,
+          p_listing_id: listing.id,
+        });
+        if (completeError) {
+          setLoading(false);
+          setMessage(completeError.message);
+          return;
+        }
+      }
+
       setLoading(false);
-      router.replace(`/listings/${listing.id}`);
+      router.replace(inspectionRequestId ? "/admin/inspections" : `/listings/${listing.id}`);
       router.refresh();
       return;
     }
@@ -192,12 +220,23 @@ export function ListingEditorForm({ mode, listingId, initial, cancelHref }: Prop
     router.refresh();
   };
 
-  const title = isCreate ? "在庫を出品" : "出品を編集";
-  const submitLabel = isCreate ? "出品する" : "保存する";
-  const loadingLabel = isCreate ? "出品中…" : "保存中…";
+  const title = inspectionRequestId
+    ? "出品代行登録"
+    : isCreate
+      ? "在庫を出品"
+      : "出品を編集";
+  const submitLabel = inspectionRequestId
+    ? "登録してMotoHub査定済にする"
+    : isCreate
+      ? "出品する"
+      : "保存する";
+  const loadingLabel = inspectionRequestId
+    ? "登録中…"
+    : isCreate
+      ? "出品中…"
+      : "保存中…";
 
-  return (
-    <AppShell>
+  const body = (
       <div className="mx-auto max-w-xl space-y-6">
         <div>
           {cancelHref ? (
@@ -212,20 +251,12 @@ export function ListingEditorForm({ mode, listingId, initial, cancelHref }: Prop
         </div>
 
         <div className="space-y-4 rounded-xl border border-border bg-card p-5">
-          <label className="block text-sm">
-            <span className="text-muted">メーカー</span>
-            <select
-              value={maker}
-              onChange={(e) => setMaker(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-border bg-zinc-950 px-3 py-2.5 text-sm"
-            >
-              {MAKERS.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
-          </label>
+          <MobilePicker
+            label="メーカー"
+            value={maker}
+            onChange={setMaker}
+            options={MAKERS.map((m) => ({ value: m, label: m }))}
+          />
           <label className="block text-sm">
             <span className="text-muted">車名 *</span>
             <input
@@ -235,25 +266,18 @@ export function ListingEditorForm({ mode, listingId, initial, cancelHref }: Prop
               placeholder="CB400SF など"
             />
           </label>
-          <label className="block text-sm">
-            <span className="text-muted">車種区分 *</span>
-            <select
-              value={vehicleClass}
-              onChange={(e) => setVehicleClass(e.target.value as VehicleClass | "")}
-              className="mt-1 w-full rounded-lg border border-border bg-zinc-950 px-3 py-2.5 text-sm"
-              required
-            >
-              <option value="">選択してください</option>
-              {VEHICLE_CLASSES.map((v) => (
-                <option key={v.value} value={v.value}>
-                  {v.label}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-[10px] text-zinc-500">
-              免許・取引の区分。車名と排気量が一致しない車両も、この区分で登録してください。
-            </p>
-          </label>
+          <MobilePicker
+            label="車種区分"
+            value={vehicleClass}
+            onChange={(v) => setVehicleClass(v as VehicleClass | "")}
+            options={[
+              { value: "", label: "選択してください" },
+              ...VEHICLE_CLASSES.map((v) => ({ value: v.value, label: v.label })),
+            ]}
+            placeholder="タップして車種区分を選択"
+            required
+            hint="免許・取引の区分。車名と排気量が一致しない車両も、この区分で登録してください。"
+          />
           <div className="grid grid-cols-2 gap-3">
             <label className="block text-sm">
               <span className="text-muted">年式（任意）</span>
@@ -286,20 +310,15 @@ export function ListingEditorForm({ mode, listingId, initial, cancelHref }: Prop
               placeholder="例: NC42-1201234"
             />
           </label>
-          <label className="block text-sm">
-            <span className="text-muted">距離減算</span>
-            <select
-              value={mileageRollback}
-              onChange={(e) => setMileageRollback(e.target.value as MileageRollbackStatus)}
-              className="mt-1 w-full rounded-lg border border-border bg-zinc-950 px-3 py-2.5 text-sm"
-            >
-              {MILEAGE_ROLLBACK_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <MobilePicker
+            label="距離減算"
+            value={mileageRollback}
+            onChange={(v) => setMileageRollback(v as MileageRollbackStatus)}
+            options={MILEAGE_ROLLBACK_OPTIONS.map((o) => ({
+              value: o.value,
+              label: o.label,
+            }))}
+          />
           <ListingGradingInput
             grades={grades}
             onChange={setGrades}
@@ -356,6 +375,8 @@ export function ListingEditorForm({ mode, listingId, initial, cancelHref }: Prop
           {loading ? loadingLabel : submitLabel}
         </button>
       </div>
-    </AppShell>
   );
+
+  if (embedded) return body;
+  return <AppShell>{body}</AppShell>;
 }

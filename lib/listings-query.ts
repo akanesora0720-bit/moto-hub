@@ -15,6 +15,9 @@ export function applyListingSearchFilters(query: any, search: ParsedListingSearc
   if (search.frameNumber) {
     q = q.ilike("frame_number", `%${escapeIlikePattern(search.frameNumber)}%`);
   }
+  if (search.motohubOnly) {
+    q = q.eq("inspection_badge_type", "motohub_inspected");
+  }
   return q;
 }
 

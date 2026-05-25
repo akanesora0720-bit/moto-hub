@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
-import { InspectionBadge } from "@/components/InspectionBadge";
+import { MotohubInspectionBadge } from "@/components/MotohubInspectionBadge";
+import { isMotohubInspected } from "@/lib/inspection";
 import { InquiryForm } from "@/components/InquiryForm";
 import { MileageRollbackBadge } from "@/components/MileageRollbackBadge";
 import { SellerPublicSummary } from "@/components/SellerPublicSummary";
@@ -95,7 +96,9 @@ export default async function ListingDetailPage({
               <p className="text-sm text-muted">{listing.maker}</p>
               <h1 className="text-3xl font-semibold">{listing.model}</h1>
               <div className="mt-2 flex flex-wrap gap-2">
-                {listing.inspection_status ? <InspectionBadge /> : null}
+                {isMotohubInspected(listing.inspection_badge_type) ? (
+                  <MotohubInspectionBadge showHint />
+                ) : null}
               </div>
               <p className="mt-2 text-2xl font-semibold text-accent">
                 {formatYen(listing.price_ex_tax)}

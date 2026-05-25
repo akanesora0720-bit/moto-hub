@@ -14,7 +14,6 @@ type MilestoneDeal = Pick<
   | "pickup_completed_at"
   | "seller_payment_confirmed_at"
   | "funded_at"
-  | "documents_shipped_at"
   | "transfer_deadline_at"
   | "transfer_completed_at"
   | "tracking_number"
@@ -43,12 +42,11 @@ export function DealMilestonesPanel({
   deal: MilestoneDeal;
   role: "buyer" | "seller";
   readOnly?: boolean;
-  section?: "pickup" | "documents" | "transfer" | "all";
+  section?: "pickup" | "transfer" | "all";
 }) {
   const router = useRouter();
   const [pickupScheduled, setPickupScheduled] = useState(toLocal(deal.pickup_scheduled_at));
   const [pickupCompleted, setPickupCompleted] = useState(toLocal(deal.pickup_completed_at));
-  const [documentsShipped, setDocumentsShipped] = useState(toLocal(deal.documents_shipped_at));
   const [transferCompleted, setTransferCompleted] = useState(toLocal(deal.transfer_completed_at));
   const [tracking, setTracking] = useState(deal.tracking_number ?? "");
   const [message, setMessage] = useState("");
@@ -59,7 +57,6 @@ export function DealMilestonesPanel({
   const save = async (opts: {
     pickupScheduled?: string;
     pickupCompleted?: string;
-    documentsShipped?: string;
     transferCompleted?: string;
     tracking?: string;
     usePickupRpc?: boolean;
@@ -92,7 +89,6 @@ export function DealMilestonesPanel({
       p_deal_id: deal.id,
       p_pickup_scheduled_at: opts.pickupScheduled ? fromLocal(opts.pickupScheduled) : null,
       p_pickup_completed_at: opts.pickupCompleted ? fromLocal(opts.pickupCompleted) : null,
-      p_documents_shipped_at: opts.documentsShipped ? fromLocal(opts.documentsShipped) : null,
       p_transfer_completed_at: opts.transferCompleted ? fromLocal(opts.transferCompleted) : null,
       p_tracking_number: opts.tracking ?? null,
       p_clear_tracking: false,
@@ -108,15 +104,14 @@ export function DealMilestonesPanel({
   const canEditPickupSchedule =
     !readOnly && role === "buyer" && deal.status === "funded";
   const canEditPickupCompleted =
-    !readOnly && role === "seller" && ["funded", "handover_done", "transfer_pending"].includes(deal.status);
-  const canEditDocuments =
-    !readOnly && role === "seller";
+    !readOnly &&
+    role === "seller" &&
+    ["funded", "handover_done", "transfer_pending"].includes(deal.status);
   const canEditTransfer =
     !readOnly && (role === "buyer" || role === "seller");
   const canEditTracking = !readOnly;
 
   const showPickup = section === "all" || section === "pickup";
-  const showDocuments = section === "all" || section === "documents";
   const showTransfer = section === "all" || section === "transfer";
 
   return (
@@ -125,113 +120,99 @@ export function DealMilestonesPanel({
         <MilestoneRow label="入金確認日時" value={paymentAt ? formatPickupSchedule(paymentAt) : "未"} />
       ) : null}
       {showPickup ? (
-      <>
-      <MilestoneRow
-        label="引取予定日時"
-        value={deal.pickup_scheduled_at ? formatPickupSchedule(deal.pickup_scheduled_at) : "未"}
-      />
-      {canEditPickupSchedule ? (
-        <Field
-          label="引取予定を登録（正式）"
-          type="datetime-local"
-          value={pickupScheduled}
-          onChange={setPickupScheduled}
-          onSave={() => void save({ pickupScheduled, usePickupRpc: true })}
-          loading={loading}
-        />
-      ) : null}
-
-      <MilestoneRow
-        label="引取完了日時"
-        value={
-          deal.pickup_completed_at || deal.handover_at
-            ? formatPickupSchedule(deal.pickup_completed_at ?? deal.handover_at)
-            : "未"
-        }
-      />
-      {canEditPickupCompleted ? (
-        <Field
-          label="引取完了を記録"
-          type="datetime-local"
-          value={pickupCompleted}
-          onChange={setPickupCompleted}
-          onSave={() => void save({ pickupCompleted })}
-          loading={loading}
-        />
-      ) : null}
-      </>
-      ) : null}
-
-      {showDocuments ? (
-      <>
-      <MilestoneRow
-        label="書類発送日時"
-        value={deal.documents_shipped_at ? formatPickupSchedule(deal.documents_shipped_at) : "未"}
-      />
-      {canEditDocuments ? (
-        <Field
-          label="書類発送を記録"
-          type="datetime-local"
-          value={documentsShipped}
-          onChange={setDocumentsShipped}
-          onSave={() => void save({ documentsShipped })}
-          loading={loading}
-        />
-      ) : null}
-
-      <MilestoneRow
-        label="追跡番号（任意）"
-        value={deal.tracking_number?.trim() || "—"}
-      />
-      {canEditTracking ? (
-        <div className="space-y-2">
-          <input
-            type="text"
-            value={tracking}
-            onChange={(e) => setTracking(e.target.value)}
-            placeholder="宅配便の追跡番号など"
-            className="w-full rounded-lg border border-border bg-zinc-950 px-3 py-2 text-sm"
+        <>
+          <MilestoneRow
+            label="引取予定日時"
+            value={deal.pickup_scheduled_at ? formatPickupSchedule(deal.pickup_scheduled_at) : "未"}
           />
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => void save({ tracking })}
-            className="rounded-lg border border-border px-3 py-1.5 text-xs hover:border-accent/40"
-          >
-            追跡番号を保存
-          </button>
-        </div>
-      ) : null}
-      </>
+          {canEditPickupSchedule ? (
+            <Field
+              label="引取予定を登録（正式）"
+              type="datetime-local"
+              value={pickupScheduled}
+              onChange={setPickupScheduled}
+              onSave={() => void save({ pickupScheduled, usePickupRpc: true })}
+              loading={loading}
+            />
+          ) : null}
+
+          <MilestoneRow
+            label="引渡完了日時"
+            value={
+              deal.pickup_completed_at || deal.handover_at
+                ? formatPickupSchedule(deal.pickup_completed_at ?? deal.handover_at)
+                : "未"
+            }
+          />
+          {canEditPickupCompleted ? (
+            <Field
+              label="引渡完了を記録（車両・書類同時）"
+              type="datetime-local"
+              value={pickupCompleted}
+              onChange={setPickupCompleted}
+              onSave={() => void save({ pickupCompleted })}
+              loading={loading}
+            />
+          ) : null}
+
+          <MilestoneRow
+            label="陸送追跡番号（任意）"
+            value={deal.tracking_number?.trim() || "—"}
+          />
+          {canEditTracking ? (
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={tracking}
+                onChange={(e) => setTracking(e.target.value)}
+                placeholder="陸送利用時のみ"
+                className="w-full rounded-lg border border-border bg-zinc-950 px-3 py-2 text-sm"
+              />
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => void save({ tracking })}
+                className="rounded-lg border border-border px-3 py-1.5 text-xs hover:border-accent/40"
+              >
+                追跡番号を保存
+              </button>
+            </div>
+          ) : null}
+          <p className="text-xs text-muted">
+            書類は車両と同時に引渡します。別送・書類発送の工程はありません。
+          </p>
+        </>
       ) : null}
 
       {showTransfer ? (
-      <>
-      <MilestoneRow
-        label="名変期限"
-        value={formatTransferDeadline(deal.transfer_deadline_at)}
-      />
-      <MilestoneRow
-        label="名変完了日時"
-        value={deal.transfer_completed_at ? formatPickupSchedule(deal.transfer_completed_at) : "未"}
-      />
-      {canEditTransfer && deal.status === "transfer_pending" ? (
-        <Field
-          label="名変完了を記録"
-          type="datetime-local"
-          value={transferCompleted}
-          onChange={setTransferCompleted}
-          onSave={() => void save({ transferCompleted })}
-          loading={loading}
-        />
-      ) : null}
-      </>
+        <>
+          <MilestoneRow
+            label="名変期限"
+            value={formatTransferDeadline(deal.transfer_deadline_at)}
+          />
+          <MilestoneRow
+            label="名変完了日時"
+            value={deal.transfer_completed_at ? formatPickupSchedule(deal.transfer_completed_at) : "未"}
+          />
+          {canEditTransfer && deal.status === "transfer_pending" ? (
+            <Field
+              label="名変完了を記録"
+              type="datetime-local"
+              value={transferCompleted}
+              onChange={setTransferCompleted}
+              onSave={() => void save({ transferCompleted })}
+              loading={loading}
+            />
+          ) : null}
+        </>
       ) : null}
 
       {message ? <p className="text-sm text-rose-300">{message}</p> : null}
-      <p className="text-xs text-muted">
-        チャットではなく正式記録です。集計・運営確認用に日時を登録してください。
-      </p>
+      {section !== "pickup" ? (
+        <p className="text-xs text-muted">
+          正式記録です。集計・運営確認用に日時を登録してください。
+        </p>
+      ) : null}
     </dl>
   );
 }

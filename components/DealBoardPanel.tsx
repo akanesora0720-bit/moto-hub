@@ -89,7 +89,7 @@ export function DealBoardPanel({
     <div className="space-y-3">
       <p className="text-xs leading-relaxed text-amber-100/90">{DEAL_BOARD_DESCRIPTION}</p>
       <p className="text-xs text-muted">
-        引取予定の調整、到着予定、陸送、引渡し、書類受け渡しに関する連絡にご利用ください。即時返信は不要です。
+        引取予定の調整、到着予定、陸送、引渡し（書類は車両と同時）に関する連絡にご利用ください。即時返信は不要です。
       </p>
 
       <DealEmergencyContact dealId={dealId} role={role} boardVisible={boardVisible} />
@@ -141,7 +141,7 @@ export function DealBoardPanel({
               onChange={(e) => setDraft(e.target.value)}
               rows={3}
               maxLength={4000}
-              placeholder="例：5/25 14:00 引取予定 / 陸送業者到着 15:30頃 / 書類は同梱でお渡しします"
+              placeholder="例：5/25 14:00 引取予定 / 陸送業者到着 15:30頃 / 引渡時に書類一式お渡し予定"
               className="mt-1 w-full rounded-lg border border-border bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-accent"
             />
           </label>

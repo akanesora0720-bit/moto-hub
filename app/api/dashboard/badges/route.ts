@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
         openInquiries: pending.openInquiries,
         openSupport: pending.openSupport,
         openDisputes: pending.openDisputes,
+        openInspectionRequests: pending.openInspectionRequests,
         unreadDealBoard: pending.unreadDealBoard,
         invoicesReviewPending: pending.invoicesReviewPending,
         payoutsAwaiting: pending.payoutsAwaiting,

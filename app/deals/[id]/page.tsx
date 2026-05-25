@@ -11,7 +11,7 @@ import { DealPickupSchedulePanel } from "@/components/DealPickupSchedulePanel";
 import { DealCounterpartyContact } from "@/components/DealCounterpartyContact";
 import { canRevealDealContacts } from "@/lib/deal-contact";
 import { canShowDealBoardForViewer } from "@/lib/deal-board";
-import { DEAL_STATUS_LABELS } from "@/lib/deal-flow";
+import { DEAL_STATUS_LABELS, partyDealStatusBadge } from "@/lib/deal-flow";
 import { formatYen } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/viewer";
@@ -96,9 +96,9 @@ export default async function DealDetailPage({
     buyer_intent_confirmed: row.buyer_intent_confirmed ?? false,
     payment_due_at: row.payment_due_at ?? null,
     seller_payment_confirmed_at: row.seller_payment_confirmed_at ?? null,
+    buyer_payment_reported_at: row.buyer_payment_reported_at ?? null,
     pickup_scheduled_at: row.pickup_scheduled_at ?? null,
     pickup_completed_at: row.pickup_completed_at ?? null,
-    documents_shipped_at: row.documents_shipped_at ?? null,
     transfer_completed_at: row.transfer_completed_at ?? null,
     tracking_number: row.tracking_number ?? null,
     created_at: row.created_at,
@@ -117,6 +117,34 @@ export default async function DealDetailPage({
   const showMilestones =
     deal.status !== "inquiry" && deal.status !== "negotiating" && deal.status !== "cancelled";
   const isPreAgreement = deal.status === "inquiry" || deal.status === "negotiating";
+  const billingFirst =
+    deal.status === "awaiting_payment" ||
+    (deal.status === "funded" && role === "buyer");
+
+  const billingSection = (
+    <DealCard id="deal-billing" title="請求・入金" step={3}>
+      <DealBillingPanel
+        dealId={id}
+        userId={userId}
+        role={role}
+        status={deal.status}
+        agreedPriceExTax={deal.agreed_price_ex_tax}
+        paymentDueAt={deal.payment_due_at}
+      />
+    </DealCard>
+  );
+
+  const actionSection = (
+    <DealCard title="今やること・詳細" step={billingFirst ? 4 : 3} highlight={!adminViewOnly}>
+      {adminViewOnly ? (
+        <p className="text-sm text-muted">
+          運営表示。ステータス変更は管理画面の取引タブから行ってください。
+        </p>
+      ) : (
+        <DealActionPanel deal={deal} role={role} />
+      )}
+    </DealCard>
+  );
 
   return (
     <AuthenticatedShell>
@@ -140,14 +168,20 @@ export default async function DealDetailPage({
         </DealCard>
 
         <DealCard title="商談情報" step={2}>
-          <p className="text-sm font-medium">{DEAL_STATUS_LABELS[deal.status]}</p>
+          <p className="text-sm font-medium">
+            {isParty ? partyDealStatusBadge(deal.status, role) : DEAL_STATUS_LABELS[deal.status]}
+          </p>
           {isPreAgreement ? (
             <p className="mt-2 text-sm text-muted">
-              運営が商談・合意を進めます。合意後に取引連絡板と正式情報の入力が利用できます。
+              {role === "buyer"
+                ? "運営が商談・合意を進めます。合意後に入金・引取の手順が表示されます。"
+                : "運営が商談・合意を進めます。合意後に買い手の入金確認・引渡しへ進みます。"}
             </p>
           ) : (
             <p className="mt-2 text-sm text-muted">
-              合意済みです。入金確認後に引取・引渡し専用の取引連絡板が開きます。
+              {role === "buyer"
+                ? "合意済みです。売り手へ直接お振込みのうえ、入金確認後に引取・引渡しへ進みます。"
+                : "合意済みです。買い手の入金確認後、引取・引渡しと取引連絡板が利用できます。"}
             </p>
           )}
           {isAdmin ? (
@@ -159,15 +193,17 @@ export default async function DealDetailPage({
 
         {!isPreAgreement ? (
           <>
-            <DealCard title="成約確認・アクション" step={3}>
-              {adminViewOnly ? (
-                <p className="text-sm text-muted">
-                  運営表示。ステータス変更は管理画面の取引タブから行ってください。
-                </p>
-              ) : (
-                <DealActionPanel deal={deal} role={role} />
-              )}
-            </DealCard>
+            {billingFirst ? (
+              <>
+                {billingSection}
+                {actionSection}
+              </>
+            ) : (
+              <>
+                {actionSection}
+                {billingSection}
+              </>
+            )}
 
             {contactPayload?.revealed && contactPayload.buyer && contactPayload.seller ? (
               <DealCounterpartyContact
@@ -177,20 +213,9 @@ export default async function DealDetailPage({
               />
             ) : null}
 
-            <DealCard title="請求・入金" step={4}>
-              <DealBillingPanel
-                dealId={id}
-                userId={userId}
-                role={role}
-                status={deal.status}
-                agreedPriceExTax={deal.agreed_price_ex_tax}
-                paymentDueAt={deal.payment_due_at}
-              />
-            </DealCard>
-
             {showMilestones ? (
               <>
-                <DealCard title="引取調整" step={5}>
+                <DealCard id="deal-pickup" title="引取・引渡（車両・書類同時）" step={5}>
                   {adminViewOnly ? (
                     <DealPickupSchedulePanel
                       dealId={id}
@@ -223,16 +248,7 @@ export default async function DealDetailPage({
                   )}
                 </DealCard>
 
-                <DealCard title="書類発送" step={6}>
-                  <DealMilestonesPanel
-                    deal={deal}
-                    role={role}
-                    section="documents"
-                    readOnly={adminViewOnly}
-                  />
-                </DealCard>
-
-                <DealCard title="名変" step={7}>
+                <DealCard title="名変" step={6}>
                   <DealMilestonesPanel
                     deal={deal}
                     role={role}
@@ -243,7 +259,7 @@ export default async function DealDetailPage({
               </>
             ) : null}
 
-            <DealCard title="完了" step={8}>
+            <DealCard title="完了" step={7}>
               <p className="text-sm text-muted">
                 双方の完了確認後、MotoHub手数料（税抜3万円超のみ）の精算が行われます。
               </p>

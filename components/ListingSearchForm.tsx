@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { MobilePicker } from "@/components/MobilePicker";
 import { MAKERS, VEHICLE_CLASSES } from "@/lib/constants";
 import type { VehicleClass } from "@/lib/constants";
 import { parseListingSearch } from "@/lib/listing-search";
@@ -14,12 +15,14 @@ export function ListingSearchForm({ action = "/search" }: { action?: string }) {
     model: searchParams.get("model") ?? undefined,
     frame: searchParams.get("frame") ?? undefined,
     vehicle_class: searchParams.get("vehicle_class") ?? undefined,
+    motohub_only: searchParams.get("motohub_only") ?? undefined,
   });
 
   const [maker, setMaker] = useState(parsed.maker ?? "");
   const [model, setModel] = useState(parsed.model ?? "");
   const [frame, setFrame] = useState(parsed.frameNumber ?? "");
   const [vehicleClass, setVehicleClass] = useState(parsed.vehicleClass ?? "");
+  const [motohubOnly, setMotohubOnly] = useState(parsed.motohubOnly ?? false);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +31,7 @@ export function ListingSearchForm({ action = "/search" }: { action?: string }) {
     if (model.trim()) sp.set("model", model.trim());
     if (frame.trim()) sp.set("frame", frame.trim());
     if (vehicleClass) sp.set("vehicle_class", vehicleClass);
+    if (motohubOnly) sp.set("motohub_only", "1");
     const q = sp.toString();
     router.push(q ? `${action}?${q}` : action);
   };
@@ -37,6 +41,7 @@ export function ListingSearchForm({ action = "/search" }: { action?: string }) {
     setModel("");
     setFrame("");
     setVehicleClass("");
+    setMotohubOnly(false);
     router.push(action);
   };
 
@@ -47,36 +52,23 @@ export function ListingSearchForm({ action = "/search" }: { action?: string }) {
     >
       <p className="text-sm font-medium">在庫を検索</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <label className="block text-sm">
-          <span className="text-muted">メーカー</span>
-          <select
-            value={maker}
-            onChange={(e) => setMaker(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-border bg-zinc-950 px-3 py-2.5 text-sm"
-          >
-            <option value="">すべて</option>
-            {MAKERS.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="block text-sm">
-          <span className="text-muted">車種区分</span>
-          <select
-            value={vehicleClass}
-            onChange={(e) => setVehicleClass(e.target.value as VehicleClass | "")}
-            className="mt-1 w-full rounded-lg border border-border bg-zinc-950 px-3 py-2.5 text-sm"
-          >
-            <option value="">すべて</option>
-            {VEHICLE_CLASSES.map((v) => (
-              <option key={v.value} value={v.value}>
-                {v.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <MobilePicker
+          label="メーカー"
+          value={maker}
+          onChange={setMaker}
+          options={[{ value: "", label: "すべて" }, ...MAKERS.map((m) => ({ value: m, label: m }))]}
+          placeholder="すべて"
+        />
+        <MobilePicker
+          label="車種区分"
+          value={vehicleClass}
+          onChange={(v) => setVehicleClass(v as VehicleClass | "")}
+          options={[
+            { value: "", label: "すべて" },
+            ...VEHICLE_CLASSES.map((v) => ({ value: v.value, label: v.label })),
+          ]}
+          placeholder="すべて"
+        />
         <label className="block text-sm">
           <span className="text-muted">車名</span>
           <input
@@ -98,6 +90,15 @@ export function ListingSearchForm({ action = "/search" }: { action?: string }) {
           />
         </label>
       </div>
+      <label className="mt-3 flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={motohubOnly}
+          onChange={(e) => setMotohubOnly(e.target.checked)}
+          className="rounded border-border"
+        />
+        <span>MotoHub査定済のみ</span>
+      </label>
       <div className="mt-3 flex flex-wrap gap-2">
         <button
           type="submit"

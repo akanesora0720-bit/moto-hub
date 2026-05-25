@@ -30,13 +30,21 @@ function docLabel(inv: InvoiceRow) {
   const kind = (inv as Invoice & { document_kind?: string }).document_kind;
   if (kind === "payment_instruction") return "入金指示書";
   if (kind === "platform_fee") return "MotoHub手数料請求";
+  if (kind === "motohub_inspection") return "MotoHub査定";
   return inv.party === "buyer" ? "買い手" : "売り手";
 }
 
 function listingLabel(inv: InvoiceRow) {
+  const kind = (inv as Invoice & { document_kind?: string }).document_kind;
+  if (kind === "motohub_inspection") {
+    return inv.inspection_request_id
+      ? `査定 ${inv.inspection_request_id.slice(0, 8)}`
+      : "査定サービス";
+  }
   const li = inv.deal?.listings;
   const listing = Array.isArray(li) ? li[0] : li;
-  return listing ? `${listing.maker} ${listing.model}` : inv.deal_id.slice(0, 8);
+  if (listing) return `${listing.maker} ${listing.model}`;
+  return inv.deal_id ? inv.deal_id.slice(0, 8) : "—";
 }
 
 export default function AdminBillingPage() {
@@ -158,7 +166,8 @@ export default function AdminBillingPage() {
               "payment_instruction" ||
               !(i as Invoice & { document_kind?: string }).document_kind),
         )
-        .map((i) => i.deal_id),
+        .map((i) => i.deal_id)
+        .filter((id): id is string => id != null),
     ),
   ];
 

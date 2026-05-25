@@ -5,7 +5,7 @@ export type DealerActionStats = {
   newInquiries: number;
   negotiating: number;
   awaitingPayment: number;
-  documentsPending: number;
+  handoverPending: number;
   unreadNotifications: number;
   unreadDealBoard: number;
   openSupport: number;
@@ -86,7 +86,7 @@ export async function fetchDealerActionStats(userId: string): Promise<DealerActi
     (d) => d.buyer_id === userId && d.status === "awaiting_payment",
   ).length;
 
-  const documentsPending = deals.filter((d) => {
+  const handoverPending = deals.filter((d) => {
     const status = d.status as DealStatus;
     if (status === "transfer_pending") return true;
     if (d.seller_id === userId && status === "funded") return true;
@@ -103,7 +103,7 @@ export async function fetchDealerActionStats(userId: string): Promise<DealerActi
     newInquiries,
     negotiating,
     awaitingPayment,
-    documentsPending,
+    handoverPending,
     unreadNotifications: notificationsRes.count ?? 0,
     unreadDealBoard: boardUnreadRes.error ? 0 : boardUnread,
     openSupport: supportRes.count ?? 0,

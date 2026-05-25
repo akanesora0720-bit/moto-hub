@@ -51,6 +51,12 @@ export function canAccessAdmin(profile: Profile | null): boolean {
   return profile.is_admin || profile.member_type === "staff";
 }
 
+/** 査定依頼の対応・出品代行（staff または is_admin の業者管理者） */
+export function canPerformMotohubInspection(profile: Profile | null): boolean {
+  if (!profile?.is_active) return false;
+  return profile.member_type === "staff" || profile.is_admin;
+}
+
 export function buildDealerProfilePayload(
   input: DealerProfileInput,
   docs: {

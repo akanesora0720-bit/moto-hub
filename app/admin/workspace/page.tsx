@@ -59,7 +59,7 @@ export default function AdminPage() {
       model: string;
       price_ex_tax: number;
       status: string;
-      inspection_status: boolean;
+      inspection_badge_type: string;
       engine_video_url: string | null;
       store_name: string | null;
     }[]
@@ -138,7 +138,7 @@ export default function AdminPage() {
       supabase
         .from("listings")
         .select(
-          "id, maker, model, price_ex_tax, status, inspection_status, engine_video_url, profiles!listings_seller_id_fkey ( store_name )",
+          "id, maker, model, price_ex_tax, status, inspection_badge_type, engine_video_url, profiles!listings_seller_id_fkey ( store_name )",
         )
         .order("created_at", { ascending: false })
         .limit(50),
@@ -220,7 +220,7 @@ export default function AdminPage() {
         model: row.model,
         price_ex_tax: row.price_ex_tax,
         status: row.status,
-        inspection_status: row.inspection_status ?? false,
+        inspection_badge_type: row.inspection_badge_type ?? "none",
         engine_video_url: row.engine_video_url ?? null,
         store_name: (profile as { store_name: string | null } | null)?.store_name ?? null,
       };
@@ -319,16 +319,6 @@ export default function AdminPage() {
           ? "エンジン動画URLを保存しました。"
           : "エンジン動画URLを削除しました。",
     );
-    load();
-  };
-
-  const toggleInspection = async (id: string, current: boolean) => {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("listings")
-      .update({ inspection_status: !current })
-      .eq("id", id);
-    setMessage(error ? error.message : !current ? "査定済にしました。" : "査定済を解除しました。");
     load();
   };
 
@@ -734,15 +724,9 @@ export default function AdminPage() {
                     <span className="ml-2 text-xs text-zinc-500">{row.store_name ?? "—"}</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-3 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => toggleInspection(row.id, row.inspection_status)}
-                      className={
-                        row.inspection_status ? "text-violet-300" : "text-muted hover:underline"
-                      }
-                    >
-                      {row.inspection_status ? "査定済 ✓" : "未査定"}
-                    </button>
+                    {row.inspection_badge_type === "motohub_inspected" ? (
+                      <span className="text-sky-300">MotoHub査定済</span>
+                    ) : null}
                     {row.engine_video_url ? (
                       <span className="text-sky-300">動画あり</span>
                     ) : null}

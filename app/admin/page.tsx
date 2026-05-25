@@ -121,6 +121,11 @@ export default async function AdminHubPage() {
                 title="① 商談監視"
                 items={[
                   {
+                    label: "MotoHub査定依頼",
+                    count: pending.openInspectionRequests,
+                    href: "/admin/inspections",
+                  },
+                  {
                     label: "未対応問い合わせ",
                     count: pending.openInquiries,
                     href: "/admin/workspace",

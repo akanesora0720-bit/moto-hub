@@ -3,15 +3,23 @@ export function DealCard({
   step,
   children,
   className = "",
+  id,
+  highlight,
 }: {
   title: string;
   step?: number;
   children: React.ReactNode;
   className?: string;
+  id?: string;
+  /** 次の操作を目立たせる */
+  highlight?: boolean;
 }) {
   return (
     <section
-      className={`rounded-xl border border-border bg-card p-4 shadow-sm ${className}`}
+      id={id}
+      className={`rounded-xl border bg-card p-4 shadow-sm ${
+        highlight ? "border-amber-500/50 bg-amber-950/20" : "border-border"
+      } ${className}`}
     >
       <header className="mb-3 flex items-baseline gap-2 border-b border-border/60 pb-2">
         {step != null ? (

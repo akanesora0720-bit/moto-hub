@@ -195,7 +195,7 @@ export default async function MemberProfilePage({
             </Link>
             {stats ? (
               <p className="mt-2 text-xs text-zinc-500">
-                成約 {stats.completed_deals}台 · 査定済率 {inspectionRate}%
+                成約 {stats.completed_deals}台 · MotoHub査定済率 {inspectionRate}%
               </p>
             ) : null}
           </div>

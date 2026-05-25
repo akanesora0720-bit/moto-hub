@@ -12,13 +12,13 @@ export async function fetchMemberStats(profileId: string): Promise<MemberStats> 
       .eq("status", "completed"),
     supabase
       .from("listings")
-      .select("inspection_status")
+      .select("inspection_badge_type")
       .eq("seller_id", profileId)
       .neq("status", "removed"),
   ]);
 
   const rows = listings.data ?? [];
-  const inspected = rows.filter((r) => r.inspection_status).length;
+  const inspected = rows.filter((r) => r.inspection_badge_type === "motohub_inspected").length;
 
   return {
     completed_deals: deals.count ?? 0,

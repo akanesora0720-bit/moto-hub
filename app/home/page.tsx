@@ -62,10 +62,10 @@ export default async function DealerHomePage() {
                 urgent
               />
             ) : null}
-            {actions.documentsPending > 0 ? (
+            {actions.handoverPending > 0 ? (
               <StatBadge
-                count={actions.documentsPending}
-                label="書類・引渡"
+                count={actions.handoverPending}
+                label="引取・引渡"
                 href="/deals"
                 urgent
               />
@@ -81,7 +81,7 @@ export default async function DealerHomePage() {
             {actions.newInquiries === 0 &&
             actions.negotiating === 0 &&
             actions.awaitingPayment === 0 &&
-            actions.documentsPending === 0 &&
+            actions.handoverPending === 0 &&
             actions.unreadNotifications === 0 ? (
               <p className="text-sm text-muted">現在、要対応の項目はありません。</p>
             ) : null}
@@ -114,6 +114,11 @@ export default async function DealerHomePage() {
               title="① 出品する"
               description="車両を登録して業販に出す"
               href="/listings/new"
+            />
+            <ActionCard
+              title="MotoHub査定依頼"
+              description="現車確認・出品代行（税抜¥3,000/台）"
+              href="/inspections"
             />
             <ActionCard
               title="② 商談管理"

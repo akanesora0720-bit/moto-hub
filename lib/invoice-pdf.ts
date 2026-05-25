@@ -10,7 +10,9 @@ export type InvoicePdfLineItem = {
 
 type InvoicePdfInput = {
   invoiceId: string;
-  dealId: string;
+  dealId?: string | null;
+  referenceLabel?: string;
+  referenceId?: string;
   partyLabel: string;
   billToName: string;
   vehicleLabel: string;
@@ -48,7 +50,11 @@ export async function buildInvoicePdf(input: InvoicePdfInput): Promise<Uint8Arra
   writer.y -= 4;
 
   writer.draw(`請求書ID: ${input.invoiceId.slice(0, 8)}`);
-  writer.draw(`取引ID: ${input.dealId.slice(0, 8)}`);
+  if (input.dealId) {
+    writer.draw(`取引ID: ${input.dealId.slice(0, 8)}`);
+  } else if (input.referenceId) {
+    writer.draw(`${input.referenceLabel ?? "参照ID"}: ${input.referenceId.slice(0, 8)}`);
+  }
   writer.draw(`車両: ${input.vehicleLabel}`);
   writer.draw(`発行日: ${input.issuedAt}`);
   if (input.paymentDueAt) writer.draw(`お支払期限: ${input.paymentDueAt}`);

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { InspectionBadge } from "@/components/InspectionBadge";
+import { MotohubInspectionBadge } from "@/components/MotohubInspectionBadge";
+import { isMotohubInspected } from "@/lib/inspection";
 import { ListingImage } from "@/components/ListingImage";
 import { MileageRollbackBadge } from "@/components/MileageRollbackBadge";
 import { TrustBadge } from "@/components/TrustBadge";
@@ -30,9 +31,9 @@ export function ListingCard({
       <Link href={`/listings/${listing.id}`} className="block">
       <div className="relative aspect-[4/3] bg-zinc-900">
         <ListingImage path={listing.cover_path} alt={title} fill className="transition group-hover:scale-[1.02]" />
-        {listing.inspection_status ? (
+        {isMotohubInspected(listing.inspection_badge_type) ? (
           <div className="absolute left-2 top-2">
-            <InspectionBadge />
+            <MotohubInspectionBadge />
           </div>
         ) : null}
         {listing.status === "negotiating" ? (

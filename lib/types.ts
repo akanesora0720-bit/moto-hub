@@ -1,3 +1,4 @@
+import type { InspectionBadgeType } from "@/lib/inspection";
 import type { MileageRollbackStatus, VehicleClass } from "@/lib/constants";
 
 export type { VehicleClass };
@@ -81,6 +82,7 @@ export type Listing = {
   condition_comment: string;
   status: ListingStatus;
   inspection_status: boolean;
+  inspection_badge_type: InspectionBadgeType;
   grade_total: number | null;
   grade_engine: number | null;
   grade_front: number | null;
@@ -145,9 +147,11 @@ export type Deal = {
   buyer_intent_confirmed: boolean;
   payment_due_at: string | null;
   seller_payment_confirmed_at: string | null;
+  buyer_payment_reported_at: string | null;
   pickup_scheduled_at: string | null;
   pickup_completed_at: string | null;
-  documents_shipped_at: string | null;
+  /** @deprecated 書類は車両と同時引渡。UIでは未使用 */
+  documents_shipped_at?: string | null;
   transfer_completed_at: string | null;
   tracking_number: string | null;
   created_at: string;
@@ -280,11 +284,16 @@ export type MonthlyPaymentReport = {
 export type InvoiceParty = "buyer" | "seller";
 export type InvoiceStatus = "draft" | "review_pending" | "issued" | "paid" | "cancelled";
 
-export type InvoiceDocumentKind = "legacy" | "payment_instruction" | "platform_fee";
+export type InvoiceDocumentKind =
+  | "legacy"
+  | "payment_instruction"
+  | "platform_fee"
+  | "motohub_inspection";
 
 export type Invoice = {
   id: string;
-  deal_id: string;
+  deal_id: string | null;
+  inspection_request_id?: string | null;
   user_id: string;
   party: InvoiceParty;
   document_kind?: InvoiceDocumentKind;

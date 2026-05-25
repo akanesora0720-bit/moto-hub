@@ -4,11 +4,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { canBuyerFileComplaint } from "@/lib/complaint-eligibility";
+import { DealNextStepBanner } from "@/components/DealNextStepBanner";
 import {
-  DEAL_STATUS_LABELS,
+  getDealNextStep,
+  type DealPrimaryAction,
+} from "@/lib/deal-next-steps";
+import {
   buyerDealLabel,
   formatPickupSchedule,
   formatTransferDeadline,
+  partyDealActionHint,
+  partyDealStatusBadge,
   sellerDealLabel,
 } from "@/lib/deal-flow";
 import { formatYen } from "@/lib/format";
@@ -79,6 +85,15 @@ export function DealActionPanel({
       return { error };
     });
 
+  const buyerReportPayment = () =>
+    run(async () => {
+      const supabase = createClient();
+      const { error } = await supabase.rpc("buyer_report_payment_sent", {
+        p_deal_id: deal.id,
+      });
+      return { error };
+    });
+
   const vehicleTax = calcTax(deal.agreed_price_ex_tax);
   const buyerTotalIncTax = calcVehiclePriceIncTax(deal.agreed_price_ex_tax);
 
@@ -95,9 +110,63 @@ export function DealActionPanel({
   const canMarkHandover = role === "seller" && deal.status === "funded";
   const canSellerConfirmPayment =
     role === "seller" && deal.status === "awaiting_payment";
+  const canBuyerReportPayment =
+    role === "buyer" &&
+    deal.status === "awaiting_payment" &&
+    !deal.buyer_payment_reported_at;
   const showComplaintLink = role === "buyer" && canBuyerFileComplaint(deal.status);
 
+  const nextStep = getDealNextStep(deal.status, role, {
+    buyerConfirmed: !!deal.buyer_confirmed_at,
+    sellerConfirmed: !!deal.seller_confirmed_at,
+    hasPickupScheduled: !!deal.pickup_scheduled_at,
+    buyerPaymentReported: !!deal.buyer_payment_reported_at,
+  });
+
+  const runPrimary = (action: DealPrimaryAction) => {
+    switch (action) {
+      case "buyer_report_payment":
+        return buyerReportPayment();
+      case "seller_confirm_payment":
+        return sellerConfirmPayment();
+      case "mark_handover":
+        return markHandover();
+      case "buyer_confirm":
+        return buyerConfirm();
+      case "seller_confirm":
+        return sellerConfirm();
+      default:
+        return;
+    }
+  };
+
+  const scrollTo = (targetId: string) => {
+    document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const bannerHasPrimary =
+    nextStep?.primaryAction &&
+    ((nextStep.primaryAction === "buyer_report_payment" && canBuyerReportPayment) ||
+      (nextStep.primaryAction === "seller_confirm_payment" && canSellerConfirmPayment) ||
+      (nextStep.primaryAction === "mark_handover" && canMarkHandover) ||
+      (nextStep.primaryAction === "buyer_confirm" && canBuyerConfirm) ||
+      (nextStep.primaryAction === "seller_confirm" && canSellerConfirm));
+
   return (
+    <div id="deal-primary-action" className="space-y-4">
+      {nextStep ? (
+        <DealNextStepBanner
+          step={nextStep}
+          loading={loading}
+          onScrollTo={nextStep.scrollTargetId ? scrollTo : undefined}
+          onPrimary={
+            bannerHasPrimary && nextStep.primaryAction
+              ? () => runPrimary(nextStep.primaryAction)
+              : undefined
+          }
+        />
+      ) : null}
+
     <div className="space-y-4 rounded-xl border border-border bg-card p-5">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
@@ -105,7 +174,7 @@ export function DealActionPanel({
           <p className="text-lg font-semibold text-accent">{progressLabel}</p>
         </div>
         <span className="rounded border border-border px-2 py-1 text-xs text-muted">
-          {DEAL_STATUS_LABELS[deal.status]}
+          {partyDealStatusBadge(deal.status, role)}
         </span>
       </div>
 
@@ -124,7 +193,15 @@ export function DealActionPanel({
         </div>
         {deal.status === "awaiting_payment" && role === "buyer" ? (
           <p className="text-xs text-amber-200/90">
-            入金指示書の売り手口座へ、税込総額を直接お振込みください。MotoHubは資金を預かりません。
+            {deal.buyer_payment_reported_at
+              ? `振込報告済（${new Date(deal.buyer_payment_reported_at).toLocaleString("ja-JP")}）— 売り手の入金確認をお待ちください。`
+              : "入金指示書の売り手口座へ税込総額を振込み、振込後は上のボタンで売り手・運営に知らせてください。"}
+          </p>
+        ) : null}
+        {deal.status === "awaiting_payment" && role === "seller" && deal.buyer_payment_reported_at ? (
+          <p className="text-xs text-emerald-200/90">
+            買い手が {new Date(deal.buyer_payment_reported_at).toLocaleString("ja-JP")}{" "}
+            に振込報告済みです。口座を確認して入金確認ボタンを押してください。
           </p>
         ) : null}
         {deal.funded_at ? (
@@ -176,54 +253,66 @@ export function DealActionPanel({
         ) : null}
       </dl>
 
-      {deal.status === "payout_ready" ? (
-        <p className="text-xs text-emerald-200/90">
-          双方の確認が揃いました。取引完了処理へ進みます。
-        </p>
+      {partyDealActionHint(deal.status, role) ? (
+        <p className="text-xs text-emerald-200/90">{partyDealActionHint(deal.status, role)}</p>
       ) : null}
 
-      <div className="flex flex-col gap-2">
-        {canSellerConfirmPayment ? (
-          <button
-            type="button"
-            disabled={loading}
-            onClick={sellerConfirmPayment}
-            className="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60"
-          >
-            {loading ? "処理中…" : "買い手からの入金を確認"}
-          </button>
-        ) : null}
-        {canMarkHandover ? (
-          <button
-            type="button"
-            disabled={loading}
-            onClick={markHandover}
-            className="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60"
-          >
-            {loading ? "処理中…" : "車両・書類の引渡完了（引取予定日登録後）"}
-          </button>
-        ) : null}
-        {canBuyerConfirm ? (
-          <button
-            type="button"
-            disabled={loading}
-            onClick={buyerConfirm}
-            className="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60"
-          >
-            {loading ? "処理中…" : "取引完了を確認（買い手）"}
-          </button>
-        ) : null}
-        {canSellerConfirm ? (
-          <button
-            type="button"
-            disabled={loading}
-            onClick={sellerConfirm}
-            className="rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60"
-          >
-            {loading ? "処理中…" : "取引完了を確認（売り手）"}
-          </button>
-        ) : null}
-      </div>
+      {!bannerHasPrimary ? (
+        <div className="flex flex-col gap-2">
+          {canBuyerReportPayment ? (
+            <button
+              type="button"
+              disabled={loading}
+              onClick={buyerReportPayment}
+              className="min-h-12 rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-black disabled:opacity-60 touch-manipulation"
+            >
+              {loading ? "処理中…" : "振込した（売り手・運営に知らせる）"}
+            </button>
+          ) : null}
+          {canSellerConfirmPayment ? (
+            <button
+              type="button"
+              disabled={loading}
+              onClick={sellerConfirmPayment}
+              className="min-h-12 rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-black disabled:opacity-60 touch-manipulation"
+            >
+              {loading ? "処理中…" : "買い手からの入金を確認"}
+            </button>
+          ) : null}
+          {canMarkHandover ? (
+            <button
+              type="button"
+              disabled={loading}
+              onClick={markHandover}
+              className="min-h-12 rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-black disabled:opacity-60 touch-manipulation"
+            >
+              {loading ? "処理中…" : "車両・書類の引渡完了（引取予定日登録後）"}
+            </button>
+          ) : null}
+          {canBuyerConfirm ? (
+            <button
+              type="button"
+              disabled={loading}
+              onClick={buyerConfirm}
+              className="min-h-12 rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-black disabled:opacity-60 touch-manipulation"
+            >
+              {loading ? "処理中…" : "取引完了を確認（買い手）"}
+            </button>
+          ) : null}
+          {canSellerConfirm ? (
+            <button
+              type="button"
+              disabled={loading}
+              onClick={sellerConfirm}
+              className="min-h-12 rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-black disabled:opacity-60 touch-manipulation"
+            >
+              {loading ? "処理中…" : "取引完了を確認（売り手）"}
+            </button>
+          ) : null}
+        </div>
+      ) : (
+        <p className="text-xs text-muted">操作ボタンは上の黄色い枠内です。</p>
+      )}
 
       {showComplaintLink ? (
         <Link
@@ -235,6 +324,7 @@ export function DealActionPanel({
       ) : null}
 
       {message ? <p className="text-sm text-rose-300">{message}</p> : null}
+    </div>
     </div>
   );
 }

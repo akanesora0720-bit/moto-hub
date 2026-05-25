@@ -4,6 +4,7 @@ import {
   DEAL_STATUS_LABELS,
   buyerDealLabel,
   isDealActive,
+  partyDealStatusBadge,
   sellerDealLabel,
 } from "@/lib/deal-flow";
 import { formatYen } from "@/lib/format";
@@ -52,7 +53,7 @@ export default async function DealsPage() {
         <div>
           <h1 className="text-2xl font-semibold">取引</h1>
           <p className="mt-1 text-sm text-muted">
-            入金は運営預かり。車両・書類は同時引渡。双方確認後に売り手へ振込します。
+            車両代金は買い手が売り手へ直接お振込み。引渡後に双方で完了確認し、運営が取引を完了にします。
           </p>
         </div>
 
@@ -72,7 +73,7 @@ export default async function DealsPage() {
                     <p className="font-medium">{d.title}</p>
                     <p className="mt-1 text-sm text-accent">{d.label}</p>
                     <p className="mt-1 text-xs text-muted">
-                      {d.role === "buyer" ? "購入" : "出品"} · {DEAL_STATUS_LABELS[d.status]}
+                      {d.role === "buyer" ? "購入" : "出品"} · {partyDealStatusBadge(d.status, d.role)}
                       {d.overdue ? " · 名変期限超過" : ""}
                     </p>
                   </div>

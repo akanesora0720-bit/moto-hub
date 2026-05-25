@@ -71,8 +71,52 @@ export async function GET(
 
   const documentKind =
     (invoice as { document_kind?: string }).document_kind ?? "legacy";
+  const inspectionRequestId = (invoice as { inspection_request_id?: string | null })
+    .inspection_request_id;
 
   try {
+    if (documentKind === "motohub_inspection") {
+      let vehicleLabel = "—";
+      let referenceId = inspectionRequestId ?? invoice.id;
+      if (inspectionRequestId) {
+        const { data: req } = await supabase
+          .from("inspection_requests")
+          .select("id, vehicle_name, listings ( maker, model )")
+          .eq("id", inspectionRequestId)
+          .maybeSingle();
+        if (req) {
+          referenceId = req.id;
+          const li = Array.isArray(req.listings) ? req.listings[0] : req.listings;
+          vehicleLabel = li
+            ? `${li.maker} ${li.model}`
+            : (req.vehicle_name as string) ?? "—";
+        }
+      }
+
+      const issuer = await getMotohubIssuer(supabase);
+      const pdfBytes = await buildInvoicePdf({
+        invoiceId: invoice.id,
+        referenceLabel: "査定依頼ID",
+        referenceId,
+        partyLabel: "MotoHub査定サービス請求書",
+        billToName: profile?.store_name ?? profile?.email ?? "—",
+        vehicleLabel,
+        items: (items ?? []).map((i) => ({
+          label: i.label,
+          amountExTax: i.amount_ex_tax,
+          taxAmount: i.tax_amount,
+          amountIncTax: i.amount_inc_tax,
+        })),
+        totalExTax: invoice.total_ex_tax,
+        totalTax: invoice.total_tax,
+        totalIncTax: invoice.total_inc_tax,
+        issuedAt,
+        issuer,
+      });
+
+      return pdfResponse(pdfBytes, `inspection-invoice-${invoice.id.slice(0, 8)}.pdf`);
+    }
+
     if (documentKind === "payment_instruction") {
       let seller: Record<string, string | null | undefined> | null = null;
       const extended = await supabase

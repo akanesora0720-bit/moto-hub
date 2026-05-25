@@ -298,17 +298,14 @@ export default function OnboardingPage() {
               className="mt-2 block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-800 file:px-3 file:py-2 file:text-sm"
             />
           </label>
-          <label className="block text-sm">
-            <span className="text-muted">
-              都道府県 <span className="text-accent">*</span>
-            </span>
+          <div className="block text-sm">
             <PrefectureSelect
               value={dealerForm.prefecture}
               onChange={(prefecture) => setDealerForm((f) => ({ ...f, prefecture }))}
               required
             />
-            <p className="mt-1 text-xs text-muted">北海道から沖縄まで47都道府県から選択できます。</p>
-          </label>
+            <p className="mt-1 text-xs text-muted">北海道から沖縄まで47都道府県からタップして選択できます。</p>
+          </div>
           {dealerField("address", "住所", true)}
           {dealerField("phone", "電話番号", true)}
           <p className="text-xs font-medium text-muted">振込先口座（買い手への入金指示に使用）</p>
