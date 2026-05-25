@@ -36,6 +36,8 @@ export async function GET(req: NextRequest) {
         invoicesReviewPending: pending.invoicesReviewPending,
         payoutsAwaiting: pending.payoutsAwaiting,
         dealsClosurePending: pending.dealsClosurePending,
+        negotiationDeals: pending.negotiationDeals,
+        adminNegotiationPending: pending.adminNegotiationPending,
         adminWorkspacePending:
           pending.openInquiries +
           pending.dealsClosurePending +
@@ -49,13 +51,10 @@ export async function GET(req: NextRequest) {
 
   try {
     const stats = await fetchDealerActionStats(user.id);
-    const dealsAttention =
-      stats.dealsNeedingAttention +
-      (stats.dealsNeedingAttention > 0 ? stats.unreadDealBoard : 0);
-
     return NextResponse.json({
+      /** 商談タブ: 商談フェーズの取引のみ */
       negotiating: stats.negotiating,
-      dealsAttention,
+      dealsAttention: stats.negotiating,
       dealsNeedingAttention: stats.dealsNeedingAttention,
       newInquiries: stats.newInquiries,
       unreadNotifications: stats.unreadNotifications,

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SidebarNav } from "@/components/layout/SidebarNav";
 import { canAccessAdmin } from "@/lib/auth";
 import { adminNavItems, dealerNavItems, staffNavItems } from "@/lib/nav-config";
@@ -59,13 +59,23 @@ export function AppShell({
     });
   }, [isAdminProp, memberTypeProp, showAdminNavProp]);
 
-  useEffect(() => {
+  const refreshBadges = useCallback(() => {
     const scope = useAdminShell ? "admin" : "dealer";
-    fetch(`/api/dashboard/badges?scope=${scope}`)
+    fetch(`/api/dashboard/badges?scope=${scope}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : {}))
       .then((data) => setBadges(data as Record<string, number>))
       .catch(() => {});
-  }, [pathname, useAdminShell]);
+  }, [useAdminShell]);
+
+  useEffect(() => {
+    refreshBadges();
+  }, [pathname, refreshBadges]);
+
+  useEffect(() => {
+    const onFocus = () => refreshBadges();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [refreshBadges]);
 
   const logout = async () => {
     const supabase = createClient();

@@ -1,4 +1,8 @@
 import { countDealsNeedingDealerAttention } from "@/lib/dealer-deal-attention";
+import {
+  countNegotiationPhaseDeals,
+  countOrphanOpenInquiries,
+} from "@/lib/open-inquiry-count";
 import { createClient } from "@/lib/supabase/server";
 import type { DealStatus } from "@/lib/types";
 
@@ -66,30 +70,12 @@ export async function fetchDealerActionStats(userId: string): Promise<DealerActi
   const listingIds = (listingsRes.data ?? []).map((l) => l.id);
   const deals = dealsRes.data ?? [];
 
-  /** 進行中の取引に紐づく open 問い合わせのみ（完了・取消のみの問い合わせは除外） */
-  const inquiryIdsWithOpenDeal = new Set(
-    deals
-      .filter((d) => NEGOTIATION_PHASE_STATUSES.includes(d.status as DealStatus))
-      .map((d) => d.inquiry_id)
-      .filter((id): id is string => !!id),
-  );
-
-  let newInquiries = 0;
-  if (listingIds.length > 0) {
-    const { data: openInquiries } = await supabase
-      .from("inquiries")
-      .select("id")
-      .eq("status", "open")
-      .in("listing_id", listingIds);
-
-    newInquiries = (openInquiries ?? []).filter(
-      (inq) => !inquiryIdsWithOpenDeal.has(inq.id),
-    ).length;
-  }
-
-  const negotiating = deals.filter((d) =>
-    NEGOTIATION_PHASE_STATUSES.includes(d.status as DealStatus),
-  ).length;
+  const [newInquiries, negotiating] = await Promise.all([
+    listingIds.length > 0
+      ? countOrphanOpenInquiries(supabase, { listingIds })
+      : Promise.resolve(0),
+    countNegotiationPhaseDeals(supabase, { partyUserId: userId }),
+  ]);
 
   const awaitingPayment = deals.filter(
     (d) => d.buyer_id === userId && d.status === "awaiting_payment",

@@ -1,3 +1,9 @@
+import {
+  countActionableOpenInquiries,
+  countAdminNegotiationPending,
+  countNegotiationPhaseDeals,
+  countOrphanOpenInquiries,
+} from "@/lib/open-inquiry-count";
 import { createServiceClient } from "@/lib/server-supabase";
 
 export type AdminPendingCounts = {
@@ -13,6 +19,12 @@ export type AdminPendingCounts = {
   pickupSchedulePending: number;
   /** 運営が「取引を完了」にする必要がある件数 */
   dealsClosurePending: number;
+  /** 商談フェーズの取引件数 */
+  negotiationDeals: number;
+  /** 商談タブ用（商談取引 + 要対応の open 問い合わせ） */
+  adminNegotiationPending: number;
+  /** 取引未作成の open 問い合わせ */
+  orphanInquiries: number;
 };
 
 export async function fetchAdminPendingCounts(
@@ -20,7 +32,6 @@ export async function fetchAdminPendingCounts(
 ): Promise<AdminPendingCounts> {
   const supabase = createServiceClient();
   const [
-    inquiries,
     support,
     disputes,
     inspections,
@@ -33,10 +44,6 @@ export async function fetchAdminPendingCounts(
     payoutReady,
     payoutDone,
   ] = await Promise.all([
-    supabase
-      .from("inquiries")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "open"),
     supabase
       .from("support_tickets")
       .select("id", { count: "exact", head: true })
@@ -89,8 +96,19 @@ export async function fetchAdminPendingCounts(
       ? boardUnread.data
       : Number(boardUnread.data ?? 0);
 
+  const [openInquiries, negotiationDeals, adminNegotiationPending, orphanInquiries] =
+    await Promise.all([
+      countActionableOpenInquiries(supabase),
+      countNegotiationPhaseDeals(supabase),
+      countAdminNegotiationPending(supabase),
+      countOrphanOpenInquiries(supabase),
+    ]);
+
   return {
-    openInquiries: inquiries.count ?? 0,
+    openInquiries,
+    negotiationDeals,
+    adminNegotiationPending,
+    orphanInquiries,
     openSupport: support.count ?? 0,
     openDisputes: disputes.count ?? 0,
     openInspectionRequests: inspections.count ?? 0,
