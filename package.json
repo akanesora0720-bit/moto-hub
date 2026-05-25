@@ -9,9 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@pdf-lib/fontkit": "^1.1.1",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.1",
-    "nodemailer": "^7.0.3",
     "next": "16.2.6",
     "nodemailer": "^7.0.3",
     "pdf-lib": "^1.17.1",
