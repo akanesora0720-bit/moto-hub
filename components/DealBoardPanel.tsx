@@ -29,6 +29,7 @@ export function DealBoardPanel({
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const prevMessageCount = useRef(0);
 
   const load = useCallback(async () => {
     if (!boardVisible) {
@@ -55,7 +56,11 @@ export function DealBoardPanel({
   }, [load]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (loading) return;
+    if (messages.length > prevMessageCount.current && prevMessageCount.current > 0) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+    prevMessageCount.current = messages.length;
   }, [messages.length, loading]);
 
   const submit = async () => {

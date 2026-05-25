@@ -22,6 +22,7 @@ export default async function DealsPage() {
     .select(
       `
       id, status, agreed_price_ex_tax, buyer_id, seller_id, transfer_overdue,
+      buyer_payment_reported_at,
       listings ( maker, model )
     `,
     )
@@ -37,7 +38,12 @@ export default async function DealsPage() {
       title: listing ? `${listing.maker} ${listing.model}` : "—",
       status,
       role: isBuyer ? ("buyer" as const) : ("seller" as const),
-      label: isBuyer ? buyerDealLabel(status) : sellerDealLabel(status),
+      label: isBuyer
+        ? buyerDealLabel(status)
+        : sellerDealLabel(status, {
+            buyerPaymentReported: !!row.buyer_payment_reported_at,
+          }),
+      buyerPaymentReported: !!row.buyer_payment_reported_at,
       price: row.agreed_price_ex_tax,
       overdue: row.transfer_overdue,
       active: isDealActive(status),
@@ -65,7 +71,13 @@ export default async function DealsPage() {
             active.map((d) => (
               <Link
                 key={d.id}
-                href={`/deals/${d.id}`}
+                href={
+                  d.role === "seller" &&
+                  d.status === "awaiting_payment" &&
+                  d.buyerPaymentReported
+                    ? `/deals/${d.id}#deal-primary-action`
+                    : `/deals/${d.id}`
+                }
                 className="block rounded-xl border border-border bg-card p-4 transition hover:border-accent/40"
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
@@ -74,6 +86,11 @@ export default async function DealsPage() {
                     <p className="mt-1 text-sm text-accent">{d.label}</p>
                     <p className="mt-1 text-xs text-muted">
                       {d.role === "buyer" ? "購入" : "出品"} · {partyDealStatusBadge(d.status, d.role)}
+                      {d.role === "seller" &&
+                      d.status === "awaiting_payment" &&
+                      d.buyerPaymentReported ? (
+                        <span className="text-emerald-300"> · 買い手振込報告あり</span>
+                      ) : null}
                       {d.overdue ? " · 名変期限超過" : ""}
                     </p>
                   </div>

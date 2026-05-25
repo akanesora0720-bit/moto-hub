@@ -2,7 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { ActionButton, AsyncMessage, AsyncStatusBanner } from "@/components/ui/async-ui";
 import { formatPickupSchedule } from "@/lib/deal-flow";
+import { useAsyncAction } from "@/lib/use-async-action";
 import { createClient } from "@/lib/supabase/client";
 import type { DealStatus } from "@/lib/types";
 
@@ -26,8 +28,8 @@ export function DealPickupSchedulePanel({
 }) {
   const router = useRouter();
   const [value, setValue] = useState(() => toDatetimeLocalValue(pickupScheduledAt));
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [validationHint, setValidationHint] = useState("");
+  const { loading, success, message, run } = useAsyncAction();
 
   const show =
     readOnly ||
@@ -45,35 +47,31 @@ export function DealPickupSchedulePanel({
 
   const canEdit = !readOnly && role === "buyer" && status === "funded";
 
-  const submit = async () => {
-    if (!value) {
-      setMessage("引取予定日時を選択してください。");
-      return;
-    }
-    const iso = new Date(value).toISOString();
-    if (Number.isNaN(Date.parse(iso))) {
-      setMessage("日時が不正です。");
-      return;
-    }
-    if (new Date(iso) < new Date()) {
-      setMessage("引取予定は現在より後の日時にしてください。");
-      return;
-    }
-
-    setLoading(true);
-    setMessage("");
-    const supabase = createClient();
-    const { error } = await supabase.rpc("buyer_set_pickup_schedule", {
-      p_deal_id: dealId,
-      p_pickup_scheduled_at: iso,
+  const submit = () =>
+    run(async () => {
+      if (!value) {
+        setValidationHint("引取予定日時を選択してください。");
+        return { error: null };
+      }
+      const iso = new Date(value).toISOString();
+      if (Number.isNaN(Date.parse(iso))) {
+        setValidationHint("日時が不正です。");
+        return { error: null };
+      }
+      if (new Date(iso) < new Date()) {
+        setValidationHint("引取予定は現在より後の日時にしてください。");
+        return { error: null };
+      }
+      setValidationHint("");
+      const supabase = createClient();
+      const { error } = await supabase.rpc("buyer_set_pickup_schedule", {
+        p_deal_id: dealId,
+        p_pickup_scheduled_at: iso,
+      });
+      if (error) return { error: error.message };
+      router.refresh();
+      return { okMessage: "引取予定日時を登録しました。" };
     });
-    setLoading(false);
-    if (error) {
-      setMessage(error.message);
-      return;
-    }
-    router.refresh();
-  };
 
   const scheduledLabel = useMemo(
     () => formatPickupSchedule(pickupScheduledAt),

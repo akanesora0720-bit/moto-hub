@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { ActionButton, AsyncMessage, AsyncStatusBanner } from "@/components/ui/async-ui";
 import { DEAL_STATUS_LABELS } from "@/lib/deal-flow";
+import { useAsyncAction } from "@/lib/use-async-action";
 import { createClient } from "@/lib/supabase/client";
 import type { DealStatus } from "@/lib/types";
 
@@ -15,26 +16,21 @@ export function AdminDealCompletePanel({
   status: DealStatus;
 }) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+  const { loading, success, message, run } = useAsyncAction();
 
   if (status !== "payout_ready" && status !== "payout_done") return null;
 
-  const advance = async (next: DealStatus) => {
-    setLoading(true);
-    setMessage("");
-    const supabase = createClient();
-    const { error } = await supabase.rpc("admin_advance_deal", {
-      p_deal_id: dealId,
-      p_status: next,
+  const advance = (next: DealStatus) =>
+    run(async () => {
+      const supabase = createClient();
+      const { error } = await supabase.rpc("admin_advance_deal", {
+        p_deal_id: dealId,
+        p_status: next,
+      });
+      if (error) return { error: error.message };
+      router.refresh();
+      return { okMessage: "更新しました。" };
     });
-    setLoading(false);
-    if (error) {
-      setMessage(error.message);
-      return;
-    }
-    router.refresh();
-  };
 
   const completeInOneStep = async () => {
     if (
@@ -44,34 +40,32 @@ export function AdminDealCompletePanel({
     ) {
       return;
     }
-    setLoading(true);
-    setMessage("");
-    const supabase = createClient();
-    if (status === "payout_ready") {
-      const { error: e1 } = await supabase.rpc("admin_advance_deal", {
-        p_deal_id: dealId,
-        p_status: "payout_done",
-      });
-      if (e1) {
-        setLoading(false);
-        setMessage(e1.message);
-        return;
+    await run(async () => {
+      const supabase = createClient();
+      if (status === "payout_ready") {
+        const { error: e1 } = await supabase.rpc("admin_advance_deal", {
+          p_deal_id: dealId,
+          p_status: "payout_done",
+        });
+        if (e1) return { error: e1.message };
       }
-    }
-    const { error: e2 } = await supabase.rpc("admin_advance_deal", {
-      p_deal_id: dealId,
-      p_status: "completed",
+      const { error: e2 } = await supabase.rpc("admin_advance_deal", {
+        p_deal_id: dealId,
+        p_status: "completed",
+      });
+      if (e2) return { error: e2.message };
+      router.refresh();
+      return { okMessage: "取引を完了にしました。" };
     });
-    setLoading(false);
-    if (e2) {
-      setMessage(e2.message);
-      return;
-    }
-    router.refresh();
   };
 
   return (
-    <div className="space-y-4 rounded-xl border-2 border-emerald-500/50 bg-emerald-950/30 p-4">
+    <div
+      className="space-y-4 rounded-xl border-2 border-emerald-500/50 bg-emerald-950/30 p-4"
+      aria-busy={loading}
+    >
+      <AsyncStatusBanner loading={loading} />
+
       <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">運営操作</p>
       <h3 className="text-lg font-bold text-emerald-50">
         {status === "payout_ready"
@@ -85,37 +79,39 @@ export function AdminDealCompletePanel({
 
       {status === "payout_ready" ? (
         <>
-          <button
-            type="button"
-            disabled={loading}
+          <ActionButton
+            size="lg"
+            loading={loading}
+            success={success}
+            loadingLabel="処理中…"
             onClick={completeInOneStep}
-            className="min-h-14 w-full rounded-xl bg-accent px-4 py-4 text-base font-bold text-black disabled:opacity-60 touch-manipulation"
           >
-            {loading ? "処理中…" : "取引を完了にする（運営）"}
-          </button>
+            取引を完了にする（運営）
+          </ActionButton>
           <details className="text-sm text-muted">
             <summary className="cursor-pointer text-emerald-200/80">2段階で操作する場合</summary>
-            <div className="mt-2 space-y-2">
-              <button
-                type="button"
-                disabled={loading}
+            <div className="mt-2">
+              <ActionButton
+                variant="secondary"
+                loading={loading}
+                loadingLabel="処理中…"
                 onClick={() => advance("payout_done")}
-                className="block w-full rounded-lg border border-border px-4 py-2.5 text-sm hover:border-accent/40 disabled:opacity-60"
               >
                 ① 完了登録（{DEAL_STATUS_LABELS.payout_done}）
-              </button>
+              </ActionButton>
             </div>
           </details>
         </>
       ) : (
-        <button
-          type="button"
-          disabled={loading}
+        <ActionButton
+          size="lg"
+          loading={loading}
+          success={success}
+          loadingLabel="処理中…"
           onClick={() => advance("completed")}
-          className="min-h-14 w-full rounded-xl bg-accent px-4 py-4 text-base font-bold text-black disabled:opacity-60 touch-manipulation"
         >
-          {loading ? "処理中…" : "取引を完了にする（運営）"}
-        </button>
+          取引を完了にする（運営）
+        </ActionButton>
       )}
 
       <p className="text-xs text-muted">
@@ -123,9 +119,8 @@ export function AdminDealCompletePanel({
         <Link href="/admin/workspace?tab=deals" className="text-accent hover:underline">
           商談・取引 → 取引タブ
         </Link>
-        （操作列のリンクでも同じ処理です）
       </p>
-      {message ? <p className="text-sm text-rose-300">{message}</p> : null}
+      <AsyncMessage message={message} success={success} />
     </div>
   );
 }

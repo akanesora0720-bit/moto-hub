@@ -77,7 +77,7 @@ function getSellerNextStep(
     case "awaiting_payment":
       return {
         phase: "入金確認",
-        stepNumber: 2,
+        stepNumber: opts.buyerPaymentReported ? 4 : 2,
         stepTotal: 4,
         title: opts.buyerPaymentReported
           ? "買い手が振込済みと報告しています"
@@ -94,9 +94,13 @@ function getSellerNextStep(
               "③ この画面の黄色いボタンをタップしてください。",
             ],
         primaryAction: "seller_confirm_payment",
-        primaryButtonLabel: "③ 買い手からの入金を確認した",
+        primaryButtonLabel: opts.buyerPaymentReported
+          ? "④ 買い手からの入金を確認した"
+          : "③ 買い手からの入金を確認した",
         waitOnly: false,
-        scrollTargetId: "deal-billing",
+        scrollTargetId: opts.buyerPaymentReported
+          ? "deal-primary-action"
+          : "deal-billing",
       };
     case "funded":
       return {

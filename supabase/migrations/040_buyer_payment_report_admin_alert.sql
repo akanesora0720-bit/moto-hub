@@ -1,9 +1,10 @@
--- Buyer reports vehicle payment sent (notifies seller + ops; seller still confirms → funded)
+-- Reinforce buyer payment report: admin deal_alert + idempotent function
+-- Requires deal_alert_type value 'buyer_payment_reported' (see 041 if enum error)
+
+alter type public.deal_alert_type add value if not exists 'buyer_payment_reported';
 
 alter table public.deals
   add column if not exists buyer_payment_reported_at timestamptz;
-
-comment on column public.deals.buyer_payment_reported_at is '買い手が車両代金の振込完了を報告した日時';
 
 create or replace function public.buyer_report_payment_sent(p_deal_id uuid)
 returns public.deals
@@ -44,6 +45,13 @@ begin
   v_body := format(
     '取引 %s: %s %s — 買い手が車両代金の振込完了を報告しました。売り手の口座入金を確認し、取引画面で「入金を確認」を押してください。',
     p_deal_id, v_maker, v_model
+  );
+
+  insert into public.deal_alerts (deal_id, alert_type, message)
+  values (
+    p_deal_id,
+    'buyer_payment_reported',
+    format('買い手振込報告: %s %s — 売り手の入金確認待ち', v_maker, v_model)
   );
 
   perform public.notify_enqueue(
@@ -89,9 +97,21 @@ $$;
 
 grant execute on function public.buyer_report_payment_sent(uuid) to authenticated;
 
-insert into public.notification_templates (event_type, channel, subject_template, body_template) values
-  ('deal.buyer_payment_reported', 'email', '[MotoHub] 買い手振込報告', '買い手が車両代金の振込完了を報告しました。\n\n{{body}}\n\n管理画面で取引を確認してください。')
-on conflict (event_type) do update
-set subject_template = excluded.subject_template,
-    body_template = excluded.body_template,
-    enabled = true;
+-- Backfill admin alerts for deals already reported (no duplicate alert type per deal)
+insert into public.deal_alerts (deal_id, alert_type, message)
+select
+  d.id,
+  'buyer_payment_reported',
+  format(
+    '買い手振込報告: %s %s — 売り手の入金確認待ち',
+    coalesce(l.maker, '—'),
+    coalesce(l.model, '—')
+  )
+from public.deals d
+join public.listings l on l.id = d.listing_id
+where d.status = 'awaiting_payment'
+  and d.buyer_payment_reported_at is not null
+  and not exists (
+    select 1 from public.deal_alerts a
+    where a.deal_id = d.id and a.alert_type = 'buyer_payment_reported' and a.resolved = false
+  );

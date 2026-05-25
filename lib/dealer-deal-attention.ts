@@ -36,7 +36,8 @@ export function dealNeedsDealerAttention(d: DealRow, userId: string): boolean {
       return true;
     case "awaiting_payment":
       if (isBuyer) return !d.buyer_payment_reported_at;
-      return true;
+      if (isSeller) return !!d.buyer_payment_reported_at;
+      return false;
     case "funded":
       if (isBuyer) return true;
       return !!d.pickup_scheduled_at;

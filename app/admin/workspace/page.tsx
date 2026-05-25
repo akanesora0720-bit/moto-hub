@@ -101,6 +101,7 @@ export default function AdminPage() {
       transfer_deadline_at: string | null;
       funded_at: string | null;
       seller_payment_confirmed_at: string | null;
+      buyer_payment_reported_at: string | null;
       pickup_scheduled_at: string | null;
       buyer_confirmed_at: string | null;
       seller_confirmed_at: string | null;
@@ -121,6 +122,7 @@ export default function AdminPage() {
     transferOverdue: 0,
     pickupSchedulePending: 0,
     dealsClosurePending: 0,
+    buyerPaymentReportedPending: 0,
   });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [dealAlerts, setDealAlerts] = useState<
@@ -150,6 +152,7 @@ export default function AdminPage() {
       pcPickup,
       pcPayoutReady,
       pcPayoutDone,
+      pcBuyerPaymentReported,
     ] = await Promise.all([
       supabase
         .from("inquiries")
@@ -193,7 +196,7 @@ export default function AdminPage() {
         .select(
           `
           id, status, agreed_price_ex_tax, transfer_overdue, transfer_deadline_at,
-          funded_at, seller_payment_confirmed_at, pickup_scheduled_at,
+          funded_at, seller_payment_confirmed_at, buyer_payment_reported_at, pickup_scheduled_at,
           buyer_confirmed_at, seller_confirmed_at, seller_intent_confirmed, buyer_intent_confirmed,
           listings ( maker, model ),
           buyer:profiles!deals_buyer_id_fkey ( store_name ),
@@ -217,6 +220,11 @@ export default function AdminPage() {
       supabase.from("deals").select("id", { count: "exact", head: true }).eq("status", "funded").is("pickup_scheduled_at", null),
       supabase.from("deals").select("id", { count: "exact", head: true }).eq("status", "payout_ready"),
       supabase.from("deals").select("id", { count: "exact", head: true }).eq("status", "payout_done"),
+      supabase
+        .from("deals")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "awaiting_payment")
+        .not("buyer_payment_reported_at", "is", null),
     ]);
     setInquiries(
       (inq.data ?? []).map((row) => {
@@ -293,6 +301,7 @@ export default function AdminPage() {
           transfer_deadline_at: row.transfer_deadline_at ?? null,
           funded_at: row.funded_at ?? null,
           seller_payment_confirmed_at: row.seller_payment_confirmed_at ?? null,
+          buyer_payment_reported_at: row.buyer_payment_reported_at ?? null,
           pickup_scheduled_at: row.pickup_scheduled_at ?? null,
           buyer_confirmed_at: row.buyer_confirmed_at ?? null,
           seller_confirmed_at: row.seller_confirmed_at ?? null,
@@ -315,6 +324,7 @@ export default function AdminPage() {
       transferOverdue: pcTr.count ?? 0,
       pickupSchedulePending: pcPickup.count ?? 0,
       dealsClosurePending: (pcPayoutReady.count ?? 0) + (pcPayoutDone.count ?? 0),
+      buyerPaymentReportedPending: pcBuyerPaymentReported.count ?? 0,
     });
   }, []);
 
@@ -586,9 +596,12 @@ export default function AdminPage() {
                 label: "取引・完了確認",
                 count:
                   pending.dealsClosurePending +
+                  pending.buyerPaymentReportedPending +
                   pending.pickupSchedulePending +
                   pending.transferOverdue,
-                highlight: pending.dealsClosurePending > 0,
+                highlight:
+                  pending.dealsClosurePending > 0 ||
+                  pending.buyerPaymentReportedPending > 0,
               },
             ] as const
           ).map(({ key, label, count, highlight }) => (
@@ -947,6 +960,17 @@ export default function AdminPage() {
 
         {tab === "deals" ? (
           <div className="space-y-6">
+            {pending.buyerPaymentReportedPending > 0 ? (
+              <div className="rounded-xl border-2 border-sky-500/50 bg-sky-950/30 p-4">
+                <p className="text-base font-semibold text-sky-50">
+                  {pending.buyerPaymentReportedPending} 件 — 買い手が振込報告済み（売り手の入金確認待ち）
+                </p>
+                <p className="mt-2 text-sm text-sky-100/90">
+                  車両代金は当事者間で完結します。下の一覧「入金・引取」列で振込報告日時を確認し、売り手の確認を促してください。
+                </p>
+              </div>
+            ) : null}
+
             {pending.dealsClosurePending > 0 ? (
               <div className="rounded-xl border-2 border-amber-500/60 bg-amber-950/40 p-4">
                 <p className="text-base font-semibold text-amber-50">
@@ -1010,7 +1034,14 @@ export default function AdminPage() {
                   {deals
                     .filter((row) => !hideCancelledDeals || row.status !== "cancelled")
                     .map((row) => (
-                    <tr key={row.id} className="border-b border-border/60 align-top">
+                    <tr
+                      key={row.id}
+                      className={`border-b border-border/60 align-top ${
+                        row.status === "awaiting_payment" && row.buyer_payment_reported_at
+                          ? "bg-sky-950/20"
+                          : ""
+                      }`}
+                    >
                       <td className="px-4 py-3">
                         {row.listing ? `${row.listing.maker} ${row.listing.model}` : "—"}
                         <Link
@@ -1044,7 +1075,18 @@ export default function AdminPage() {
                         />
                       </td>
                       <td className="px-4 py-3 text-xs">
-                        入金{" "}
+                        振込報告{" "}
+                        {row.buyer_payment_reported_at ? (
+                          <span className="text-sky-300">
+                            {formatPickupSchedule(row.buyer_payment_reported_at)}
+                          </span>
+                        ) : row.status === "awaiting_payment" ? (
+                          <span className="text-muted">未</span>
+                        ) : (
+                          "—"
+                        )}
+                        <br />
+                        入金確認{" "}
                         {row.seller_payment_confirmed_at || row.funded_at ? (
                           <span className="text-emerald-300">済</span>
                         ) : (

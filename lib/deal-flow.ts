@@ -60,13 +60,18 @@ export function buyerDealLabel(status: DealStatus): string {
 }
 
 /** 販売側の進捗表示 */
-export function sellerDealLabel(status: DealStatus): string {
+export function sellerDealLabel(
+  status: DealStatus,
+  opts?: { buyerPaymentReported?: boolean },
+): string {
   switch (status) {
     case "inquiry":
     case "negotiating":
     case "agreed":
     case "awaiting_payment":
-      return "買い手の入金待ち";
+      return opts?.buyerPaymentReported
+        ? "振込報告あり・入金確認"
+        : "買い手の入金待ち";
     case "funded":
       return "引取予定待ち";
     case "handover_done":

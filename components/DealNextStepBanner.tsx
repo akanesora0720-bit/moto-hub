@@ -1,17 +1,26 @@
 "use client";
 
+import { ActionButton, AsyncStatusBanner } from "@/components/ui/async-ui";
 import type { DealNextStep } from "@/lib/deal-next-steps";
 
 type Props = {
   step: DealNextStep;
   loading: boolean;
+  success?: boolean;
   onPrimary?: () => void;
   onScrollTo?: (targetId: string) => void;
 };
 
-export function DealNextStepBanner({ step, loading, onPrimary, onScrollTo }: Props) {
+export function DealNextStepBanner({ step, loading, success, onPrimary, onScrollTo }: Props) {
   return (
-    <div className="space-y-4 rounded-xl border-2 border-amber-500/60 bg-amber-950/30 p-4">
+    <div
+      className={`space-y-4 rounded-xl border-2 border-amber-500/60 bg-amber-950/30 p-4 ${
+        loading ? "border-accent/50" : ""
+      }`}
+      aria-busy={loading}
+    >
+      <AsyncStatusBanner loading={loading} label="送信中… しばらくお待ちください" />
+
       <div className="flex flex-wrap items-center gap-2">
         <span className="rounded-full bg-amber-500 px-2.5 py-0.5 text-xs font-bold text-black">
           ステップ {step.stepNumber} / {step.stepTotal}
@@ -30,8 +39,9 @@ export function DealNextStepBanner({ step, loading, onPrimary, onScrollTo }: Pro
       {step.scrollTargetId && onScrollTo ? (
         <button
           type="button"
+          disabled={loading}
           onClick={() => onScrollTo(step.scrollTargetId!)}
-          className="w-full rounded-lg border border-amber-500/40 bg-zinc-950/80 px-4 py-3 text-sm font-medium text-amber-100 touch-manipulation active:bg-zinc-900"
+          className="w-full rounded-lg border border-amber-500/40 bg-zinc-950/80 px-4 py-3 text-sm font-medium text-amber-100 touch-manipulation active:bg-zinc-900 disabled:opacity-50"
         >
           ↓ 関連セクションへ移動
         </button>
@@ -44,14 +54,16 @@ export function DealNextStepBanner({ step, loading, onPrimary, onScrollTo }: Pro
       ) : null}
 
       {step.primaryButtonLabel && onPrimary ? (
-        <button
-          type="button"
-          disabled={loading}
+        <ActionButton
+          size="lg"
+          loading={loading}
+          success={success}
+          loadingLabel="送信中…"
+          successLabel="送信済み"
           onClick={onPrimary}
-          className="min-h-14 w-full rounded-xl bg-accent px-4 py-4 text-base font-bold text-black shadow-lg disabled:opacity-60 touch-manipulation"
         >
-          {loading ? "処理中…" : step.primaryButtonLabel}
-        </button>
+          {step.primaryButtonLabel}
+        </ActionButton>
       ) : null}
     </div>
   );

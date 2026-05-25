@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { AdminDealCompletePanel } from "@/components/AdminDealCompletePanel";
 import { DealActionPanel } from "@/components/DealActionPanel";
+import { DealDetailFocus } from "@/components/DealDetailFocus";
 import { DealPickupSchedulePanel } from "@/components/DealPickupSchedulePanel";
 import { DealCounterpartyContact } from "@/components/DealCounterpartyContact";
 import { canRevealDealContacts } from "@/lib/deal-contact";
@@ -137,8 +138,18 @@ export default async function DealDetailPage({
     </DealCard>
   );
 
+  const sellerPaymentActionFocus =
+    role === "seller" &&
+    deal.status === "awaiting_payment" &&
+    !!deal.buyer_payment_reported_at;
+
   const actionSection = (
-    <DealCard title="今やること・詳細" step={billingFirst ? 4 : 3} highlight={!adminViewOnly}>
+    <DealCard
+      id="deal-primary-action"
+      title="今やること・詳細"
+      step={billingFirst ? 4 : 3}
+      highlight={!adminViewOnly}
+    >
       {adminViewOnly ? (
         <p className="text-sm text-muted">
           運営表示。ステータス変更は管理画面の取引タブから行ってください。
@@ -152,6 +163,7 @@ export default async function DealDetailPage({
   return (
     <AuthenticatedShell>
       <div className="mx-auto max-w-xl space-y-5">
+        {sellerPaymentActionFocus ? <DealDetailFocus autoFocus /> : null}
         <Link href="/deals" className="text-sm text-muted hover:text-accent">
           ← 取引一覧
         </Link>
