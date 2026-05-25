@@ -43,34 +43,48 @@ export default async function DealerHomePage() {
         <section>
           <h2 className="mb-3 text-sm font-medium text-muted">要対応</h2>
           <div className="flex flex-wrap gap-3">
-            <StatBadge
-              count={actions.newInquiries}
-              label="新着問い合わせ"
-              href="/listings/mine"
-              urgent
-            />
-            <StatBadge
-              count={actions.negotiating}
-              label="商談中"
-              href="/deals"
-            />
-            <StatBadge
-              count={actions.awaitingPayment}
-              label="入金待ち"
-              href="/deals"
-              urgent={actions.awaitingPayment > 0}
-            />
-            <StatBadge
-              count={actions.documentsPending}
-              label="書類・引渡"
-              href="/deals"
-            />
-            <StatBadge
-              count={actions.unreadNotifications}
-              label="運営通知"
-              href="/notifications"
-              urgent={actions.unreadNotifications > 0}
-            />
+            {actions.newInquiries > 0 ? (
+              <StatBadge
+                count={actions.newInquiries}
+                label="新着問い合わせ"
+                href="/listings/mine"
+                urgent
+              />
+            ) : null}
+            {actions.negotiating > 0 ? (
+              <StatBadge count={actions.negotiating} label="商談中" href="/deals" />
+            ) : null}
+            {actions.awaitingPayment > 0 ? (
+              <StatBadge
+                count={actions.awaitingPayment}
+                label="入金待ち"
+                href="/deals"
+                urgent
+              />
+            ) : null}
+            {actions.documentsPending > 0 ? (
+              <StatBadge
+                count={actions.documentsPending}
+                label="書類・引渡"
+                href="/deals"
+                urgent
+              />
+            ) : null}
+            {actions.unreadNotifications > 0 ? (
+              <StatBadge
+                count={actions.unreadNotifications}
+                label="運営通知"
+                href="/notifications"
+                urgent
+              />
+            ) : null}
+            {actions.newInquiries === 0 &&
+            actions.negotiating === 0 &&
+            actions.awaitingPayment === 0 &&
+            actions.documentsPending === 0 &&
+            actions.unreadNotifications === 0 ? (
+              <p className="text-sm text-muted">現在、要対応の項目はありません。</p>
+            ) : null}
           </div>
         </section>
 

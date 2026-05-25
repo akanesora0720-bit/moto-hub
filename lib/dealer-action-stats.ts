@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import type { DealStatus } from "@/lib/types";
 
 export type DealerActionStats = {
   newInquiries: number;
@@ -11,7 +12,8 @@ export type DealerActionStats = {
   openDisputes: number;
 };
 
-const ACTIVE_DEAL_STATUSES = [
+/** 進行中取引（完了・取消以外） */
+const ACTIVE_DEAL_STATUSES: DealStatus[] = [
   "inquiry",
   "negotiating",
   "agreed",
@@ -24,57 +26,73 @@ const ACTIVE_DEAL_STATUSES = [
   "dispute",
 ];
 
+/** まだ商談フェーズの取引のみ（合意・入金以降は含めない） */
+const NEGOTIATION_PHASE_STATUSES: DealStatus[] = ["inquiry", "negotiating"];
+
 export async function fetchDealerActionStats(userId: string): Promise<DealerActionStats> {
   const supabase = await createClient();
 
   const [listingsRes, dealsRes, notificationsRes, boardUnreadRes, supportRes, disputesRes] =
     await Promise.all([
-    supabase.from("listings").select("id").eq("seller_id", userId),
-    supabase
-      .from("deals")
-      .select("id, status, buyer_id, seller_id")
-      .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
-      .in("status", ACTIVE_DEAL_STATUSES),
-    supabase
-      .from("user_notifications")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .is("read_at", null),
-    supabase.rpc("count_unread_deal_messages", { p_user_id: userId }),
-    supabase
-      .from("support_tickets")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .in("status", ["open", "reviewing", "answered"]),
-    supabase
-      .from("disputes")
-      .select("id", { count: "exact", head: true })
-      .eq("reporter_id", userId)
-      .in("status", ["open", "reviewing"]),
-  ]);
+      supabase.from("listings").select("id").eq("seller_id", userId),
+      supabase
+        .from("deals")
+        .select("id, status, buyer_id, seller_id, inquiry_id, listing_id")
+        .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
+        .in("status", ACTIVE_DEAL_STATUSES),
+      supabase
+        .from("user_notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .is("read_at", null),
+      supabase.rpc("count_unread_deal_messages", { p_user_id: userId }),
+      supabase
+        .from("support_tickets")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .in("status", ["open", "reviewing", "answered"]),
+      supabase
+        .from("disputes")
+        .select("id", { count: "exact", head: true })
+        .eq("reporter_id", userId)
+        .in("status", ["open", "reviewing"]),
+    ]);
 
   const listingIds = (listingsRes.data ?? []).map((l) => l.id);
+  const deals = dealsRes.data ?? [];
+
+  const inquiryIdsWithActiveDeal = new Set(
+    deals.map((d) => d.inquiry_id).filter((id): id is string => !!id),
+  );
 
   let newInquiries = 0;
   if (listingIds.length > 0) {
-    const { count } = await supabase
+    const { data: openInquiries } = await supabase
       .from("inquiries")
-      .select("id", { count: "exact", head: true })
+      .select("id")
       .eq("status", "open")
       .in("listing_id", listingIds);
-    newInquiries = count ?? 0;
+
+    newInquiries = (openInquiries ?? []).filter(
+      (inq) => !inquiryIdsWithActiveDeal.has(inq.id),
+    ).length;
   }
 
-  const deals = dealsRes.data ?? [];
-  const negotiating = deals.length;
+  const negotiating = deals.filter((d) =>
+    NEGOTIATION_PHASE_STATUSES.includes(d.status as DealStatus),
+  ).length;
+
   const awaitingPayment = deals.filter(
     (d) => d.buyer_id === userId && d.status === "awaiting_payment",
   ).length;
-  const documentsPending = deals.filter(
-    (d) =>
-      d.status === "transfer_pending" ||
-      (d.seller_id === userId && d.status === "funded"),
-  ).length;
+
+  const documentsPending = deals.filter((d) => {
+    const status = d.status as DealStatus;
+    if (status === "transfer_pending") return true;
+    if (d.seller_id === userId && status === "funded") return true;
+    if (d.buyer_id === userId && status === "funded") return true;
+    return false;
+  }).length;
 
   const boardUnread =
     typeof boardUnreadRes.data === "number"
