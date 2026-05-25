@@ -222,7 +222,7 @@ function getBuyerNextStep(
           "③ 振込が終わったら、下の黄色いボタンをタップ（売り手・運営に知らせます）。",
         ],
         primaryAction: "buyer_report_payment",
-        primaryButtonLabel: "③ 振込した（売り手・運営に知らせる）",
+        primaryButtonLabel: "③ 入金（振込）した — 売り手・運営に知らせる",
         waitOnly: false,
         scrollTargetId: "deal-billing",
       };

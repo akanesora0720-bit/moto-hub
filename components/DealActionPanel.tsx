@@ -45,7 +45,7 @@ export function DealActionPanel({
   role: "buyer" | "seller";
 }) {
   const router = useRouter();
-  const { loading, success, message, run } = useAsyncAction();
+  const { loading, success, phase, message, run } = useAsyncAction();
   const [buyerPaymentReportedAt, setBuyerPaymentReportedAt] = useState<string | null>(
     deal.buyer_payment_reported_at,
   );
@@ -95,35 +95,41 @@ export function DealActionPanel({
 
   const buyerReportPayment = () =>
     run(async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase.rpc("buyer_report_payment_sent", {
-        p_deal_id: deal.id,
+      const res = await fetch(`/api/deals/${deal.id}/buyer-report-payment`, {
+        method: "POST",
       });
-      if (error) {
-        const msg = error.message ?? "";
+      const payload = (await res.json()) as {
+        error?: string;
+        ok?: boolean;
+        buyer_payment_reported_at?: string;
+      };
+
+      if (!res.ok || payload.error) {
+        const msg = payload.error ?? "振込報告に失敗しました。";
         if (
           msg.includes("Could not find the function") ||
           msg.includes("buyer_report_payment_sent") ||
-          error.code === "42883"
+          msg.includes("マイグレーション")
         ) {
           return {
             error:
-              "振込報告機能がデータベースに未設定です。運営へ「マイグレーション036/040」の適用を依頼してください。",
+              "振込報告機能がデータベースに未設定です。運営が Supabase で 036/041/042 を実行してください。",
+          };
+        }
+        if (msg.includes("not awaiting payment")) {
+          return {
+            error:
+              "この取引はまだ「入金待ち」ではありません。運営に成約・入金待ちへの進行を依頼してください。",
           };
         }
         return { error: msg };
       }
-      const row = data as { buyer_payment_reported_at?: string | null } | null;
-      const reportedAt = row?.buyer_payment_reported_at ?? new Date().toISOString();
-      if (!row?.buyer_payment_reported_at) {
-        return {
-          error:
-            "振込報告を保存できませんでした。ページを再読み込みして再度お試しください。",
-        };
-      }
+
+      const reportedAt =
+        payload.buyer_payment_reported_at ?? new Date().toISOString();
       setBuyerPaymentReportedAt(reportedAt);
       router.refresh();
-      return { okMessage: "振込報告を送信しました。売り手・運営に通知しました。" };
+      return { okMessage: "入金（振込）報告済みです。売り手・運営に通知しました。" };
     });
 
   const vehicleTax = calcTax(deal.agreed_price_ex_tax);
@@ -193,12 +199,14 @@ export function DealActionPanel({
           loading={loading}
           success={success && !buyerPaymentCompleted}
           actionCompleted={buyerPaymentCompleted}
-          completedLabel="振込報告済み"
+          completedLabel="入金（振込）報告済み"
           completedDetail={
             buyerPaymentReportedAt
               ? `${new Date(buyerPaymentReportedAt).toLocaleString("ja-JP")} に報告済み — 売り手の入金確認をお待ちください`
               : "売り手の入金確認をお待ちください"
           }
+          feedbackMessage={bannerHasPrimary ? message : ""}
+          feedbackSuccess={phase === "success"}
           onScrollTo={nextStep.scrollTargetId ? scrollTo : undefined}
           onPrimary={
             bannerHasPrimary && nextStep.primaryAction
@@ -307,7 +315,7 @@ export function DealActionPanel({
           <div className="flex flex-col gap-2">
             {buyerPaymentCompleted ? (
               <ActionCompleted
-                label="振込報告済み"
+                label="入金（振込）報告済み"
                 detail={`${new Date(buyerPaymentReportedAt!).toLocaleString("ja-JP")} — 売り手の入金確認をお待ちください`}
               />
             ) : canBuyerReportPayment ? (
@@ -318,7 +326,7 @@ export function DealActionPanel({
                 successLabel="報告済み"
                 onClick={buyerReportPayment}
               >
-                振込した（売り手・運営に知らせる）
+                入金（振込）した — 売り手・運営に知らせる
               </ActionButton>
             ) : null}
             {canSellerConfirmPayment ? (

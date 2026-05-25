@@ -1,6 +1,11 @@
 "use client";
 
-import { ActionButton, ActionCompleted, AsyncStatusBanner } from "@/components/ui/async-ui";
+import {
+  ActionButton,
+  ActionCompleted,
+  AsyncMessage,
+  AsyncStatusBanner,
+} from "@/components/ui/async-ui";
 import type { DealNextStep } from "@/lib/deal-next-steps";
 
 type Props = {
@@ -13,6 +18,8 @@ type Props = {
   actionCompleted?: boolean;
   completedLabel?: string;
   completedDetail?: string;
+  feedbackMessage?: string;
+  feedbackSuccess?: boolean;
 };
 
 export function DealNextStepBanner({
@@ -24,6 +31,8 @@ export function DealNextStepBanner({
   actionCompleted = false,
   completedLabel = "完了",
   completedDetail,
+  feedbackMessage = "",
+  feedbackSuccess = false,
 }: Props) {
   return (
     <div
@@ -35,6 +44,12 @@ export function DealNextStepBanner({
       aria-busy={loading}
     >
       <AsyncStatusBanner loading={loading} label="送信中… しばらくお待ちください" />
+
+      <AsyncMessage
+        message={feedbackMessage}
+        success={feedbackSuccess}
+        className={feedbackMessage ? "mt-0" : ""}
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="rounded-full bg-amber-500 px-2.5 py-0.5 text-xs font-bold text-black">
