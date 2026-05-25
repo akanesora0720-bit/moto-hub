@@ -31,14 +31,17 @@ export const DEAL_STATUS_LABELS: Record<DealStatus, string> = {
 };
 
 /** 購入側の進捗表示 */
-export function buyerDealLabel(status: DealStatus): string {
+export function buyerDealLabel(
+  status: DealStatus,
+  opts?: { buyerPaymentReported?: boolean },
+): string {
   switch (status) {
     case "inquiry":
     case "negotiating":
     case "agreed":
       return "商談中";
     case "awaiting_payment":
-      return "振込・報告";
+      return opts?.buyerPaymentReported ? "振込報告済（確認待ち）" : "振込・報告";
     case "funded":
       return "引取日時の入力";
     case "handover_done":

@@ -1,6 +1,6 @@
 "use client";
 
-import { ActionButton, AsyncStatusBanner } from "@/components/ui/async-ui";
+import { ActionButton, ActionCompleted, AsyncStatusBanner } from "@/components/ui/async-ui";
 import type { DealNextStep } from "@/lib/deal-next-steps";
 
 type Props = {
@@ -9,14 +9,29 @@ type Props = {
   success?: boolean;
   onPrimary?: () => void;
   onScrollTo?: (targetId: string) => void;
+  /** ボタン操作が終わったあと（振込報告済みなど） */
+  actionCompleted?: boolean;
+  completedLabel?: string;
+  completedDetail?: string;
 };
 
-export function DealNextStepBanner({ step, loading, success, onPrimary, onScrollTo }: Props) {
+export function DealNextStepBanner({
+  step,
+  loading,
+  success,
+  onPrimary,
+  onScrollTo,
+  actionCompleted = false,
+  completedLabel = "完了",
+  completedDetail,
+}: Props) {
   return (
     <div
-      className={`space-y-4 rounded-xl border-2 border-amber-500/60 bg-amber-950/30 p-4 ${
-        loading ? "border-accent/50" : ""
-      }`}
+      className={`space-y-4 rounded-xl border-2 p-4 ${
+        actionCompleted
+          ? "border-emerald-500/50 bg-emerald-950/25"
+          : "border-amber-500/60 bg-amber-950/30"
+      } ${loading ? "border-accent/50" : ""}`}
       aria-busy={loading}
     >
       <AsyncStatusBanner loading={loading} label="送信中… しばらくお待ちください" />
@@ -47,19 +62,21 @@ export function DealNextStepBanner({ step, loading, success, onPrimary, onScroll
         </button>
       ) : null}
 
-      {step.waitOnly && !step.primaryButtonLabel ? (
+      {step.waitOnly && !step.primaryButtonLabel && !actionCompleted ? (
         <p className="rounded-lg border border-amber-500/30 bg-zinc-950/60 px-4 py-3 text-center text-sm text-amber-200/90">
           今はボタン操作は不要です。上の手順どおり進めてください。
         </p>
       ) : null}
 
-      {step.primaryButtonLabel && onPrimary ? (
+      {actionCompleted ? (
+        <ActionCompleted label={completedLabel} detail={completedDetail} />
+      ) : step.primaryButtonLabel && onPrimary ? (
         <ActionButton
           size="lg"
           loading={loading}
           success={success}
           loadingLabel="送信中…"
-          successLabel="送信済み"
+          successLabel="報告済み"
           onClick={onPrimary}
         >
           {step.primaryButtonLabel}

@@ -80,6 +80,36 @@ type ActionButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   children: ReactNode;
 };
 
+/** 操作完了後の固定表示（押せない・報告済みなど） */
+export function ActionCompleted({
+  label,
+  detail,
+  className = "",
+}: {
+  label: string;
+  detail?: string;
+  className?: string;
+}) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className={`flex min-h-14 w-full items-center gap-3 rounded-lg border border-emerald-500/50 bg-emerald-950/50 px-4 py-4 ${className}`}
+    >
+      <span
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-lg font-bold text-black"
+        aria-hidden
+      >
+        ✓
+      </span>
+      <div className="min-w-0 text-left">
+        <p className="text-base font-semibold text-emerald-50">{label}</p>
+        {detail ? <p className="mt-0.5 text-sm text-emerald-200/90">{detail}</p> : null}
+      </div>
+    </div>
+  );
+}
+
 /** 非同期操作用ボタン（送信中・完了のラベル切替 + スピナー） */
 export function ActionButton({
   loading = false,

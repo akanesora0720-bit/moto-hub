@@ -1,10 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { canBuyerFileComplaint } from "@/lib/complaint-eligibility";
 import { DealNextStepBanner } from "@/components/DealNextStepBanner";
-import { ActionButton, AsyncMessage, AsyncStatusBanner } from "@/components/ui/async-ui";
+import {
+  ActionButton,
+  ActionCompleted,
+  AsyncMessage,
+  AsyncStatusBanner,
+} from "@/components/ui/async-ui";
 import {
   getDealNextStep,
   type DealPrimaryAction,
@@ -40,13 +46,20 @@ export function DealActionPanel({
 }) {
   const router = useRouter();
   const { loading, success, message, run } = useAsyncAction();
+  const [buyerPaymentReportedAt, setBuyerPaymentReportedAt] = useState<string | null>(
+    deal.buyer_payment_reported_at,
+  );
+
+  useEffect(() => {
+    setBuyerPaymentReportedAt(deal.buyer_payment_reported_at);
+  }, [deal.buyer_payment_reported_at]);
+
+  const buyerPaymentReported = !!buyerPaymentReportedAt;
 
   const progressLabel =
     role === "buyer"
-      ? buyerDealLabel(deal.status)
-      : sellerDealLabel(deal.status, {
-          buyerPaymentReported: !!deal.buyer_payment_reported_at,
-        });
+      ? buyerDealLabel(deal.status, { buyerPaymentReported })
+      : sellerDealLabel(deal.status, { buyerPaymentReported });
 
   const rpcAction = (label: string, rpc: () => Promise<{ error: { message: string } | null }>) =>
     run(async () => {
@@ -81,7 +94,7 @@ export function DealActionPanel({
     });
 
   const buyerReportPayment = () =>
-    rpcAction("振込報告を送信しました。売り手・運営に通知しました。", async () => {
+    run(async () => {
       const supabase = createClient();
       const { data, error } = await supabase.rpc("buyer_report_payment_sent", {
         p_deal_id: deal.id,
@@ -94,24 +107,23 @@ export function DealActionPanel({
           error.code === "42883"
         ) {
           return {
-            error: {
-              message:
-                "振込報告機能がデータベースに未設定です。運営へ「マイグレーション036/040」の適用を依頼してください。",
-            },
+            error:
+              "振込報告機能がデータベースに未設定です。運営へ「マイグレーション036/040」の適用を依頼してください。",
           };
         }
-        return { error };
+        return { error: msg };
       }
       const row = data as { buyer_payment_reported_at?: string | null } | null;
+      const reportedAt = row?.buyer_payment_reported_at ?? new Date().toISOString();
       if (!row?.buyer_payment_reported_at) {
         return {
-          error: {
-            message:
-              "振込報告を保存できませんでした。ページを再読み込みして再度お試しください。",
-          },
+          error:
+            "振込報告を保存できませんでした。ページを再読み込みして再度お試しください。",
         };
       }
-      return { error: null };
+      setBuyerPaymentReportedAt(reportedAt);
+      router.refresh();
+      return { okMessage: "振込報告を送信しました。売り手・運営に通知しました。" };
     });
 
   const vehicleTax = calcTax(deal.agreed_price_ex_tax);
@@ -131,17 +143,18 @@ export function DealActionPanel({
   const canSellerConfirmPayment =
     role === "seller" && deal.status === "awaiting_payment";
   const canBuyerReportPayment =
-    role === "buyer" &&
-    deal.status === "awaiting_payment" &&
-    !deal.buyer_payment_reported_at;
+    role === "buyer" && deal.status === "awaiting_payment" && !buyerPaymentReported;
   const showComplaintLink = role === "buyer" && canBuyerFileComplaint(deal.status);
 
   const nextStep = getDealNextStep(deal.status, role, {
     buyerConfirmed: !!deal.buyer_confirmed_at,
     sellerConfirmed: !!deal.seller_confirmed_at,
     hasPickupScheduled: !!deal.pickup_scheduled_at,
-    buyerPaymentReported: !!deal.buyer_payment_reported_at,
+    buyerPaymentReported,
   });
+
+  const buyerPaymentCompleted =
+    role === "buyer" && deal.status === "awaiting_payment" && buyerPaymentReported;
 
   const runPrimary = (action: DealPrimaryAction) => {
     switch (action) {
@@ -178,7 +191,14 @@ export function DealActionPanel({
         <DealNextStepBanner
           step={nextStep}
           loading={loading}
-          success={success}
+          success={success && !buyerPaymentCompleted}
+          actionCompleted={buyerPaymentCompleted}
+          completedLabel="振込報告済み"
+          completedDetail={
+            buyerPaymentReportedAt
+              ? `${new Date(buyerPaymentReportedAt).toLocaleString("ja-JP")} に報告済み — 売り手の入金確認をお待ちください`
+              : "売り手の入金確認をお待ちください"
+          }
           onScrollTo={nextStep.scrollTargetId ? scrollTo : undefined}
           onPrimary={
             bannerHasPrimary && nextStep.primaryAction
@@ -219,14 +239,14 @@ export function DealActionPanel({
           </div>
           {deal.status === "awaiting_payment" && role === "buyer" ? (
             <p className="text-xs text-amber-200/90">
-              {deal.buyer_payment_reported_at
-                ? `振込報告済（${new Date(deal.buyer_payment_reported_at).toLocaleString("ja-JP")}）— 売り手の入金確認をお待ちください。`
+              {buyerPaymentReported
+                ? `振込報告済（${new Date(buyerPaymentReportedAt!).toLocaleString("ja-JP")}）— 売り手の入金確認をお待ちください。`
                 : "入金指示書の売り手口座へ税込総額を振込み、振込後は上のボタンで売り手・運営に知らせてください。"}
             </p>
           ) : null}
-          {deal.status === "awaiting_payment" && role === "seller" && deal.buyer_payment_reported_at ? (
+          {deal.status === "awaiting_payment" && role === "seller" && buyerPaymentReported ? (
             <p className="text-xs text-emerald-200/90">
-              買い手が {new Date(deal.buyer_payment_reported_at).toLocaleString("ja-JP")}{" "}
+              買い手が {new Date(buyerPaymentReportedAt!).toLocaleString("ja-JP")}{" "}
               に振込報告済みです。口座を確認して入金確認ボタンを押してください。
             </p>
           ) : null}
@@ -285,12 +305,17 @@ export function DealActionPanel({
 
         {!bannerHasPrimary ? (
           <div className="flex flex-col gap-2">
-            {canBuyerReportPayment ? (
+            {buyerPaymentCompleted ? (
+              <ActionCompleted
+                label="振込報告済み"
+                detail={`${new Date(buyerPaymentReportedAt!).toLocaleString("ja-JP")} — 売り手の入金確認をお待ちください`}
+              />
+            ) : canBuyerReportPayment ? (
               <ActionButton
                 loading={loading}
                 success={success}
                 loadingLabel="送信中…"
-                successLabel="送信済み"
+                successLabel="報告済み"
                 onClick={buyerReportPayment}
               >
                 振込した（売り手・運営に知らせる）
