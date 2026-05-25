@@ -126,9 +126,20 @@ export default async function DealDetailPage({
         </div>
 
         {isAdmin && row.buyer_id !== userId && row.seller_id !== userId ? (
-          <p className="rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted">
-            管理者表示。ステータス変更は管理画面の取引タブから行ってください。
-          </p>
+          <>
+            <p className="rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted">
+              運営表示。ステータス変更は管理画面の取引タブから行ってください。
+            </p>
+            <DealPickupSchedulePanel
+              dealId={id}
+              role="buyer"
+              status={deal.status}
+              pickupScheduledAt={deal.pickup_scheduled_at}
+              fundedAt={deal.funded_at}
+              sellerPaymentConfirmedAt={deal.seller_payment_confirmed_at}
+              readOnly
+            />
+          </>
         ) : (
           <>
             <DealActionPanel deal={deal} role={role} />
@@ -137,6 +148,8 @@ export default async function DealDetailPage({
               role={role}
               status={deal.status}
               pickupScheduledAt={deal.pickup_scheduled_at}
+              fundedAt={deal.funded_at}
+              sellerPaymentConfirmedAt={deal.seller_payment_confirmed_at}
             />
           </>
         )}

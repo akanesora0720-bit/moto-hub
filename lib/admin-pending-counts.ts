@@ -8,6 +8,7 @@ export type AdminPendingCounts = {
   invoicesReviewPending: number;
   payoutsAwaiting: number;
   transferOverdue: number;
+  pickupSchedulePending: number;
 };
 
 export async function fetchAdminPendingCounts(): Promise<AdminPendingCounts> {
@@ -20,6 +21,7 @@ export async function fetchAdminPendingCounts(): Promise<AdminPendingCounts> {
     invoices,
     payouts,
     overdue,
+    pickupPending,
   ] = await Promise.all([
     supabase
       .from("inquiries")
@@ -50,6 +52,11 @@ export async function fetchAdminPendingCounts(): Promise<AdminPendingCounts> {
       .select("id", { count: "exact", head: true })
       .eq("transfer_overdue", true)
       .neq("status", "completed"),
+    supabase
+      .from("deals")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "funded")
+      .is("pickup_scheduled_at", null),
   ]);
 
   return {
@@ -60,5 +67,6 @@ export async function fetchAdminPendingCounts(): Promise<AdminPendingCounts> {
     invoicesReviewPending: invoices.count ?? 0,
     payoutsAwaiting: payouts.count ?? 0,
     transferOverdue: overdue.count ?? 0,
+    pickupSchedulePending: pickupPending.count ?? 0,
   };
-}
+};

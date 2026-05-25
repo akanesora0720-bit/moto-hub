@@ -11,7 +11,12 @@ import { formatYen } from "@/lib/format";
 import { VERIFICATION_STATUS_LABELS } from "@/lib/constants";
 import { SELLER_FEE_RATE } from "@/lib/billing";
 import { pickPrimaryDealForInquiry } from "@/lib/admin-inquiry-deal";
-import { DEAL_STATUSES, DEAL_STATUS_LABELS, formatTransferDeadline } from "@/lib/deal-flow";
+import {
+  DEAL_STATUSES,
+  DEAL_STATUS_LABELS,
+  formatPickupSchedule,
+  formatTransferDeadline,
+} from "@/lib/deal-flow";
 import { COMPLAINT_TYPES } from "@/lib/trust";
 import type { ComplaintType, DealStatus, TrustRank, VerificationStatus } from "@/lib/types";
 import { normalizeVideoUrl } from "@/lib/video-url";
@@ -82,6 +87,9 @@ export default function AdminPage() {
       agreed_price_ex_tax: number;
       transfer_overdue: boolean;
       transfer_deadline_at: string | null;
+      funded_at: string | null;
+      seller_payment_confirmed_at: string | null;
+      pickup_scheduled_at: string | null;
       buyer_confirmed_at: string | null;
       seller_confirmed_at: string | null;
       seller_intent_confirmed: boolean;
@@ -99,6 +107,7 @@ export default function AdminPage() {
     invoicesReviewPending: 0,
     payoutsAwaiting: 0,
     transferOverdue: 0,
+    pickupSchedulePending: 0,
   });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [dealAlerts, setDealAlerts] = useState<
@@ -111,7 +120,8 @@ export default function AdminPage() {
 
   const load = useCallback(async () => {
     const supabase = createClient();
-    const [inq, l, m, c, d, a, pcInq, pcSup, pcDisp, pcPay, pcInv, pcPo, pcTr] = await Promise.all([
+    const [inq, l, m, c, d, a, pcInq, pcSup, pcDisp, pcPay, pcInv, pcPo, pcTr, pcPickup] =
+      await Promise.all([
       supabase
         .from("inquiries")
         .select(
@@ -154,6 +164,7 @@ export default function AdminPage() {
         .select(
           `
           id, status, agreed_price_ex_tax, transfer_overdue, transfer_deadline_at,
+          funded_at, seller_payment_confirmed_at, pickup_scheduled_at,
           buyer_confirmed_at, seller_confirmed_at, seller_intent_confirmed, buyer_intent_confirmed,
           listings ( maker, model ),
           buyer:profiles!deals_buyer_id_fkey ( store_name ),
@@ -174,6 +185,7 @@ export default function AdminPage() {
       supabase.from("invoices").select("id", { count: "exact", head: true }).eq("status", "review_pending"),
       supabase.from("payouts").select("id", { count: "exact", head: true }).in("status", ["awaiting", "ready"]),
       supabase.from("deals").select("id", { count: "exact", head: true }).eq("transfer_overdue", true).neq("status", "completed"),
+      supabase.from("deals").select("id", { count: "exact", head: true }).eq("status", "funded").is("pickup_scheduled_at", null),
     ]);
     setInquiries(
       (inq.data ?? []).map((row) => {
@@ -248,6 +260,9 @@ export default function AdminPage() {
           agreed_price_ex_tax: row.agreed_price_ex_tax,
           transfer_overdue: row.transfer_overdue ?? false,
           transfer_deadline_at: row.transfer_deadline_at ?? null,
+          funded_at: row.funded_at ?? null,
+          seller_payment_confirmed_at: row.seller_payment_confirmed_at ?? null,
+          pickup_scheduled_at: row.pickup_scheduled_at ?? null,
           buyer_confirmed_at: row.buyer_confirmed_at ?? null,
           seller_confirmed_at: row.seller_confirmed_at ?? null,
           seller_intent_confirmed: row.seller_intent_confirmed ?? false,
@@ -267,6 +282,7 @@ export default function AdminPage() {
       invoicesReviewPending: pcInv.count ?? 0,
       payoutsAwaiting: pcPo.count ?? 0,
       transferOverdue: pcTr.count ?? 0,
+      pickupSchedulePending: pcPickup.count ?? 0,
     });
   }, []);
 
@@ -534,7 +550,10 @@ export default function AdminPage() {
               ["complaints", "クレーム"],
               ["listings", "出品"],
               ["members", "会員"],
-              ["deals", `取引${badge(pending.transferOverdue)}`],
+              [
+                "deals",
+                `取引${badge(pending.transferOverdue + pending.pickupSchedulePending)}`,
+              ],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -924,7 +943,8 @@ export default function AdminPage() {
                     <th className="px-4 py-3">買い手</th>
                     <th className="px-4 py-3">価格</th>
                     <th className="px-4 py-3">状態</th>
-                    <th className="px-4 py-3">確認</th>
+                    <th className="px-4 py-3">入金・引取</th>
+                    <th className="px-4 py-3">完了確認</th>
                     <th className="px-4 py-3">名変</th>
                     <th className="px-4 py-3">操作</th>
                   </tr>
@@ -965,6 +985,25 @@ export default function AdminPage() {
                           status={row.status}
                           onUpdated={load}
                         />
+                      </td>
+                      <td className="px-4 py-3 text-xs">
+                        入金{" "}
+                        {row.seller_payment_confirmed_at || row.funded_at ? (
+                          <span className="text-emerald-300">済</span>
+                        ) : (
+                          <span className="text-amber-200">未</span>
+                        )}
+                        <br />
+                        引取{" "}
+                        {row.pickup_scheduled_at ? (
+                          <span className="text-emerald-300">
+                            {formatPickupSchedule(row.pickup_scheduled_at)}
+                          </span>
+                        ) : row.status === "funded" ? (
+                          <span className="text-amber-200">入力待ち</span>
+                        ) : (
+                          "—"
+                        )}
                       </td>
                       <td className="px-4 py-3 text-xs">
                         買 {row.buyer_confirmed_at ? "済" : "未"}

@@ -134,7 +134,12 @@ export default async function AdminHubPage() {
                     label: "名変期限超過",
                     count: pending.transferOverdue,
                     href: "/admin/workspace",
-                    note: "放置候補",
+                  },
+                  {
+                    label: "引取予定 入力待ち",
+                    count: pending.pickupSchedulePending,
+                    href: "/admin/workspace",
+                    note: "入金確認済・日時未登録",
                   },
                   {
                     label: "取引・商談一覧",

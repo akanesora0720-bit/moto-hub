@@ -11,11 +11,18 @@ export function DealPickupSchedulePanel({
   role,
   status,
   pickupScheduledAt,
+  fundedAt,
+  sellerPaymentConfirmedAt,
+  readOnly = false,
 }: {
   dealId: string;
   role: "buyer" | "seller";
   status: DealStatus;
   pickupScheduledAt: string | null;
+  fundedAt?: string | null;
+  sellerPaymentConfirmedAt?: string | null;
+  /** 運営・管理者は閲覧のみ */
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [value, setValue] = useState(() => toDatetimeLocalValue(pickupScheduledAt));
@@ -23,15 +30,20 @@ export function DealPickupSchedulePanel({
   const [loading, setLoading] = useState(false);
 
   const show =
+    readOnly ||
     status === "funded" ||
     (pickupScheduledAt &&
       ["handover_done", "transfer_pending", "payout_ready", "payout_done", "completed"].includes(
+        status,
+      )) ||
+    (fundedAt &&
+      ["funded", "handover_done", "transfer_pending", "payout_ready", "payout_done", "completed"].includes(
         status,
       ));
 
   if (!show) return null;
 
-  const canEdit = role === "buyer" && status === "funded";
+  const canEdit = !readOnly && role === "buyer" && status === "funded";
 
   const submit = async () => {
     if (!value) {
@@ -70,9 +82,34 @@ export function DealPickupSchedulePanel({
 
   return (
     <section className="space-y-3 rounded-xl border border-accent/30 bg-accent/5 p-4">
-      <h2 className="text-sm font-semibold text-accent">引取予定</h2>
+      <h2 className="text-sm font-semibold text-accent">
+        {readOnly ? "入金・引取（運営確認）" : "引取予定"}
+      </h2>
 
-      {role === "buyer" && status === "funded" ? (
+      {readOnly ? (
+        <dl className="space-y-2 text-sm">
+          <div className="flex justify-between gap-4">
+            <dt className="text-muted">売り手入金確認</dt>
+            <dd>
+              {sellerPaymentConfirmedAt || fundedAt
+                ? formatPickupSchedule(sellerPaymentConfirmedAt ?? fundedAt!)
+                : "未"}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-4">
+            <dt className="text-muted">引取予定日時</dt>
+            <dd className={pickupScheduledAt ? "font-medium text-accent" : "text-amber-200"}>
+              {scheduledLabel}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-4">
+            <dt className="text-muted">ステータス</dt>
+            <dd className="text-xs">{status}</dd>
+          </div>
+        </dl>
+      ) : null}
+
+      {!readOnly && role === "buyer" && status === "funded" ? (
         <>
           <p className="text-sm leading-relaxed text-zinc-200">
             売り手が入金を確認しました。売り手と連絡を取り、引取日時を調整したうえで、下記に
@@ -109,7 +146,7 @@ export function DealPickupSchedulePanel({
         </>
       ) : null}
 
-      {role === "seller" && status === "funded" ? (
+      {!readOnly && role === "seller" && status === "funded" ? (
         pickupScheduledAt ? (
           <p className="text-sm">
             買い手の引取予定:{" "}
