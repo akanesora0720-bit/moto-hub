@@ -49,12 +49,18 @@ export function DealActionPanel({
   const [buyerPaymentReportedAt, setBuyerPaymentReportedAt] = useState<string | null>(
     deal.buyer_payment_reported_at,
   );
+  const [sellerPaymentConfirmedAt, setSellerPaymentConfirmedAt] = useState<string | null>(
+    deal.seller_payment_confirmed_at,
+  );
 
   useEffect(() => {
     setBuyerPaymentReportedAt(deal.buyer_payment_reported_at);
-  }, [deal.buyer_payment_reported_at]);
+    setSellerPaymentConfirmedAt(deal.seller_payment_confirmed_at);
+  }, [deal.buyer_payment_reported_at, deal.seller_payment_confirmed_at]);
 
   const buyerPaymentReported = !!buyerPaymentReportedAt;
+  const sellerPaymentConfirmed =
+    !!sellerPaymentConfirmedAt || deal.status === "funded" || !!deal.funded_at;
 
   const progressLabel =
     role === "buyer"
@@ -88,9 +94,31 @@ export function DealActionPanel({
     });
 
   const sellerConfirmPayment = () =>
-    rpcAction("入金確認を登録しました。", async () => {
-      const supabase = createClient();
-      return supabase.rpc("seller_confirm_buyer_payment", { p_deal_id: deal.id });
+    run(async () => {
+      const res = await fetch(`/api/deals/${deal.id}/seller-confirm-payment`, {
+        method: "POST",
+      });
+      const payload = (await res.json()) as {
+        error?: string;
+        ok?: boolean;
+        seller_payment_confirmed_at?: string;
+        funded_at?: string;
+      };
+
+      if (!res.ok || payload.error) {
+        const msg = payload.error ?? "入金確認に失敗しました。";
+        if (msg.includes("not awaiting payment")) {
+          return { error: "この取引は入金待ちではありません。" };
+        }
+        return { error: msg };
+      }
+
+      const confirmedAt =
+        payload.seller_payment_confirmed_at ?? new Date().toISOString();
+      setSellerPaymentConfirmedAt(confirmedAt);
+      router.refresh();
+      window.dispatchEvent(new Event("motohub:refresh-badges"));
+      return { okMessage: "入金確認済みです。買い手・運営に通知しました。" };
     });
 
   const buyerReportPayment = () =>
@@ -129,6 +157,7 @@ export function DealActionPanel({
         payload.buyer_payment_reported_at ?? new Date().toISOString();
       setBuyerPaymentReportedAt(reportedAt);
       router.refresh();
+      window.dispatchEvent(new Event("motohub:refresh-badges"));
       return { okMessage: "入金（振込）報告済みです。売り手・運営に通知しました。" };
     });
 
@@ -147,7 +176,10 @@ export function DealActionPanel({
 
   const canMarkHandover = role === "seller" && deal.status === "funded";
   const canSellerConfirmPayment =
-    role === "seller" && deal.status === "awaiting_payment";
+    role === "seller" &&
+    deal.status === "awaiting_payment" &&
+    buyerPaymentReported &&
+    !sellerPaymentConfirmed;
   const canBuyerReportPayment =
     role === "buyer" && deal.status === "awaiting_payment" && !buyerPaymentReported;
   const showComplaintLink = role === "buyer" && canBuyerFileComplaint(deal.status);
@@ -161,6 +193,11 @@ export function DealActionPanel({
 
   const buyerPaymentCompleted =
     role === "buyer" && deal.status === "awaiting_payment" && buyerPaymentReported;
+
+  const sellerPaymentCompleted =
+    role === "seller" &&
+    deal.status === "awaiting_payment" &&
+    sellerPaymentConfirmed;
 
   const runPrimary = (action: DealPrimaryAction) => {
     switch (action) {
@@ -197,13 +234,21 @@ export function DealActionPanel({
         <DealNextStepBanner
           step={nextStep}
           loading={loading}
-          success={success && !buyerPaymentCompleted}
-          actionCompleted={buyerPaymentCompleted}
-          completedLabel="入金（振込）報告済み"
+          success={
+            success && !buyerPaymentCompleted && !sellerPaymentCompleted
+          }
+          actionCompleted={buyerPaymentCompleted || sellerPaymentCompleted}
+          completedLabel={
+            sellerPaymentCompleted
+              ? "入金確認済み"
+              : "入金（振込）報告済み"
+          }
           completedDetail={
-            buyerPaymentReportedAt
-              ? `${new Date(buyerPaymentReportedAt).toLocaleString("ja-JP")} に報告済み — 売り手の入金確認をお待ちください`
-              : "売り手の入金確認をお待ちください"
+            sellerPaymentCompleted
+              ? `${sellerPaymentConfirmedAt ? new Date(sellerPaymentConfirmedAt).toLocaleString("ja-JP") : ""} — 買い手に引取予定日時の入力を案内済み`
+              : buyerPaymentReportedAt
+                ? `${new Date(buyerPaymentReportedAt).toLocaleString("ja-JP")} に報告済み — 売り手の入金確認をお待ちください`
+                : "売り手の入金確認をお待ちください"
           }
           feedbackMessage={bannerHasPrimary ? message : ""}
           feedbackSuccess={phase === "success"}
@@ -329,9 +374,24 @@ export function DealActionPanel({
                 入金（振込）した — 売り手・運営に知らせる
               </ActionButton>
             ) : null}
-            {canSellerConfirmPayment ? (
-              <ActionButton loading={loading} loadingLabel="送信中…" onClick={sellerConfirmPayment}>
-                買い手からの入金を確認
+            {sellerPaymentCompleted ? (
+              <ActionCompleted
+                label="入金確認済み"
+                detail={
+                  sellerPaymentConfirmedAt
+                    ? `${new Date(sellerPaymentConfirmedAt).toLocaleString("ja-JP")} — 引取・引渡フェーズへ`
+                    : "引取・引渡フェーズへ"
+                }
+              />
+            ) : canSellerConfirmPayment ? (
+              <ActionButton
+                loading={loading}
+                success={success}
+                loadingLabel="送信中…"
+                successLabel="確認済み"
+                onClick={sellerConfirmPayment}
+              >
+                買い手からの入金を確認した
               </ActionButton>
             ) : null}
             {canMarkHandover ? (

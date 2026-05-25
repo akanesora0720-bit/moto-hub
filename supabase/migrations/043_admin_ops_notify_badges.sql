@@ -3,7 +3,7 @@
 create or replace function public.notify_all_admins(
   p_title text,
   p_body text,
-  p_importance public.message_importance default 'high',
+  p_importance public.message_importance default 'important',
   p_link_url text default '/admin/workspace',
   p_entity_type text default null,
   p_entity_id uuid default null
@@ -60,7 +60,7 @@ begin
     perform public.notify_all_admins(
       '【運営】新規商談・問い合わせ',
       format('%s %s — 商談が開始されました。ワークスペースで確認してください。', v_maker, v_model),
-      'high',
+      'important',
       '/admin/workspace?tab=inquiries',
       'deals',
       new.id
@@ -86,7 +86,7 @@ begin
         v_maker, v_model, old.status, new.status
       );
       perform public.notify_all_admins(
-        v_title, v_body, 'high', v_link, 'deals', new.id
+        v_title, v_body, 'important', v_link, 'deals', new.id
       );
     end if;
   end if;
@@ -97,7 +97,7 @@ begin
     perform public.notify_all_admins(
       '【運営】買い手振込報告',
       format('%s %s — 売り手の入金確認を促してください。', v_maker, v_model),
-      'high',
+      'important',
       format('/deals/%s', new.id),
       'deals',
       new.id
@@ -136,7 +136,7 @@ begin
     perform public.notify_all_admins(
       '【運営】新規問い合わせ',
       format('%s %s — %s', l.maker, l.model, left(trim(new.message), 120)),
-      'high',
+      'important',
       '/admin/workspace?tab=inquiries',
       'inquiries',
       new.id

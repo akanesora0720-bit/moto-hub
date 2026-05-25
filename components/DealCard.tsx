@@ -17,7 +17,7 @@ export function DealCard({
   return (
     <section
       id={id}
-      className={`rounded-xl border bg-card p-4 shadow-sm ${
+      className={`scroll-mt-24 rounded-xl border bg-card p-4 shadow-sm ${
         highlight ? "border-amber-500/50 bg-amber-950/20" : "border-border"
       } ${className}`}
     >

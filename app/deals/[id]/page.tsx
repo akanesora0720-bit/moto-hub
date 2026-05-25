@@ -138,10 +138,9 @@ export default async function DealDetailPage({
     </DealCard>
   );
 
-  const sellerPaymentActionFocus =
-    role === "seller" &&
-    deal.status === "awaiting_payment" &&
-    !!deal.buyer_payment_reported_at;
+  const focusPrimaryAction =
+    !adminViewOnly &&
+    (deal.status === "awaiting_payment" || deal.status === "funded");
 
   const actionSection = (
     <DealCard
@@ -163,7 +162,7 @@ export default async function DealDetailPage({
   return (
     <AuthenticatedShell>
       <div className="mx-auto max-w-xl space-y-5">
-        {sellerPaymentActionFocus ? <DealDetailFocus autoFocus /> : null}
+        <DealDetailFocus enabled={focusPrimaryAction} />
         <Link href="/deals" className="text-sm text-muted hover:text-accent">
           ← 取引一覧
         </Link>

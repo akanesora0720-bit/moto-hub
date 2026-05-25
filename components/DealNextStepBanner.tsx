@@ -66,7 +66,10 @@ export function DealNextStepBanner({
         ))}
       </ol>
 
-      {step.scrollTargetId && onScrollTo ? (
+      {step.scrollTargetId &&
+      onScrollTo &&
+      step.scrollTargetId !== "deal-primary-action" &&
+      !step.primaryButtonLabel ? (
         <button
           type="button"
           disabled={loading}
