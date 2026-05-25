@@ -177,7 +177,7 @@ export default function AdminBillingPage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold">請求・入出金</h1>
-            <p className="mt-1 text-sm text-muted">入金指示書 / MotoHub手数料 / 月額入金報告</p>
+            <p className="mt-1 text-sm text-muted">月額入金報告の一覧。取引ごとの承認・完了は取引詳細で行います。</p>
           </div>
           <Link href="/admin" className="text-sm text-accent hover:underline">
             管理画面
@@ -194,9 +194,18 @@ export default function AdminBillingPage() {
           </p>
         ) : null}
 
+        <div className="rounded-xl border border-sky-500/30 bg-sky-950/20 px-4 py-3 text-sm text-sky-100">
+          <strong>取引ごとの操作はここではなく取引詳細へ。</strong>
+          入金指示の承認・取引完了・手数料入金確認は、各取引の
+          <Link href="/admin/deals" className="mx-1 text-accent hover:underline">
+            取引連絡
+          </Link>
+          一覧 → 詳細の「運営の手順」で行ってください（抜け漏れ防止）。
+        </div>
+
         <section className="space-y-3">
           <h2 className="font-medium">
-            入金指示書 確認待ち
+            入金指示書 確認待ち（一覧用・通常は取引詳細で承認）
             {reviewDealIds.length > 0 ? (
               <span className="ml-2 text-sm text-amber-200">({reviewDealIds.length} 件)</span>
             ) : null}
@@ -218,7 +227,7 @@ export default function AdminBillingPage() {
                     <span className="font-medium">
                       {label} · 取引 {did.slice(0, 8)}…
                     </span>
-                    <Link href={`/deals/${did}`} className="text-xs text-accent hover:underline">
+                    <Link href={`/admin/deals/${did}`} className="text-xs text-accent hover:underline">
                       取引詳細
                     </Link>
                   </div>

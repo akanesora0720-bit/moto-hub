@@ -75,7 +75,7 @@ export function AdminEmergencyContactLog() {
               <td className="py-2 pr-3">{r.viewer_store_name ?? r.viewer_user_id.slice(0, 8)}</td>
               <td className="py-2 pr-3">{r.seller_store_name ?? "—"}</td>
               <td className="py-2 pr-3">
-                <Link href={`/deals/${r.deal_id}`} className="text-accent hover:underline">
+                <Link href={`/admin/deals/${r.deal_id}`} className="text-accent hover:underline">
                   詳細
                 </Link>
               </td>

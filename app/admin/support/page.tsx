@@ -179,7 +179,7 @@ export default function AdminSupportPage() {
                 <p className="text-sm font-medium">{selected.subject}</p>
                 <p className="text-xs text-muted whitespace-pre-wrap">{selected.message}</p>
                 {selected.deal_id ? (
-                  <Link href={`/deals/${selected.deal_id}`} className="text-xs text-accent">
+                  <Link href={`/admin/deals/${selected.deal_id}`} className="text-xs text-accent">
                     取引詳細 →
                   </Link>
                 ) : null}

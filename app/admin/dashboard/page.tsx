@@ -103,7 +103,7 @@ export default async function AdminDashboardPage() {
                   <PendingRow
                     label="取引連絡板（未読）"
                     count={pending.unreadDealBoard}
-                    href="/deals"
+                    href="/admin/deals"
                   />
                   <PendingRow label="入金報告" count={pending.paymentReportsPending} href="/admin/billing" />
                   <PendingRow label="請求書確認待ち" count={pending.invoicesReviewPending} href="/admin/billing" />

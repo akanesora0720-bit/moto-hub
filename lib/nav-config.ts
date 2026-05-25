@@ -37,7 +37,7 @@ export const adminNavItems: NavItem[] = [
     matchPrefix: true,
   },
   {
-    href: "/deals",
+    href: "/admin/deals",
     label: "取引連絡",
     badgeKey: "adminDealsPending",
     matchPrefix: true,

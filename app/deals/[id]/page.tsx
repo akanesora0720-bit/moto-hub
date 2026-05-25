@@ -6,7 +6,8 @@ import { DealMilestonesPanel } from "@/components/DealMilestonesPanel";
 import { canFileDispute } from "@/lib/disputes";
 import { notFound } from "next/navigation";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
-import { AdminDealCompletePanel } from "@/components/AdminDealCompletePanel";
+import { AdminDealOpsPanel } from "@/components/AdminDealOpsPanel";
+import type { AdminDealOpsInput } from "@/lib/admin-deal-ops";
 import { DealActionPanel } from "@/components/DealActionPanel";
 import { DealDetailFocus } from "@/components/DealDetailFocus";
 import { DealPickupSchedulePanel } from "@/components/DealPickupSchedulePanel";
@@ -16,19 +17,31 @@ import { canShowDealBoardForViewer } from "@/lib/deal-board";
 import { DEAL_STATUS_LABELS, partyDealStatusBadge } from "@/lib/deal-flow";
 import { formatYen } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
+import { canAccessAdmin } from "@/lib/auth";
+import { adminDealListPath } from "@/lib/admin-deal-routes";
 import { getViewer } from "@/lib/viewer";
-import type { Deal, DealStatus } from "@/lib/types";
+import type { Deal, DealStatus, InvoiceStatus, Profile } from "@/lib/types";
 
 export default async function DealDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  return DealDetailPageView({ params });
+}
+
+export async function DealDetailPageView(
+  { params }: { params: Promise<{ id: string }> },
+  opts?: { forceAdminShell?: boolean },
+) {
   const { id } = await params;
   const viewer = await getViewer();
   const supabase = await createClient();
   const userId = viewer!.id;
-  const isAdmin = viewer!.profile.is_admin;
+  const canAdminView = canAccessAdmin(viewer!.profile as Profile);
+  const isAdmin = canAdminView;
+  const useAdminShell = opts?.forceAdminShell ?? canAdminView;
+  const dealsListHref = useAdminShell ? adminDealListPath() : "/deals";
 
   const { data: row } = await supabase
     .from("deals")
@@ -122,8 +135,43 @@ export default async function DealDetailPage({
   const billingFirst =
     deal.status === "awaiting_payment" ||
     (deal.status === "funded" && role === "buyer");
-  const adminCanCloseDeal =
-    isAdmin && (deal.status === "payout_ready" || deal.status === "payout_done");
+  const { data: invoiceRows } = adminViewOnly
+    ? await supabase
+        .from("invoices")
+        .select("id, party, status, document_kind")
+        .eq("deal_id", id)
+    : { data: null };
+
+  type InvoiceRow = {
+    id: string;
+    party: string;
+    status: InvoiceStatus;
+    document_kind?: string | null;
+  };
+  const invoices = (invoiceRows ?? []) as InvoiceRow[];
+  const paymentInstruction = invoices.find(
+    (i) => i.party === "buyer" && i.document_kind === "payment_instruction",
+  );
+  const platformFeeInvoice = invoices.find(
+    (i) => i.party === "seller" && i.document_kind === "platform_fee",
+  );
+
+  const adminOpsInput: AdminDealOpsInput | null = adminViewOnly
+    ? {
+        status: deal.status,
+        agreedPriceExTax: deal.agreed_price_ex_tax,
+        paymentInstructionStatus: paymentInstruction?.status ?? null,
+        platformFeeStatus: platformFeeInvoice?.status ?? null,
+        buyerPaymentReported: !!deal.buyer_payment_reported_at,
+        sellerPaymentConfirmed: !!deal.seller_payment_confirmed_at,
+        buyerConfirmed: !!deal.buyer_confirmed_at,
+        sellerConfirmed: !!deal.seller_confirmed_at,
+        requiresNameTransfer: deal.requires_name_transfer,
+        transferCompletedAt: deal.transfer_completed_at,
+        transferDeadlineAt: deal.transfer_deadline_at,
+        transferOverdue: deal.transfer_overdue,
+      }
+    : null;
 
   const billingSection = (
     <DealCard id="deal-billing" title="請求・入金" step={3}>
@@ -151,7 +199,7 @@ export default async function DealDetailPage({
     >
       {adminViewOnly ? (
         <p className="text-sm text-muted">
-          運営表示。ステータス変更は管理画面の取引タブから行ってください。
+          当事者の操作状況は下の連絡板・マイルストーンで確認できます。運営の承認・完了は上の「運営の手順」から行ってください。
         </p>
       ) : (
         <DealActionPanel deal={deal} role={role} />
@@ -160,11 +208,11 @@ export default async function DealDetailPage({
   );
 
   return (
-    <AuthenticatedShell>
+    <AuthenticatedShell mode={useAdminShell ? "admin" : undefined}>
       <div className="mx-auto max-w-xl space-y-5">
         <DealDetailFocus enabled={focusPrimaryAction} />
-        <Link href="/deals" className="text-sm text-muted hover:text-accent">
-          ← 取引一覧
+        <Link href={dealsListHref} className="text-sm text-muted hover:text-accent">
+          ← {useAdminShell ? "取引連絡一覧" : "取引一覧"}
         </Link>
 
         <DealCard title="車両情報" step={1}>
@@ -198,21 +246,18 @@ export default async function DealDetailPage({
                 : "合意済みです。買い手の入金確認後、引取・引渡しと取引連絡板が利用できます。"}
             </p>
           )}
-          {isAdmin ? (
-            <Link
-              href="/admin/workspace?tab=deals"
-              className="mt-2 inline-block text-sm text-accent hover:underline"
-            >
-              管理画面（取引タブ）で操作 →
-            </Link>
-          ) : null}
         </DealCard>
 
         {!isPreAgreement ? (
           <>
-            {adminCanCloseDeal ? (
-              <DealCard title="運営操作（要対応）" highlight>
-                <AdminDealCompletePanel dealId={id} status={deal.status} />
+            {adminViewOnly && adminOpsInput ? (
+              <DealCard title="運営の手順（この画面で完結）" highlight>
+                <AdminDealOpsPanel
+                  dealId={id}
+                  status={deal.status}
+                  opsInput={adminOpsInput}
+                  platformFeeInvoiceId={platformFeeInvoice?.id ?? null}
+                />
               </DealCard>
             ) : null}
 
