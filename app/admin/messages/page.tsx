@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { TrustBadge } from "@/components/TrustBadge";
 import { BULK_FILTER_PRESETS, MESSAGE_IMPORTANCE_OPTIONS } from "@/lib/messages";
-import { PREFECTURES } from "@/lib/constants";
+import { PrefectureSelect } from "@/components/PrefectureSelect";
 import { useAsyncAction } from "@/lib/use-async-action";
 import { createClient } from "@/lib/supabase/client";
 import type { MessageImportance, TrustRank } from "@/lib/types";
@@ -261,18 +261,12 @@ export default function AdminMessagesPage() {
               </option>
             ))}
           </select>
-          <select
+          <PrefectureSelect
             value={prefecture}
-            onChange={(e) => setPrefecture(e.target.value)}
-            className="w-full rounded-lg border border-border bg-zinc-950 px-3 py-2 text-sm"
-          >
-            <option value="">都道府県指定なし</option>
-            {PREFECTURES.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
+            onChange={setPrefecture}
+            allowEmpty
+            className="w-full rounded-lg border border-border bg-zinc-950 px-3 py-2 text-sm text-foreground"
+          />
           <button
             type="button"
             disabled={loading}

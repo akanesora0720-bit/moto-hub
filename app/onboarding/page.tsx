@@ -10,7 +10,9 @@ import {
   type DealerProfileInput,
   type StaffProfileInput,
 } from "@/lib/auth";
-import { PREFECTURES, VERIFICATION_STATUS_LABELS } from "@/lib/constants";
+import { PrefectureSelect } from "@/components/PrefectureSelect";
+import { VERIFICATION_STATUS_LABELS } from "@/lib/constants";
+import { isValidPrefecture, PREFECTURE_PLACEHOLDER } from "@/lib/prefectures";
 import { createClient } from "@/lib/supabase/client";
 import type { MemberType, VerificationStatus } from "@/lib/types";
 
@@ -20,7 +22,7 @@ const emptyDealer: DealerProfileInput = {
   contact_name: "",
   antique_dealer_number: "",
   invoice_number: "",
-  prefecture: PREFECTURES[12],
+  prefecture: PREFECTURE_PLACEHOLDER,
   address: "",
   phone: "",
   bank_name: "",
@@ -84,7 +86,7 @@ export default function OnboardingPage() {
           contact_name: profile.contact_name ?? "",
           antique_dealer_number: profile.antique_dealer_number ?? "",
           invoice_number: profile.invoice_number ?? "",
-          prefecture: profile.prefecture ?? PREFECTURES[12],
+          prefecture: profile.prefecture ?? PREFECTURE_PLACEHOLDER,
           address: profile.address ?? "",
           phone: profile.phone ?? "",
           bank_name: profile.bank_name ?? "",
@@ -138,9 +140,10 @@ export default function OnboardingPage() {
       !dealerForm.phone.trim() ||
       !dealerForm.bank_name.trim() ||
       !dealerForm.bank_account_number.trim() ||
-      !dealerForm.bank_account_holder.trim()
+      !dealerForm.bank_account_holder.trim() ||
+      !isValidPrefecture(dealerForm.prefecture)
     ) {
-      setMessage("必須項目（会社情報・振込口座含む）を入力してください。");
+      setMessage("必須項目（都道府県・会社情報・振込口座含む）を入力してください。");
       return;
     }
     if (!antiqueFile && !existingAntiquePath) {
@@ -299,17 +302,12 @@ export default function OnboardingPage() {
             <span className="text-muted">
               都道府県 <span className="text-accent">*</span>
             </span>
-            <select
+            <PrefectureSelect
               value={dealerForm.prefecture}
-              onChange={(e) => setDealerForm((f) => ({ ...f, prefecture: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-border bg-zinc-950 px-3 py-2.5 text-sm"
-            >
-              {PREFECTURES.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
+              onChange={(prefecture) => setDealerForm((f) => ({ ...f, prefecture }))}
+              required
+            />
+            <p className="mt-1 text-xs text-muted">北海道から沖縄まで47都道府県から選択できます。</p>
           </label>
           {dealerField("address", "住所", true)}
           {dealerField("phone", "電話番号", true)}
