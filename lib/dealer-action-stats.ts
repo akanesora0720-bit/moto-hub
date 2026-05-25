@@ -6,6 +6,9 @@ export type DealerActionStats = {
   awaitingPayment: number;
   documentsPending: number;
   unreadNotifications: number;
+  unreadDealBoard: number;
+  openSupport: number;
+  openDisputes: number;
 };
 
 const ACTIVE_DEAL_STATUSES = [
@@ -24,7 +27,8 @@ const ACTIVE_DEAL_STATUSES = [
 export async function fetchDealerActionStats(userId: string): Promise<DealerActionStats> {
   const supabase = await createClient();
 
-  const [listingsRes, dealsRes, notificationsRes] = await Promise.all([
+  const [listingsRes, dealsRes, notificationsRes, boardUnreadRes, supportRes, disputesRes] =
+    await Promise.all([
     supabase.from("listings").select("id").eq("seller_id", userId),
     supabase
       .from("deals")
@@ -36,6 +40,17 @@ export async function fetchDealerActionStats(userId: string): Promise<DealerActi
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
       .is("read_at", null),
+    supabase.rpc("count_unread_deal_messages", { p_user_id: userId }),
+    supabase
+      .from("support_tickets")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .in("status", ["open", "reviewing", "answered"]),
+    supabase
+      .from("disputes")
+      .select("id", { count: "exact", head: true })
+      .eq("reporter_id", userId)
+      .in("status", ["open", "reviewing"]),
   ]);
 
   const listingIds = (listingsRes.data ?? []).map((l) => l.id);
@@ -61,11 +76,19 @@ export async function fetchDealerActionStats(userId: string): Promise<DealerActi
       (d.seller_id === userId && d.status === "funded"),
   ).length;
 
+  const boardUnread =
+    typeof boardUnreadRes.data === "number"
+      ? boardUnreadRes.data
+      : Number(boardUnreadRes.data ?? 0);
+
   return {
     newInquiries,
     negotiating,
     awaitingPayment,
     documentsPending,
     unreadNotifications: notificationsRes.count ?? 0,
+    unreadDealBoard: boardUnreadRes.error ? 0 : boardUnread,
+    openSupport: supportRes.count ?? 0,
+    openDisputes: disputesRes.count ?? 0,
   };
 }

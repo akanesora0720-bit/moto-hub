@@ -4,6 +4,7 @@ export type AdminPendingCounts = {
   openInquiries: number;
   openSupport: number;
   openDisputes: number;
+  unreadDealBoard: number;
   paymentReportsPending: number;
   invoicesReviewPending: number;
   payoutsAwaiting: number;
@@ -11,12 +12,15 @@ export type AdminPendingCounts = {
   pickupSchedulePending: number;
 };
 
-export async function fetchAdminPendingCounts(): Promise<AdminPendingCounts> {
+export async function fetchAdminPendingCounts(
+  adminUserId?: string,
+): Promise<AdminPendingCounts> {
   const supabase = createServiceClient();
   const [
     inquiries,
     support,
     disputes,
+    boardUnread,
     payments,
     invoices,
     payouts,
@@ -35,6 +39,9 @@ export async function fetchAdminPendingCounts(): Promise<AdminPendingCounts> {
       .from("disputes")
       .select("id", { count: "exact", head: true })
       .in("status", ["open", "reviewing"]),
+    adminUserId
+      ? supabase.rpc("count_unread_deal_messages", { p_user_id: adminUserId })
+      : Promise.resolve({ data: 0, error: null }),
     supabase
       .from("monthly_payment_reports")
       .select("id", { count: "exact", head: true })
@@ -59,10 +66,16 @@ export async function fetchAdminPendingCounts(): Promise<AdminPendingCounts> {
       .is("pickup_scheduled_at", null),
   ]);
 
+  const unreadBoard =
+    typeof boardUnread.data === "number"
+      ? boardUnread.data
+      : Number(boardUnread.data ?? 0);
+
   return {
     openInquiries: inquiries.count ?? 0,
     openSupport: support.count ?? 0,
     openDisputes: disputes.count ?? 0,
+    unreadDealBoard: boardUnread.error ? 0 : unreadBoard,
     paymentReportsPending: payments.count ?? 0,
     invoicesReviewPending: invoices.count ?? 0,
     payoutsAwaiting: payouts.count ?? 0,

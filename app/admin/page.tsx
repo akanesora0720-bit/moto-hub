@@ -29,7 +29,7 @@ export default async function AdminHubPage() {
 
     const [k, p, dealers, fundedToday] = await Promise.all([
       fetchAdminKpi(),
-      fetchAdminPendingCounts(),
+      fetchAdminPendingCounts(viewer.id),
       service
         .from("profiles")
         .select("id", { count: "exact", head: true })

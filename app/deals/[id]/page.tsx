@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { DealBillingPanel } from "@/components/DealBillingPanel";
+import { DealBoardPanel } from "@/components/DealBoardPanel";
+import { DealCard } from "@/components/DealCard";
+import { DealMilestonesPanel } from "@/components/DealMilestonesPanel";
 import { canFileDispute } from "@/lib/disputes";
 import { notFound } from "next/navigation";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
@@ -7,7 +10,9 @@ import { DealActionPanel } from "@/components/DealActionPanel";
 import { DealPickupSchedulePanel } from "@/components/DealPickupSchedulePanel";
 import { DealCounterpartyContact } from "@/components/DealCounterpartyContact";
 import { canRevealDealContacts } from "@/lib/deal-contact";
+import { canShowDealBoardForViewer } from "@/lib/deal-board";
 import { DEAL_STATUS_LABELS } from "@/lib/deal-flow";
+import { formatYen } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/viewer";
 import type { Deal, DealStatus } from "@/lib/types";
@@ -28,7 +33,7 @@ export default async function DealDetailPage({
     .select(
       `
       *,
-      listings ( maker, model, inspection_remaining )
+      listings ( maker, model, inspection_remaining, price_ex_tax )
     `,
     )
     .eq("id", id)
@@ -42,6 +47,8 @@ export default async function DealDetailPage({
   const listing = Array.isArray(row.listings) ? row.listings[0] : row.listings;
   const role =
     row.buyer_id === userId ? "buyer" : row.seller_id === userId ? "seller" : "buyer";
+  const isParty = row.buyer_id === userId || row.seller_id === userId;
+  const adminViewOnly = isAdmin && !isParty;
 
   type PartyContact = {
     store_name: string | null;
@@ -90,6 +97,10 @@ export default async function DealDetailPage({
     payment_due_at: row.payment_due_at ?? null,
     seller_payment_confirmed_at: row.seller_payment_confirmed_at ?? null,
     pickup_scheduled_at: row.pickup_scheduled_at ?? null,
+    pickup_completed_at: row.pickup_completed_at ?? null,
+    documents_shipped_at: row.documents_shipped_at ?? null,
+    transfer_completed_at: row.transfer_completed_at ?? null,
+    tracking_number: row.tracking_number ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
     listing: {
@@ -99,107 +110,186 @@ export default async function DealDetailPage({
     },
   };
 
+  const boardVisible = canShowDealBoardForViewer(deal, { isAdmin });
+  const boardRole: "buyer" | "seller" | "admin" = adminViewOnly
+    ? "admin"
+    : role;
+  const showMilestones =
+    deal.status !== "inquiry" && deal.status !== "negotiating" && deal.status !== "cancelled";
+  const isPreAgreement = deal.status === "inquiry" || deal.status === "negotiating";
+
   return (
     <AuthenticatedShell>
-      <div className="mx-auto max-w-xl space-y-6">
+      <div className="mx-auto max-w-xl space-y-5">
         <Link href="/deals" className="text-sm text-muted hover:text-accent">
           ← 取引一覧
         </Link>
 
-        <div>
+        <DealCard title="車両情報" step={1}>
           <p className="text-sm text-muted">{deal.listing.maker}</p>
-          <h1 className="text-2xl font-semibold">
-            {deal.listing.model}
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            {DEAL_STATUS_LABELS[deal.status]}
-            {isAdmin ? (
+          <p className="text-xl font-semibold">{deal.listing.model}</p>
+          <p className="mt-2 text-sm">
+            成約価格（税抜）:{" "}
+            <span className="font-medium">{formatYen(deal.agreed_price_ex_tax)}</span>
+          </p>
+          {deal.listing.inspection_remaining ? (
+            <p className="mt-1 text-xs text-muted">
+              車検残: {deal.listing.inspection_remaining}
+            </p>
+          ) : null}
+        </DealCard>
+
+        <DealCard title="商談情報" step={2}>
+          <p className="text-sm font-medium">{DEAL_STATUS_LABELS[deal.status]}</p>
+          {isPreAgreement ? (
+            <p className="mt-2 text-sm text-muted">
+              運営が商談・合意を進めます。合意後に取引連絡板と正式情報の入力が利用できます。
+            </p>
+          ) : (
+            <p className="mt-2 text-sm text-muted">
+              合意済みです。入金確認後に引取・引渡し専用の取引連絡板が開きます。
+            </p>
+          )}
+          {isAdmin ? (
+            <Link href="/admin/workspace" className="mt-2 inline-block text-sm text-accent hover:underline">
+              管理画面で商談操作 →
+            </Link>
+          ) : null}
+        </DealCard>
+
+        {!isPreAgreement ? (
+          <>
+            <DealCard title="成約確認・アクション" step={3}>
+              {adminViewOnly ? (
+                <p className="text-sm text-muted">
+                  運営表示。ステータス変更は管理画面の取引タブから行ってください。
+                </p>
+              ) : (
+                <DealActionPanel deal={deal} role={role} />
+              )}
+            </DealCard>
+
+            {contactPayload?.revealed && contactPayload.buyer && contactPayload.seller ? (
+              <DealCounterpartyContact
+                role={role}
+                buyer={contactPayload.buyer}
+                seller={contactPayload.seller}
+              />
+            ) : null}
+
+            <DealCard title="請求・入金" step={4}>
+              <DealBillingPanel
+                dealId={id}
+                userId={userId}
+                role={role}
+                status={deal.status}
+                agreedPriceExTax={deal.agreed_price_ex_tax}
+                paymentDueAt={deal.payment_due_at}
+              />
+            </DealCard>
+
+            {showMilestones ? (
               <>
-                {" "}
-                ·{" "}
-                <Link href="/admin" className="text-accent hover:underline">
-                  管理画面で操作
-                </Link>
+                <DealCard title="引取調整" step={5}>
+                  {adminViewOnly ? (
+                    <DealPickupSchedulePanel
+                      dealId={id}
+                      role="buyer"
+                      status={deal.status}
+                      pickupScheduledAt={deal.pickup_scheduled_at}
+                      fundedAt={deal.funded_at}
+                      sellerPaymentConfirmedAt={deal.seller_payment_confirmed_at}
+                      readOnly
+                    />
+                  ) : (
+                    <>
+                      <DealPickupSchedulePanel
+                        dealId={id}
+                        role={role}
+                        status={deal.status}
+                        pickupScheduledAt={deal.pickup_scheduled_at}
+                        fundedAt={deal.funded_at}
+                        sellerPaymentConfirmedAt={deal.seller_payment_confirmed_at}
+                      />
+                      <div className="mt-4 border-t border-border/60 pt-4">
+                        <DealMilestonesPanel
+                          deal={deal}
+                          role={role}
+                          section="pickup"
+                          readOnly={adminViewOnly}
+                        />
+                      </div>
+                    </>
+                  )}
+                </DealCard>
+
+                <DealCard title="書類発送" step={6}>
+                  <DealMilestonesPanel
+                    deal={deal}
+                    role={role}
+                    section="documents"
+                    readOnly={adminViewOnly}
+                  />
+                </DealCard>
+
+                <DealCard title="名変" step={7}>
+                  <DealMilestonesPanel
+                    deal={deal}
+                    role={role}
+                    section="transfer"
+                    readOnly={adminViewOnly}
+                  />
+                </DealCard>
               </>
             ) : null}
-          </p>
-        </div>
 
-        {isAdmin && row.buyer_id !== userId && row.seller_id !== userId ? (
-          <>
-            <p className="rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted">
-              運営表示。ステータス変更は管理画面の取引タブから行ってください。
-            </p>
-            <DealPickupSchedulePanel
-              dealId={id}
-              role="buyer"
-              status={deal.status}
-              pickupScheduledAt={deal.pickup_scheduled_at}
-              fundedAt={deal.funded_at}
-              sellerPaymentConfirmedAt={deal.seller_payment_confirmed_at}
-              readOnly
-            />
+            <DealCard title="完了" step={8}>
+              <p className="text-sm text-muted">
+                双方の完了確認後、MotoHub手数料（税抜3万円超のみ）の精算が行われます。
+              </p>
+              {deal.status === "completed" && deal.completed_at ? (
+                <p className="mt-2 text-sm text-emerald-300">
+                  完了日時: {new Date(deal.completed_at).toLocaleString("ja-JP")}
+                </p>
+              ) : null}
+            </DealCard>
+
+            <DealCard title="取引連絡板（引取・引渡し専用）" className="border-accent/25">
+              <DealBoardPanel
+                dealId={id}
+                viewerId={userId}
+                role={boardRole}
+                boardVisible={boardVisible}
+                readOnly={adminViewOnly}
+              />
+            </DealCard>
           </>
         ) : (
-          <>
-            <DealActionPanel deal={deal} role={role} />
-            <DealPickupSchedulePanel
-              dealId={id}
-              role={role}
-              status={deal.status}
-              pickupScheduledAt={deal.pickup_scheduled_at}
-              fundedAt={deal.funded_at}
-              sellerPaymentConfirmedAt={deal.seller_payment_confirmed_at}
-            />
-          </>
+          <DealCard title="成約前">
+            {adminViewOnly ? (
+              <p className="text-sm text-muted">運営表示。合意後に連絡板が開きます。</p>
+            ) : (
+              <DealActionPanel deal={deal} role={role} />
+            )}
+          </DealCard>
         )}
 
-        {contactPayload?.revealed && contactPayload.buyer && contactPayload.seller ? (
-          <DealCounterpartyContact
-            role={role}
-            buyer={contactPayload.buyer}
-            seller={contactPayload.seller}
-          />
-        ) : null}
-
-        <DealBillingPanel
-          dealId={id}
-          userId={userId}
-          role={role}
-          status={deal.status}
-          agreedPriceExTax={deal.agreed_price_ex_tax}
-          paymentDueAt={deal.payment_due_at}
-        />
-
-        <Link
-          href={`/support/new?deal=${id}`}
-          className="block rounded-lg border border-border px-4 py-3 text-sm hover:border-accent/40"
-        >
-          運営サポート（書類・入金・名変などの相談）
-        </Link>
-
-        {canFileDispute(deal.status) &&
-        !isAdmin &&
-        (row.buyer_id === userId || row.seller_id === userId) ? (
+        <div className="space-y-2">
           <Link
-            href={`/disputes/new?deal=${id}`}
-            className="block rounded-lg border border-amber-500/30 bg-amber-950/20 px-4 py-3 text-sm text-amber-100 hover:border-amber-500/50"
+            href={`/support/new?deal=${id}`}
+            className="block rounded-lg border border-border px-4 py-3 text-sm hover:border-accent/40"
           >
-            トラブル申告（dispute）→ 書類・虚偽・瑕疵・不正など
+            運営サポート（エスカレーション）
           </Link>
-        ) : null}
 
-        <div className="rounded-xl border border-border bg-zinc-950/50 p-4 text-xs leading-relaxed text-zinc-500">
-          <p className="font-medium text-zinc-400">取引の流れ</p>
-          <ol className="mt-2 list-decimal space-y-1 pl-4">
-            <li>問い合わせ・商談・合意（運営）</li>
-            <li>買い手が売り手へ直接振込（税込）</li>
-            <li>売り手が入金確認 → 買い手が引取予定日時を登録</li>
-            <li>売り手が車両・書類を引渡し</li>
-            <li>車検残ありの場合は翌週金曜まで名義変更</li>
-            <li>双方が取引完了を確認</li>
-            <li>MotoHub手数料請求（売り手5%）→ 完了</li>
-          </ol>
+          {canFileDispute(deal.status) && isParty ? (
+            <Link
+              href={`/disputes/new?deal=${id}`}
+              className="block rounded-lg border border-amber-500/30 bg-amber-950/20 px-4 py-3 text-sm text-amber-100 hover:border-amber-500/50"
+            >
+              トラブル申告（dispute）
+            </Link>
+          ) : null}
         </div>
       </div>
     </AuthenticatedShell>

@@ -1,8 +1,36 @@
 export const BUYER_FEE_RATE = 0;
 export const SELLER_FEE_RATE = 0.05;
+export const FEE_FREE_MAX_PRICE_EX_TAX = 30_000;
 export const MIN_FEE_EX_TAX = 0;
 export const CONSUMPTION_TAX_RATE = 0.1;
 export const PAYMENT_DUE_DAYS = 7;
+
+export type FeeTier = "waived_low_price" | "standard";
+
+export type ResolvedFeeRates = {
+  buyerFeeRate: number;
+  sellerFeeRate: number;
+  feeTier: FeeTier;
+  feeWaived: boolean;
+};
+
+/** 税抜車両価格に応じた手数料率（DB resolve_deal_fee_rates と同一） */
+export function resolveDealFeeRates(vehiclePriceExTax: number): ResolvedFeeRates {
+  if (vehiclePriceExTax <= FEE_FREE_MAX_PRICE_EX_TAX) {
+    return {
+      buyerFeeRate: 0,
+      sellerFeeRate: 0,
+      feeTier: "waived_low_price",
+      feeWaived: true,
+    };
+  }
+  return {
+    buyerFeeRate: 0,
+    sellerFeeRate: SELLER_FEE_RATE,
+    feeTier: "standard",
+    feeWaived: false,
+  };
+}
 
 export function calcFeeExTax(
   amountExTax: number,
@@ -31,12 +59,12 @@ export type DealBillingSummary = {
   platformFeeTax: number;
   platformFeeIncTax: number;
   sellerReceivesIncTax: number;
+  feeTier: FeeTier;
+  feeWaived: boolean;
 };
 
-export function summarizeDealBilling(
-  vehiclePriceExTax: number,
-  sellerFeeRate = SELLER_FEE_RATE,
-): DealBillingSummary {
+export function summarizeDealBilling(vehiclePriceExTax: number): DealBillingSummary {
+  const { sellerFeeRate, feeTier, feeWaived } = resolveDealFeeRates(vehiclePriceExTax);
   const vehicleTax = calcTax(vehiclePriceExTax);
   const platformFeeExTax = calcFeeExTax(vehiclePriceExTax, sellerFeeRate, 0);
   const platformFeeTax = calcTax(platformFeeExTax);
@@ -49,6 +77,8 @@ export function summarizeDealBilling(
     platformFeeTax,
     platformFeeIncTax: platformFeeExTax + platformFeeTax,
     sellerReceivesIncTax: vehiclePriceExTax + vehicleTax,
+    feeTier,
+    feeWaived,
   };
 }
 

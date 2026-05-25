@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { AdminDealFinalizePanel } from "@/components/AdminDealFinalizePanel";
+import { AdminEmergencyContactLog } from "@/components/AdminEmergencyContactLog";
 import { ConfirmStatusSelect } from "@/components/ConfirmStatusSelect";
 import { TrustBadge } from "@/components/TrustBadge";
 import { VerificationBadge } from "@/components/VerificationBadge";
 import { formatYen } from "@/lib/format";
 import { VERIFICATION_STATUS_LABELS } from "@/lib/constants";
-import { SELLER_FEE_RATE } from "@/lib/billing";
+import { resolveDealFeeRates } from "@/lib/billing";
 import { pickPrimaryDealForInquiry } from "@/lib/admin-inquiry-deal";
 import {
   DEAL_STATUSES,
@@ -486,7 +487,11 @@ export default function AdminPage() {
   const complaintLabel = (t: ComplaintType) =>
     COMPLAINT_TYPES.find((x) => x.value === t)?.label ?? t;
 
-  const sellerFee = (price: number) => formatYen(Math.round(price * SELLER_FEE_RATE));
+  const sellerFeeLabel = (price: number) => {
+    const { sellerFeeRate, feeWaived } = resolveDealFeeRates(price);
+    if (feeWaived) return "手数料0円（3万円以下）";
+    return `売手5% ${formatYen(Math.round(price * sellerFeeRate))}`;
+  };
 
   return (
     <AppShell isAdmin mode="admin">
@@ -967,7 +972,7 @@ export default function AdminPage() {
                       <td className="px-4 py-3">{row.buyer?.store_name ?? "—"}</td>
                       <td className="px-4 py-3">
                         {formatYen(row.agreed_price_ex_tax)}
-                        <span className="block text-xs text-muted">売手数料5% {sellerFee(row.agreed_price_ex_tax)}</span>
+                        <span className="block text-xs text-muted">{sellerFeeLabel(row.agreed_price_ex_tax)}</span>
                       </td>
                       <td className="px-4 py-3">
                         <ConfirmStatusSelect
@@ -1085,6 +1090,16 @@ export default function AdminPage() {
             <p className="text-xs text-muted">
               同一車両に取引が複数ある場合は、取消済みを除いた1件が正です。問い合わせタブのリンクは有効な取引（未完了・未取消）を優先表示します。
             </p>
+
+            <section className="rounded-xl border border-amber-500/25 bg-amber-950/20 p-4">
+              <h3 className="text-sm font-semibold text-amber-100">緊急連絡先 開示履歴</h3>
+              <p className="mt-1 text-xs text-muted">
+                買い手が取引連絡板から「緊急連絡先を表示」した記録です。
+              </p>
+              <div className="mt-4">
+                <AdminEmergencyContactLog />
+              </div>
+            </section>
           </div>
         ) : null}
       </div>

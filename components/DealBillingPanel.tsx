@@ -146,13 +146,22 @@ function SellerBilling({
     <div className="space-y-2 text-sm">
       <Row label="成約価格（税抜）" value={formatYen(summary.vehiclePriceExTax)} />
       <Row label="買い手支払（税込・直接入金）" value={formatYen(summary.sellerReceivesIncTax)} />
+      {summary.feeWaived ? (
+        <p className="text-xs text-emerald-300/90">
+          税抜30,000円以下のため、MotoHub手数料は双方0円です。
+        </p>
+      ) : null}
       <Row
-        label="MotoHub手数料（5%・税抜）"
-        value={formatYen(summary.platformFeeExTax)}
-        valueClass="text-rose-300"
+        label={summary.feeWaived ? "MotoHub手数料" : "MotoHub手数料（5%・税抜）"}
+        value={summary.feeWaived ? "¥0（対象外）" : formatYen(summary.platformFeeExTax)}
+        valueClass={summary.feeWaived ? "text-emerald-300" : "text-rose-300"}
       />
-      <Row label="手数料消費税" value={formatYen(summary.platformFeeTax)} />
-      <Row label="MotoHub請求総額（税込）" value={formatYen(summary.platformFeeIncTax)} bold />
+      {!summary.feeWaived ? (
+        <>
+          <Row label="手数料消費税" value={formatYen(summary.platformFeeTax)} />
+          <Row label="MotoHub請求総額（税込）" value={formatYen(summary.platformFeeIncTax)} bold />
+        </>
+      ) : null}
       {sellerDoc ? (
         <p className="text-xs text-muted">
           {DOCUMENT_KIND_LABELS[docKind as keyof typeof DOCUMENT_KIND_LABELS] ?? "請求書"}:{" "}
@@ -172,7 +181,11 @@ function SellerBilling({
           ) : null}
         </p>
       ) : (
-        <p className="text-xs text-zinc-500">入金確認後にMotoHub手数料請求書を発行します</p>
+        <p className="text-xs text-zinc-500">
+          {summary.feeWaived
+            ? "手数料対象外のため、請求書の発行はありません"
+            : "入金確認後にMotoHub手数料請求書を発行します"}
+        </p>
       )}
       <PaymentHint status={status} role="seller" />
     </div>

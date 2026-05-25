@@ -26,11 +26,12 @@ export async function GET(req: NextRequest) {
 
   if (scope === "admin" && canAdmin) {
     try {
-      const pending = await fetchAdminPendingCounts();
+      const pending = await fetchAdminPendingCounts(user.id);
       return NextResponse.json({
         openInquiries: pending.openInquiries,
         openSupport: pending.openSupport,
         openDisputes: pending.openDisputes,
+        unreadDealBoard: pending.unreadDealBoard,
         invoicesReviewPending: pending.invoicesReviewPending,
         payoutsAwaiting: pending.payoutsAwaiting,
       });
@@ -42,9 +43,12 @@ export async function GET(req: NextRequest) {
   try {
     const stats = await fetchDealerActionStats(user.id);
     return NextResponse.json({
-      negotiating: stats.negotiating,
+      negotiating: stats.negotiating + stats.unreadDealBoard,
       newInquiries: stats.newInquiries,
       unreadNotifications: stats.unreadNotifications,
+      unreadDealBoard: stats.unreadDealBoard,
+      openSupport: stats.openSupport,
+      openDisputes: stats.openDisputes,
     });
   } catch {
     return NextResponse.json({});

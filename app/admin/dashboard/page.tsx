@@ -19,7 +19,7 @@ export default async function AdminDashboardPage() {
   let kpiError: string | null = null;
   try {
     kpi = await fetchAdminKpi();
-    pending = await fetchAdminPendingCounts();
+    pending = await fetchAdminPendingCounts(viewer.id);
   } catch (e) {
     kpiError = e instanceof Error ? e.message : String(e);
   }
@@ -100,6 +100,11 @@ export default async function AdminDashboardPage() {
                   <PendingRow label="新規問い合わせ" count={pending.openInquiries} href="/admin" />
                   <PendingRow label="運営サポート" count={pending.openSupport} href="/admin/support" />
                   <PendingRow label="トラブル申告" count={pending.openDisputes} href="/admin/disputes" />
+                  <PendingRow
+                    label="取引連絡板（未読）"
+                    count={pending.unreadDealBoard}
+                    href="/deals"
+                  />
                   <PendingRow label="入金報告" count={pending.paymentReportsPending} href="/admin/billing" />
                   <PendingRow label="請求書確認待ち" count={pending.invoicesReviewPending} href="/admin/billing" />
                   <PendingRow label="振込待ち" count={pending.payoutsAwaiting} href="/admin/billing" />

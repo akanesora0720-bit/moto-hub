@@ -146,6 +146,10 @@ export type Deal = {
   payment_due_at: string | null;
   seller_payment_confirmed_at: string | null;
   pickup_scheduled_at: string | null;
+  pickup_completed_at: string | null;
+  documents_shipped_at: string | null;
+  transfer_completed_at: string | null;
+  tracking_number: string | null;
   created_at: string;
   updated_at: string;
 };

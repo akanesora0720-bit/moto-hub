@@ -45,7 +45,7 @@ export default async function SearchPage({
         <div>
           <h1 className="text-2xl font-semibold">業販検索</h1>
           <p className="mt-1 text-sm text-muted">
-            メーカー・車種区分・車名・車台番号で絞り込み。仲介手数料は成約時に売り手5%（買い手0%）。
+            メーカー・車種区分・車名・車台番号で絞り込み。税抜3万円超は売り手5%（3万円以下は双方0円・買い手は常に0%）。
           </p>
         </div>
 
