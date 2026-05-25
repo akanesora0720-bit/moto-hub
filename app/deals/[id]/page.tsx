@@ -6,6 +6,7 @@ import { DealMilestonesPanel } from "@/components/DealMilestonesPanel";
 import { canFileDispute } from "@/lib/disputes";
 import { notFound } from "next/navigation";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
+import { AdminDealCompletePanel } from "@/components/AdminDealCompletePanel";
 import { DealActionPanel } from "@/components/DealActionPanel";
 import { DealPickupSchedulePanel } from "@/components/DealPickupSchedulePanel";
 import { DealCounterpartyContact } from "@/components/DealCounterpartyContact";
@@ -120,6 +121,8 @@ export default async function DealDetailPage({
   const billingFirst =
     deal.status === "awaiting_payment" ||
     (deal.status === "funded" && role === "buyer");
+  const adminCanCloseDeal =
+    isAdmin && (deal.status === "payout_ready" || deal.status === "payout_done");
 
   const billingSection = (
     <DealCard id="deal-billing" title="請求・入金" step={3}>
@@ -185,14 +188,23 @@ export default async function DealDetailPage({
             </p>
           )}
           {isAdmin ? (
-            <Link href="/admin/workspace" className="mt-2 inline-block text-sm text-accent hover:underline">
-              管理画面で商談操作 →
+            <Link
+              href="/admin/workspace?tab=deals"
+              className="mt-2 inline-block text-sm text-accent hover:underline"
+            >
+              管理画面（取引タブ）で操作 →
             </Link>
           ) : null}
         </DealCard>
 
         {!isPreAgreement ? (
           <>
+            {adminCanCloseDeal ? (
+              <DealCard title="運営操作（要対応）" highlight>
+                <AdminDealCompletePanel dealId={id} status={deal.status} />
+              </DealCard>
+            ) : null}
+
             {billingFirst ? (
               <>
                 {billingSection}

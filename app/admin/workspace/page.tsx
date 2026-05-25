@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { AdminDealFinalizePanel } from "@/components/AdminDealFinalizePanel";
@@ -50,8 +51,18 @@ type ComplaintRow = {
   seller: { store_name: string | null; trust_score: number; trust_rank: TrustRank } | null;
 };
 
+const TAB_KEYS: Tab[] = ["inquiries", "listings", "members", "complaints", "deals"];
+
 export default function AdminPage() {
+  const searchParams = useSearchParams();
   const [tab, setTab] = useState<Tab>("inquiries");
+
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    if (t && TAB_KEYS.includes(t as Tab)) {
+      setTab(t as Tab);
+    }
+  }, [searchParams]);
   const [listings, setListings] = useState<
     {
       id: string;
@@ -1033,7 +1044,7 @@ export default function AdminPage() {
                             }
                             className="block text-emerald-300 hover:underline disabled:opacity-50"
                           >
-                            {actionLoading === `${row.id}:payout` ? "処理中…" : "振込完了"}
+                            {actionLoading === `${row.id}:payout` ? "処理中…" : "完了登録"}
                           </button>
                         ) : null}
                         {row.status === "payout_done" ? (
@@ -1047,7 +1058,7 @@ export default function AdminPage() {
                             }
                             className="block text-emerald-300 hover:underline disabled:opacity-50"
                           >
-                            {actionLoading === `${row.id}:complete` ? "処理中…" : "完了"}
+                            {actionLoading === `${row.id}:complete` ? "処理中…" : "取引完了"}
                           </button>
                         ) : null}
                         {row.status !== "cancelled" && row.status !== "completed" ? (
