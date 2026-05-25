@@ -45,7 +45,7 @@ export default async function DealsPage() {
   });
 
   const active = deals.filter((d) => d.active);
-  const closed = deals.filter((d) => !d.active);
+  const closed = deals.filter((d) => !d.active && d.status !== "cancelled");
 
   return (
     <AuthenticatedShell>

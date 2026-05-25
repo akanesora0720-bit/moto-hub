@@ -120,6 +120,7 @@ export default function AdminPage() {
     payoutsAwaiting: 0,
     transferOverdue: 0,
     pickupSchedulePending: 0,
+    dealsClosurePending: 0,
   });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [dealAlerts, setDealAlerts] = useState<
@@ -132,8 +133,24 @@ export default function AdminPage() {
 
   const load = useCallback(async () => {
     const supabase = createClient();
-    const [inq, l, m, c, d, a, pcInq, pcSup, pcDisp, pcPay, pcInv, pcPo, pcTr, pcPickup] =
-      await Promise.all([
+    const [
+      inq,
+      l,
+      m,
+      c,
+      d,
+      a,
+      pcInq,
+      pcSup,
+      pcDisp,
+      pcPay,
+      pcInv,
+      pcPo,
+      pcTr,
+      pcPickup,
+      pcPayoutReady,
+      pcPayoutDone,
+    ] = await Promise.all([
       supabase
         .from("inquiries")
         .select(
@@ -198,6 +215,8 @@ export default function AdminPage() {
       supabase.from("payouts").select("id", { count: "exact", head: true }).in("status", ["awaiting", "ready"]),
       supabase.from("deals").select("id", { count: "exact", head: true }).eq("transfer_overdue", true).neq("status", "completed"),
       supabase.from("deals").select("id", { count: "exact", head: true }).eq("status", "funded").is("pickup_scheduled_at", null),
+      supabase.from("deals").select("id", { count: "exact", head: true }).eq("status", "payout_ready"),
+      supabase.from("deals").select("id", { count: "exact", head: true }).eq("status", "payout_done"),
     ]);
     setInquiries(
       (inq.data ?? []).map((row) => {
@@ -295,6 +314,7 @@ export default function AdminPage() {
       payoutsAwaiting: pcPo.count ?? 0,
       transferOverdue: pcTr.count ?? 0,
       pickupSchedulePending: pcPickup.count ?? 0,
+      dealsClosurePending: (pcPayoutReady.count ?? 0) + (pcPayoutDone.count ?? 0),
     });
   }, []);
 
@@ -552,25 +572,48 @@ export default function AdminPage() {
         <div className="flex flex-wrap gap-2">
           {(
             [
-              ["inquiries", `問い合わせ${badge(pending.openInquiries)}`],
-              ["complaints", "クレーム"],
-              ["listings", "出品"],
-              ["members", "会員"],
-              [
-                "deals",
-                `取引${badge(pending.transferOverdue + pending.pickupSchedulePending)}`,
-              ],
+              {
+                key: "inquiries" as const,
+                label: "問い合わせ",
+                count: pending.openInquiries,
+                highlight: pending.openInquiries > 0,
+              },
+              { key: "complaints" as const, label: "クレーム", count: 0, highlight: false },
+              { key: "listings" as const, label: "出品", count: 0, highlight: false },
+              { key: "members" as const, label: "会員", count: 0, highlight: false },
+              {
+                key: "deals" as const,
+                label: "取引・完了確認",
+                count:
+                  pending.dealsClosurePending +
+                  pending.pickupSchedulePending +
+                  pending.transferOverdue,
+                highlight: pending.dealsClosurePending > 0,
+              },
             ] as const
-          ).map(([key, label]) => (
+          ).map(({ key, label, count, highlight }) => (
             <button
               key={key}
               type="button"
               onClick={() => setTab(key)}
-              className={`rounded-lg px-4 py-2 text-sm ${
-                tab === key ? "bg-accent text-black" : "bg-zinc-900 text-muted"
+              className={`min-h-11 rounded-xl px-5 py-2.5 text-sm font-medium touch-manipulation ${
+                tab === key
+                  ? "bg-accent text-black shadow-md"
+                  : highlight
+                    ? "border-2 border-amber-500/70 bg-amber-950/40 text-amber-100"
+                    : "bg-zinc-900 text-muted"
               }`}
             >
               {label}
+              {count > 0 ? (
+                <span
+                  className={`ml-2 inline-flex min-w-[1.25rem] justify-center rounded-full px-1.5 py-0.5 text-xs font-bold ${
+                    tab === key ? "bg-black/20 text-black" : "bg-rose-500 text-white"
+                  }`}
+                >
+                  {count}
+                </span>
+              ) : null}
             </button>
           ))}
         </div>
@@ -904,6 +947,20 @@ export default function AdminPage() {
 
         {tab === "deals" ? (
           <div className="space-y-6">
+            {pending.dealsClosurePending > 0 ? (
+              <div className="rounded-xl border-2 border-amber-500/60 bg-amber-950/40 p-4">
+                <p className="text-base font-semibold text-amber-50">
+                  {pending.dealsClosurePending} 件の取引が完了登録待ちです
+                </p>
+                <p className="mt-2 text-sm text-amber-100/90">
+                  下の一覧の<strong className="font-medium">「操作」</strong>
+                  列で「取引完了」ボタンを押すか、各行の
+                  <strong className="font-medium"> 詳細 </strong>
+                  から緑枠の運営操作で完了にしてください。
+                </p>
+              </div>
+            ) : null}
+
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
@@ -1042,9 +1099,9 @@ export default function AdminPage() {
                                 await advanceDeal(row.id, "payout_done");
                               })
                             }
-                            className="block text-emerald-300 hover:underline disabled:opacity-50"
+                            className="mb-1 block w-full min-h-9 rounded-lg border border-amber-500/50 bg-amber-950/50 px-2 py-1.5 text-xs font-semibold text-amber-100 disabled:opacity-50"
                           >
-                            {actionLoading === `${row.id}:payout` ? "処理中…" : "完了登録"}
+                            {actionLoading === `${row.id}:payout` ? "処理中…" : "① 完了登録"}
                           </button>
                         ) : null}
                         {row.status === "payout_done" ? (
@@ -1056,10 +1113,18 @@ export default function AdminPage() {
                                 await advanceDeal(row.id, "completed");
                               })
                             }
-                            className="block text-emerald-300 hover:underline disabled:opacity-50"
+                            className="mb-1 block w-full min-h-9 rounded-lg bg-accent px-2 py-1.5 text-xs font-bold text-black disabled:opacity-50"
                           >
-                            {actionLoading === `${row.id}:complete` ? "処理中…" : "取引完了"}
+                            {actionLoading === `${row.id}:complete` ? "処理中…" : "② 取引完了"}
                           </button>
+                        ) : null}
+                        {row.status === "payout_ready" ? (
+                          <Link
+                            href={`/deals/${row.id}`}
+                            className="block text-[10px] text-accent hover:underline"
+                          >
+                            詳細で一括完了 →
+                          </Link>
                         ) : null}
                         {row.status !== "cancelled" && row.status !== "completed" ? (
                           <button

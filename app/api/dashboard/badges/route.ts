@@ -35,6 +35,12 @@ export async function GET(req: NextRequest) {
         unreadDealBoard: pending.unreadDealBoard,
         invoicesReviewPending: pending.invoicesReviewPending,
         payoutsAwaiting: pending.payoutsAwaiting,
+        dealsClosurePending: pending.dealsClosurePending,
+        adminWorkspacePending:
+          pending.openInquiries +
+          pending.dealsClosurePending +
+          pending.pickupSchedulePending +
+          pending.transferOverdue,
       });
     } catch {
       return NextResponse.json({});
@@ -43,8 +49,16 @@ export async function GET(req: NextRequest) {
 
   try {
     const stats = await fetchDealerActionStats(user.id);
+    const dealsAttention =
+      stats.negotiating +
+      stats.awaitingPayment +
+      stats.handoverPending;
+
     return NextResponse.json({
-      negotiating: stats.negotiating + stats.unreadDealBoard,
+      /** 商談タブ: 商談フェーズの取引のみ（連絡板未読は含めない） */
+      negotiating: stats.negotiating,
+      /** 取引の要対応（入金・引取・商談） */
+      dealsAttention,
       newInquiries: stats.newInquiries,
       unreadNotifications: stats.unreadNotifications,
       unreadDealBoard: stats.unreadDealBoard,

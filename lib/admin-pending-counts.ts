@@ -11,6 +11,8 @@ export type AdminPendingCounts = {
   payoutsAwaiting: number;
   transferOverdue: number;
   pickupSchedulePending: number;
+  /** 運営が「取引を完了」にする必要がある件数 */
+  dealsClosurePending: number;
 };
 
 export async function fetchAdminPendingCounts(
@@ -28,6 +30,8 @@ export async function fetchAdminPendingCounts(
     payouts,
     overdue,
     pickupPending,
+    payoutReady,
+    payoutDone,
   ] = await Promise.all([
     supabase
       .from("inquiries")
@@ -70,6 +74,14 @@ export async function fetchAdminPendingCounts(
       .select("id", { count: "exact", head: true })
       .eq("status", "funded")
       .is("pickup_scheduled_at", null),
+    supabase
+      .from("deals")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "payout_ready"),
+    supabase
+      .from("deals")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "payout_done"),
   ]);
 
   const unreadBoard =
@@ -88,5 +100,6 @@ export async function fetchAdminPendingCounts(
     payoutsAwaiting: payouts.count ?? 0,
     transferOverdue: overdue.count ?? 0,
     pickupSchedulePending: pickupPending.count ?? 0,
+    dealsClosurePending: (payoutReady.count ?? 0) + (payoutDone.count ?? 0),
   };
 };

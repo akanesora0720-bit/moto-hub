@@ -12,7 +12,7 @@ export const dealerNavItems: NavItem[] = [
   {
     href: "/deals",
     label: "商談",
-    badgeKey: "negotiating",
+    badgeKey: "dealsAttention",
     matchPrefix: true,
   },
   { href: "/support", label: "サポート", badgeKey: "openSupport", matchPrefix: true },
@@ -28,7 +28,7 @@ export const adminNavItems: NavItem[] = [
   {
     href: "/admin/workspace",
     label: "商談・取引",
-    badgeKey: "openInquiries",
+    badgeKey: "adminWorkspacePending",
     matchPrefix: true,
   },
   {

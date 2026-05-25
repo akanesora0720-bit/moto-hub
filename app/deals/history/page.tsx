@@ -18,7 +18,7 @@ export default async function DealsHistoryPage() {
        listings ( maker, model )`,
     )
     .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
-    .in("status", ["completed", "cancelled", "payout_done"])
+    .in("status", ["completed", "payout_done"])
     .order("updated_at", { ascending: false });
 
   const deals = (rows ?? []).map((row) => {
@@ -41,7 +41,7 @@ export default async function DealsHistoryPage() {
             ← ホーム
           </Link>
           <h1 className="mt-2 text-2xl font-semibold">成約履歴</h1>
-          <p className="mt-1 text-sm text-muted">完了・取消済みの取引と精算確認</p>
+          <p className="mt-1 text-sm text-muted">完了した取引と精算確認</p>
         </div>
 
         {deals.length === 0 ? (
