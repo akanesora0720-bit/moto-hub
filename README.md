@@ -91,7 +91,7 @@ npm run dev
 |------|------|
 | Dispute | `/disputes/new?deal=` — 書類遅延・名変遅延・虚偽・瑕疵・音信不通・不正 |
 | 減点記録 | `penalty_logs`（`score_delta` マイナス）+ 既存 `penalty_history` |
-| 信用バンド | GOLD 90+ / BLUE 70–89 / YELLOW 40–69 / RED 0–39 |
+| 信用バンド | GOLD 80+ / BLUE 60–79 / YELLOW 40–59 / RED 0–39 |
 | マイ統計 | `/my/dashboard` — **本人のみ**（成約率・売上等は非公開） |
 | 公開プロフィール | 信用ランク・点数のみ（成約率等は出さない） |
 | 管理 | `/admin/disputes` — 審査・減点・会員検索・ステータス強制変更 |

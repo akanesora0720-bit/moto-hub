@@ -8,8 +8,16 @@ import {
   BAN_REASON_PRESETS,
   formatPenaltyCategory,
   PENALTY_CATEGORIES,
+  TRUST_RANK_BANDS,
   type PenaltyCategory,
 } from "@/lib/credit";
+import {
+  AUTO_PENALTY_RULES,
+  formatPenaltyApplier,
+  formatPenaltySource,
+  MANUAL_PENALTY_EXAMPLES,
+  type PenaltySource,
+} from "@/lib/penalty";
 import { createClient } from "@/lib/supabase/client";
 import type { TrustRank } from "@/lib/types";
 
@@ -25,12 +33,15 @@ type DealerRow = {
   yearly_reset_at: string | null;
 };
 
-type PenaltyRow = {
+type PenaltyLogRow = {
   id: string;
-  penalty_points: number;
+  score_delta: number;
   reason: string;
-  category: PenaltyCategory;
+  penalty_source: PenaltySource;
   created_at: string;
+  deal_id: string | null;
+  created_by: string | null;
+  profiles: { store_name: string | null; email: string | null } | null;
 };
 
 type SnapshotRow = {
@@ -58,7 +69,7 @@ type AuditRow = {
 export default function AdminCreditPage() {
   const [dealers, setDealers] = useState<DealerRow[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [penalties, setPenalties] = useState<PenaltyRow[]>([]);
+  const [penaltyLogs, setPenaltyLogs] = useState<PenaltyLogRow[]>([]);
   const [snapshots, setSnapshots] = useState<SnapshotRow[]>([]);
   const [adminActions, setAdminActions] = useState<AdminActionRow[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditRow[]>([]);
@@ -88,11 +99,13 @@ export default function AdminCreditPage() {
     const supabase = createClient();
     const [ph, snap, acts] = await Promise.all([
       supabase
-        .from("penalty_history")
-        .select("id, penalty_points, reason, category, created_at")
-        .eq("dealer_id", dealerId)
+        .from("penalty_logs")
+        .select(
+          "id, score_delta, reason, penalty_source, created_at, deal_id, created_by, profiles:created_by(store_name, email)",
+        )
+        .eq("user_id", dealerId)
         .order("created_at", { ascending: false })
-        .limit(30),
+        .limit(50),
       supabase
         .from("dealer_yearly_snapshot")
         .select("year, final_score, final_badge")
@@ -105,7 +118,21 @@ export default function AdminCreditPage() {
         .order("created_at", { ascending: false })
         .limit(20),
     ]);
-    setPenalties((ph.data ?? []) as PenaltyRow[]);
+    setPenaltyLogs(
+      (ph.data ?? []).map((row) => {
+        const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
+        return {
+          id: row.id as string,
+          score_delta: row.score_delta as number,
+          reason: row.reason as string,
+          penalty_source: row.penalty_source as PenaltySource,
+          created_at: row.created_at as string,
+          deal_id: row.deal_id as string | null,
+          created_by: row.created_by as string | null,
+          profiles: profile as PenaltyLogRow["profiles"],
+        };
+      }),
+    );
     setSnapshots((snap.data ?? []) as SnapshotRow[]);
     setAdminActions((acts.data ?? []) as AdminActionRow[]);
   }, []);
@@ -222,7 +249,8 @@ export default function AdminCreditPage() {
             </Link>
             <h1 className="mt-2 text-2xl font-semibold">RideWorks 信用管理</h1>
             <p className="mt-1 max-w-2xl text-sm text-muted">
-              減点・BAN・年末締め（全員100点）・監査ログ。点数の回復はなく、1/1の年次リセットのみです。
+              減点・BAN・年末締め（全員100点）・監査ログ。GOLDは80点以上（誠実な通常取引の基準）。
+              入金・名変・引渡の期限超過は営業日ごとに自動 −5。その他は運営裁量です。
             </p>
           </div>
           <button
@@ -284,8 +312,36 @@ export default function AdminCreditPage() {
                   </div>
                 </div>
 
+                <section className="rounded-xl border border-dashed border-border bg-card/50 p-5 text-sm">
+                  <h3 className="font-semibold">信用バンド（現行）</h3>
+                  <ul className="mt-2 space-y-1 text-muted">
+                    {(Object.keys(TRUST_RANK_BANDS) as TrustRank[]).map((rank) => (
+                      <li key={rank}>
+                        {TRUST_RANK_BANDS[rank].label}: {TRUST_RANK_BANDS[rank].min}–
+                        {TRUST_RANK_BANDS[rank].max}点 — {TRUST_RANK_BANDS[rank].description}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <p className="text-xs font-medium text-sky-200">自動減点（厳格）</p>
+                      <ul className="mt-1 list-inside list-disc text-xs text-muted">
+                        {AUTO_PENALTY_RULES.map((r) => (
+                          <li key={r}>{r}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-amber-200">手動減点（運営裁量）</p>
+                      <p className="mt-1 text-xs text-muted">
+                        {MANUAL_PENALTY_EXAMPLES.join("、")} など。点数は事案ごとに判断。
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
                 <section className="rounded-xl border border-border bg-card p-5">
-                  <h3 className="font-semibold">理由付き減点</h3>
+                  <h3 className="font-semibold">手動減点（運営裁量）</h3>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <label className="block text-sm">
                       <span className="text-muted">区分</span>
@@ -379,21 +435,66 @@ export default function AdminCreditPage() {
 
                 <section className="rounded-xl border border-border bg-card p-5">
                   <h3 className="font-semibold">減点履歴</h3>
-                  <ul className="mt-3 max-h-48 space-y-2 overflow-y-auto text-sm">
-                    {penalties.length === 0 ? (
-                      <li className="text-muted">履歴なし</li>
-                    ) : (
-                      penalties.map((p) => (
-                        <li key={p.id} className="rounded-lg border border-border px-3 py-2">
-                          <span className="font-mono text-rose-300">−{p.penalty_points}</span>{" "}
-                          {formatPenaltyCategory(p.category)} — {p.reason}
-                          <span className="ml-2 text-[10px] text-zinc-500">
-                            {new Date(p.created_at).toLocaleString("ja-JP")}
-                          </span>
-                        </li>
-                      ))
-                    )}
-                  </ul>
+                  <div className="mt-3 max-h-72 overflow-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="text-muted">
+                        <tr className="border-b border-border">
+                          <th className="py-2 pr-2">種別</th>
+                          <th className="py-2 pr-2">点数</th>
+                          <th className="py-2 pr-2">理由</th>
+                          <th className="py-2 pr-2">適用日時</th>
+                          <th className="py-2">適用者</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {penaltyLogs.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="py-4 text-muted">
+                              履歴なし
+                            </td>
+                          </tr>
+                        ) : (
+                          penaltyLogs.map((p) => {
+                            const applierLabel = p.profiles
+                              ? p.profiles.store_name ?? p.profiles.email
+                              : null;
+                            return (
+                              <tr key={p.id} className="border-b border-border/60 align-top">
+                                <td className="py-2 pr-2 whitespace-nowrap">
+                                  <span
+                                    className={
+                                      p.penalty_source === "auto_penalty"
+                                        ? "text-sky-300"
+                                        : "text-amber-200"
+                                    }
+                                  >
+                                    {formatPenaltySource(p.penalty_source)}
+                                  </span>
+                                </td>
+                                <td className="py-2 pr-2 font-mono text-rose-300 whitespace-nowrap">
+                                  {p.score_delta}
+                                </td>
+                                <td className="py-2 pr-2 max-w-xs">
+                                  {p.reason}
+                                  {p.deal_id ? (
+                                    <span className="mt-0.5 block font-mono text-[10px] text-zinc-500">
+                                      deal: {p.deal_id.slice(0, 8)}…
+                                    </span>
+                                  ) : null}
+                                </td>
+                                <td className="py-2 pr-2 whitespace-nowrap text-zinc-500">
+                                  {new Date(p.created_at).toLocaleString("ja-JP")}
+                                </td>
+                                <td className="py-2 whitespace-nowrap text-zinc-400">
+                                  {formatPenaltyApplier(p.penalty_source, applierLabel)}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </section>
 
                 <section className="rounded-xl border border-border bg-card p-5">

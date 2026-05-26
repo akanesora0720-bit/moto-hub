@@ -8,7 +8,7 @@ import { ADMIN_DEAL_STATUS_LABELS } from "@/lib/deal-flow";
 import {
   DISPUTE_STATUS_LABELS,
   disputeCategoryLabel,
-  disputePenaltyForCategory,
+  disputeSuggestedPenalty,
 } from "@/lib/disputes";
 import { createClient } from "@/lib/supabase/client";
 import type { DealStatus, DisputeCategory, TrustRank } from "@/lib/types";
@@ -142,7 +142,7 @@ export default function AdminDisputesPage() {
 
   useEffect(() => {
     if (selected) {
-      setPenaltyPoints(disputePenaltyForCategory(selected.category));
+      setPenaltyPoints(disputeSuggestedPenalty(selected.category));
       setResolution("");
     }
   }, [selected]);

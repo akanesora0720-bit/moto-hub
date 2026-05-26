@@ -3,15 +3,45 @@ import type { DealStatus, DisputeCategory } from "@/lib/types";
 export const DISPUTE_CATEGORIES: {
   value: DisputeCategory;
   label: string;
-  penalty: number;
+  suggestedPoints: number;
   description: string;
 }[] = [
-  { value: "doc_delay", label: "書類遅延", penalty: 10, description: "必要書類の提出・郵送が遅延" },
-  { value: "transfer_delay", label: "名変遅延", penalty: 10, description: "名義変更期限を超過" },
-  { value: "false_claim", label: "虚偽申告", penalty: 30, description: "車両状態・走行・改造等の虚偽" },
-  { value: "defect", label: "瑕疵", penalty: 15, description: "申告以上の瑕疵・隠し瑕疵" },
-  { value: "no_contact", label: "音信不通", penalty: 10, description: "連絡不能・対応拒否" },
-  { value: "fraud", label: "不正", penalty: 50, description: "不正行為・詐欺行為" },
+  {
+    value: "doc_delay",
+    label: "書類遅延",
+    suggestedPoints: 10,
+    description: "期限超過は原則自動減点。悪質な場合は手動で追加減点可",
+  },
+  {
+    value: "transfer_delay",
+    label: "名変遅延",
+    suggestedPoints: 10,
+    description: "期限超過は原則自動減点。悪質な場合は手動で追加減点可",
+  },
+  {
+    value: "false_claim",
+    label: "虚偽申告",
+    suggestedPoints: 30,
+    description: "運営裁量（悪質性・故意性を総合判断）",
+  },
+  {
+    value: "defect",
+    label: "瑕疵",
+    suggestedPoints: 15,
+    description: "運営裁量（程度・説明義務違反を総合判断）",
+  },
+  {
+    value: "no_contact",
+    label: "音信不通",
+    suggestedPoints: 10,
+    description: "運営裁量",
+  },
+  {
+    value: "fraud",
+    label: "不正",
+    suggestedPoints: 50,
+    description: "運営裁量（重大違反）",
+  },
 ];
 
 export const DISPUTE_STATUS_LABELS: Record<string, string> = {
@@ -35,8 +65,8 @@ export function canFileDispute(status: DealStatus): boolean {
   return DISPUTE_ELIGIBLE_DEAL_STATUSES.includes(status);
 }
 
-export function disputePenaltyForCategory(cat: DisputeCategory): number {
-  return DISPUTE_CATEGORIES.find((c) => c.value === cat)?.penalty ?? 10;
+export function disputeSuggestedPenalty(cat: DisputeCategory): number {
+  return DISPUTE_CATEGORIES.find((c) => c.value === cat)?.suggestedPoints ?? 10;
 }
 
 export function disputeCategoryLabel(cat: DisputeCategory): string {

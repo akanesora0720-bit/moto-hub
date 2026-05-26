@@ -531,12 +531,11 @@ export function AdminWorkspaceClient() {
       overdue?: number;
       due_soon?: number;
       due_today?: number;
-      penalty_3d?: number;
-      penalty_7d?: number;
+      penalties_applied?: number;
       review_14d?: number;
     };
     setMessage(
-      `名変ジョブ: 超過 ${r.overdue ?? 0} / 3日前 ${r.due_soon ?? 0} / 当日 ${r.due_today ?? 0} / 減点3日 ${r.penalty_3d ?? 0} / 7日 ${r.penalty_7d ?? 0} / 要レビュー14日 ${r.review_14d ?? 0}`,
+      `名変ジョブ: 超過 ${r.overdue ?? 0} / 3日前 ${r.due_soon ?? 0} / 当日 ${r.due_today ?? 0} / 自動減点 ${r.penalties_applied ?? 0} / 要レビュー14日 ${r.review_14d ?? 0}`,
     );
     load();
   };

@@ -1,4 +1,4 @@
-import { formatPenaltyCategory, type PenaltyCategory } from "@/lib/credit";
+import { formatPenaltySource } from "@/lib/penalty";
 import type { PenaltyHistoryRow } from "@/lib/credit-data";
 
 export function PenaltyHistoryList({ rows }: { rows: PenaltyHistoryRow[] }) {
@@ -21,8 +21,14 @@ export function PenaltyHistoryList({ rows }: { rows: PenaltyHistoryRow[] }) {
             <span className="font-mono text-lg font-semibold text-rose-300">
               −{row.penalty_points}点
             </span>
-            <span className="rounded border border-border px-2 py-0.5 text-[10px] text-muted">
-              {formatPenaltyCategory(row.category as PenaltyCategory)}
+            <span
+              className={`rounded border px-2 py-0.5 text-[10px] ${
+                row.penalty_source === "auto_penalty"
+                  ? "border-sky-500/40 text-sky-200"
+                  : "border-amber-500/40 text-amber-200"
+              }`}
+            >
+              {formatPenaltySource(row.penalty_source)}
             </span>
           </div>
           <p className="mt-2 leading-relaxed">{row.reason}</p>

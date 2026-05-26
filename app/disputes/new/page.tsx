@@ -8,7 +8,7 @@ import { DEAL_STATUS_LABELS } from "@/lib/deal-flow";
 import {
   DISPUTE_CATEGORIES,
   canFileDispute,
-  disputePenaltyForCategory,
+  disputeSuggestedPenalty,
 } from "@/lib/disputes";
 import { createClient } from "@/lib/supabase/client";
 import type { DealStatus, DisputeCategory } from "@/lib/types";
@@ -114,7 +114,7 @@ function DisputeForm() {
         >
           {DISPUTE_CATEGORIES.map((c) => (
             <option key={c.value} value={c.value}>
-              {c.label}（減点候補 -{c.penalty}点）
+              {c.label}（運営裁量・目安 −{c.suggestedPoints}点）
             </option>
           ))}
         </select>
@@ -146,7 +146,8 @@ function DisputeForm() {
       </label>
 
       <p className="text-xs text-zinc-500">
-        減点候補: -{disputePenaltyForCategory(category)}点（運営判断・事実確認後）
+        期限超過系は原則自動減点（1営業日 −5）。その他は運営が悪質性・故意性等を踏まえて判断（目安 −
+        {disputeSuggestedPenalty(category)}点）。
       </p>
 
       {statusMsg ? (

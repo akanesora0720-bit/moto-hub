@@ -1,13 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
-import type { PenaltyCategory } from "@/lib/credit";
 import type { TrustRank } from "@/lib/types";
+import type { PenaltySource } from "@/lib/penalty";
 
 export type PenaltyHistoryRow = {
   id: string;
   dealer_id: string;
   penalty_points: number;
   reason: string;
-  category: PenaltyCategory;
+  penalty_source: PenaltySource;
   created_at: string;
   created_by: string | null;
 };
@@ -31,9 +31,9 @@ export async function fetchDealerCreditData(dealerId: string, isAdmin: boolean) 
 
   const [penalties, snapshots, bans] = await Promise.all([
     supabase
-      .from("penalty_history")
-      .select("id, dealer_id, penalty_points, reason, category, created_at, created_by")
-      .eq("dealer_id", dealerId)
+      .from("penalty_logs")
+      .select("id, user_id, score_delta, reason, penalty_source, created_at, created_by")
+      .eq("user_id", dealerId)
       .order("created_at", { ascending: false })
       .limit(isAdmin ? 100 : 50),
     supabase
@@ -50,7 +50,15 @@ export async function fetchDealerCreditData(dealerId: string, isAdmin: boolean) 
   ]);
 
   return {
-    penalties: (penalties.data ?? []) as PenaltyHistoryRow[],
+    penalties: (penalties.data ?? []).map((row) => ({
+      id: row.id as string,
+      dealer_id: row.user_id as string,
+      penalty_points: Math.abs(row.score_delta as number),
+      reason: row.reason as string,
+      penalty_source: row.penalty_source as PenaltySource,
+      created_at: row.created_at as string,
+      created_by: row.created_by as string | null,
+    })),
     snapshots: (snapshots.data ?? []) as YearlySnapshotRow[],
     bans: (bans.data ?? []) as BanHistoryRow[],
   };
