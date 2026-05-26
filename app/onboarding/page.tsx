@@ -11,11 +11,12 @@ import {
   type StaffProfileInput,
 } from "@/lib/auth";
 import { PrefectureSelect } from "@/components/PrefectureSelect";
-import { TermsConsentCheckbox } from "@/components/TermsConsentCheckbox";
+import { LegalPoliciesConsent } from "@/components/LegalPoliciesConsent";
 import {
+  CURRENT_PRIVACY_VERSION,
   CURRENT_TERMS_VERSION,
-  termsPdfAbsoluteUrl,
-} from "@/lib/terms";
+  registrationPolicyPayload,
+} from "@/lib/legal-policies";
 import { VERIFICATION_STATUS_LABELS } from "@/lib/constants";
 import { isValidPrefecture, PREFECTURE_PLACEHOLDER } from "@/lib/prefectures";
 import { createClient } from "@/lib/supabase/client";
@@ -68,7 +69,7 @@ export default function OnboardingPage() {
   const [existingInvoicePath, setExistingInvoicePath] = useState<string | null>(null);
   const [verificationStatus, setVerificationStatus] =
     useState<VerificationStatus>("unverified");
-  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [policiesAccepted, setPoliciesAccepted] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -106,10 +107,17 @@ export default function OnboardingPage() {
           phone: profile.phone ?? "",
         });
       }
-      const { data: hasTerms } = await supabase.rpc("has_accepted_terms", {
-        p_terms_version: CURRENT_TERMS_VERSION,
-      });
-      if (hasTerms) setTermsAccepted(true);
+      const [{ data: hasTerms }, { data: hasPrivacy }] = await Promise.all([
+        supabase.rpc("has_accepted_policy", {
+          p_policy_type: "terms",
+          p_policy_version: CURRENT_TERMS_VERSION,
+        }),
+        supabase.rpc("has_accepted_policy", {
+          p_policy_type: "privacy",
+          p_policy_version: CURRENT_PRIVACY_VERSION,
+        }),
+      ]);
+      if (hasTerms && hasPrivacy) setPoliciesAccepted(true);
     });
   }, []);
 
@@ -164,8 +172,8 @@ export default function OnboardingPage() {
       setMessage("インボイス登録票の画像を1枚アップロードしてください。");
       return;
     }
-    if (!termsAccepted) {
-      setMessage("利用規約PDFを確認のうえ、同意にチェックを入れてください。");
+    if (!policiesAccepted) {
+      setMessage("利用規約・プライバシーポリシーを確認のうえ、同意にチェックを入れてください。");
       return;
     }
 
@@ -189,14 +197,11 @@ export default function OnboardingPage() {
         invoice_doc_path: invoicePath!,
         submitForReview: true,
       });
-      const pdfUrl = termsPdfAbsoluteUrl(window.location.origin);
       const { error } = await supabase.rpc("complete_dealer_onboarding", {
         p_payload: {
           ...payload,
           submit_for_review: true,
-          terms_accepted: true,
-          terms_version: CURRENT_TERMS_VERSION,
-          terms_pdf_url: pdfUrl,
+          ...registrationPolicyPayload(window.location.origin),
         },
       });
 
@@ -335,10 +340,10 @@ export default function OnboardingPage() {
           {dealerField("bank_account_holder", "口座名義", true)}
         </div>
 
-        <TermsConsentCheckbox
-          checked={termsAccepted}
-          onChange={setTermsAccepted}
-          id="onboarding-terms-consent"
+        <LegalPoliciesConsent
+          checked={policiesAccepted}
+          onChange={setPoliciesAccepted}
+          id="onboarding-policies-consent"
         />
 
         {message ? (
@@ -348,7 +353,7 @@ export default function OnboardingPage() {
         <button
           type="button"
           onClick={submitDealer}
-          disabled={loading || !termsAccepted}
+          disabled={loading || !policiesAccepted}
           className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60"
         >
           {loading ? "保存中…" : "保存して在庫一覧へ"}

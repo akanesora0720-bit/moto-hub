@@ -4,25 +4,27 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthLayout } from "@/components/AuthLayout";
-import { TermsConsentCheckbox } from "@/components/TermsConsentCheckbox";
+import { LegalPoliciesConsent } from "@/components/LegalPoliciesConsent";
 import { createClient } from "@/lib/supabase/client";
 import {
+  CURRENT_PRIVACY_VERSION,
   CURRENT_TERMS_VERSION,
+  privacyPdfAbsoluteUrl,
   termsPdfAbsoluteUrl,
-} from "@/lib/terms";
+} from "@/lib/legal-policies";
 
 export default function SignupPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [policiesAccepted, setPoliciesAccepted] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
     setMessage("");
-    if (!termsAccepted) {
-      setMessage("利用規約PDFを確認のうえ、同意にチェックを入れてください。");
+    if (!policiesAccepted) {
+      setMessage("利用規約・プライバシーポリシーを確認のうえ、同意にチェックを入れてください。");
       return;
     }
     if (password.length < 8) {
@@ -59,13 +61,15 @@ export default function SignupPage() {
       return;
     }
 
-    const pdfUrl = termsPdfAbsoluteUrl(window.location.origin);
-    const { error: termsErr } = await supabase.rpc("record_terms_acceptance", {
+    const origin = window.location.origin;
+    const { error: policiesErr } = await supabase.rpc("record_registration_policy_acceptances", {
       p_terms_version: CURRENT_TERMS_VERSION,
-      p_pdf_url: pdfUrl,
+      p_terms_pdf_url: termsPdfAbsoluteUrl(origin),
+      p_privacy_version: CURRENT_PRIVACY_VERSION,
+      p_privacy_pdf_url: privacyPdfAbsoluteUrl(origin),
     });
-    if (termsErr) {
-      setMessage(termsErr.message);
+    if (policiesErr) {
+      setMessage(policiesErr.message);
       return;
     }
 
@@ -108,10 +112,10 @@ export default function SignupPage() {
           />
         </label>
 
-        <TermsConsentCheckbox
-          checked={termsAccepted}
-          onChange={setTermsAccepted}
-          id="signup-terms-consent"
+        <LegalPoliciesConsent
+          checked={policiesAccepted}
+          onChange={setPoliciesAccepted}
+          id="signup-policies-consent"
         />
 
         {message ? (
@@ -123,7 +127,7 @@ export default function SignupPage() {
         <button
           type="button"
           onClick={submit}
-          disabled={loading || !termsAccepted}
+          disabled={loading || !policiesAccepted}
           className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black hover:bg-accent-dim disabled:opacity-60"
         >
           {loading ? "処理中…" : "登録する"}
