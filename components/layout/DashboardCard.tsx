@@ -42,21 +42,41 @@ export function ActionCard({
   description,
   href,
   sublinks,
+  primary,
+  ctaLabel,
 }: {
   title: string;
   description: string;
   href: string;
   sublinks?: { label: string; href: string }[];
+  /** 業務メニューのメイン導線（2カラム幅・強調表示） */
+  primary?: boolean;
+  ctaLabel?: string;
 }) {
   return (
     <Link
       href={href}
-      className="block rounded-xl border border-border bg-card p-5 transition hover:border-accent/40 hover:bg-zinc-900/40"
+      className={
+        primary
+          ? "col-span-1 block rounded-2xl border-2 border-accent/55 bg-gradient-to-br from-card to-zinc-900/80 p-6 shadow-md shadow-accent/10 transition hover:border-accent hover:shadow-lg hover:shadow-accent/15 sm:col-span-2 md:p-8"
+          : "block rounded-xl border border-border bg-card p-5 transition hover:border-accent/40 hover:bg-zinc-900/40"
+      }
     >
-      <h3 className="font-semibold">{title}</h3>
-      <p className="mt-1 text-sm text-muted">{description}</p>
+      <h3 className={primary ? "text-xl font-bold tracking-tight md:text-2xl" : "font-semibold"}>
+        {title}
+      </h3>
+      <p className={`text-muted ${primary ? "mt-2 text-base md:text-lg" : "mt-1 text-sm"}`}>
+        {description}
+      </p>
+      {ctaLabel ? (
+        <span className="mt-5 inline-flex rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-black md:text-base">
+          {ctaLabel}
+        </span>
+      ) : null}
       {sublinks && sublinks.length > 0 ? (
-        <ul className="mt-3 space-y-1 border-t border-border/60 pt-3">
+        <ul
+          className={`space-y-1 border-t border-border/60 pt-3 ${ctaLabel ? "mt-4" : "mt-3"}`}
+        >
           {sublinks.map((s) => (
             <li key={s.href}>
               <span className="text-xs text-accent">{s.label}</span>

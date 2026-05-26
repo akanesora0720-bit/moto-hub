@@ -129,9 +129,28 @@ export default async function DealerHomePage() {
             {tradingEnabled ? (
             <>
             <ActionCard
-              title="① 出品する"
+              primary
+              ctaLabel="在庫を見る"
+              title="車両を探す"
+              description="業販在庫を検索・仕入れ"
+              href="/search"
+            />
+            <ActionCard
+              title="出品する"
               description="車両を登録して業販に出す"
               href="/listings/new"
+            />
+            <ActionCard
+              title="商談管理"
+              description="進行中の取引・問い合わせ"
+              href="/deals"
+              sublinks={[{ label: "自分の出品を見る", href: "/listings/mine" }]}
+            />
+            <ActionCard
+              title="売却済み"
+              description="成約履歴と精算確認"
+              href="/deals/history"
+              sublinks={[{ label: "月額入金報告", href: "/my/payments" }]}
             />
             <ActionCard
               title="MotoHub査定依頼"
@@ -139,35 +158,18 @@ export default async function DealerHomePage() {
               href="/inspections"
             />
             <ActionCard
-              title="② 商談管理"
-              description="進行中の取引・問い合わせ"
-              href="/deals"
-              sublinks={[{ label: "自分の出品を見る", href: "/listings/mine" }]}
-            />
-            <ActionCard
-              title="③ 売却済み"
-              description="成約履歴と精算確認"
-              href="/deals/history"
-              sublinks={[{ label: "月額入金報告", href: "/my/payments" }]}
-            />
-            <ActionCard
-              title="④ 車両を探す"
-              description="業販在庫を検索・仕入れ"
-              href="/search"
-            />
-            <ActionCard
-              title="⑤ お気に入り"
+              title="お気に入り"
               description="ウォッチリスト（準備中）"
               href="/favorites"
             />
             <ActionCard
-              title="⑥ 評価・信用"
+              title="評価・信用"
               description="加盟店スコアと公開プロフィール"
               href="/profile"
               sublinks={[{ label: "詳細統計", href: "/my/dashboard" }]}
             />
             <ActionCard
-              title="⑦ 設定"
+              title="設定"
               description="会社情報・振込口座・本人確認"
               href="/settings"
               sublinks={[{ label: "運営サポート", href: "/support" }]}
@@ -176,8 +178,10 @@ export default async function DealerHomePage() {
             ) : (
               <>
                 <ActionCard
-                  title="業販検索"
-                  description="在庫の閲覧（仮登録・審査中も利用可）"
+                  primary
+                  ctaLabel="在庫を見る"
+                  title="車両を探す"
+                  description="業販在庫を検索・仕入れ（仮登録・審査中も閲覧可）"
                   href="/search"
                 />
                 {!profileRow?.profile_completed ? (
