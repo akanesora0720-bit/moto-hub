@@ -138,17 +138,34 @@ export default async function ListingDetailPage({
                   </span>
                 </dd>
               </div>
+              {listing.model_designation ? (
+                <div className="rounded-lg border border-border bg-card p-3">
+                  <dt className="text-muted">型式</dt>
+                  <dd className="mt-1 font-mono text-sm">{listing.model_designation}</dd>
+                </div>
+              ) : null}
+              {listing.engine_model ? (
+                <div className="rounded-lg border border-border bg-card p-3">
+                  <dt className="text-muted">エンジン型式</dt>
+                  <dd className="mt-1 font-mono text-sm">{listing.engine_model}</dd>
+                </div>
+              ) : null}
               <div className="col-span-2 rounded-lg border border-border bg-card p-3">
                 <dt className="text-muted">車台番号</dt>
                 <dd className="mt-1 break-all font-mono text-sm tracking-wide">
                   {listing.frame_number}
                 </dd>
+                {listing.is_officially_stamped_vin && listing.vin_note ? (
+                  <p className="mt-2 text-xs text-muted">備考: {listing.vin_note}</p>
+                ) : null}
               </div>
             </dl>
 
             <ListingGradingDisplay
               grades={grades}
               inspectionRemaining={listing.inspection_remaining}
+              inspectionExpiryDate={listing.inspection_expiry_date}
+              liabilityInsuranceExpiryDate={listing.liability_insurance_expiry_date}
             />
 
             {listing.engine_video_url ? (

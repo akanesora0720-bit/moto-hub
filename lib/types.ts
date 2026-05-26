@@ -91,6 +91,12 @@ export type Listing = {
   grade_electrical: number | null;
   grade_frame: number | null;
   inspection_remaining: string | null;
+  inspection_expiry_date?: string | null;
+  liability_insurance_expiry_date?: string | null;
+  model_designation?: string | null;
+  engine_model?: string | null;
+  is_officially_stamped_vin?: boolean;
+  vin_note?: string | null;
   engine_video_url: string | null;
   created_at: string;
 };
@@ -146,6 +152,9 @@ export type Deal = {
   seller_intent_confirmed: boolean;
   buyer_intent_confirmed: boolean;
   payment_due_at: string | null;
+  platform_fee_invoice_issued_at?: string | null;
+  platform_fee_due_at?: string | null;
+  platform_fee_paid_at?: string | null;
   seller_payment_confirmed_at: string | null;
   buyer_payment_reported_at: string | null;
   pickup_scheduled_at: string | null;

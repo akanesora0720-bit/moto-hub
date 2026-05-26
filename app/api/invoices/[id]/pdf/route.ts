@@ -181,11 +181,11 @@ export async function GET(
     if (documentKind === "platform_fee") {
       const dueRes = await supabase
         .from("deals")
-        .select("payment_due_at")
+        .select("platform_fee_due_at")
         .eq("id", invoice.deal_id)
         .maybeSingle();
-      if (dueRes.data?.payment_due_at) {
-        paymentDueAt = new Date(dueRes.data.payment_due_at).toLocaleDateString("ja-JP");
+      if (dueRes.data?.platform_fee_due_at) {
+        paymentDueAt = new Date(dueRes.data.platform_fee_due_at).toLocaleDateString("ja-JP");
       }
     }
 

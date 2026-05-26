@@ -16,6 +16,7 @@ export async function DealBillingPanel({
   status,
   agreedPriceExTax,
   paymentDueAt,
+  platformFeeDueAt,
 }: {
   dealId: string;
   userId: string;
@@ -23,6 +24,7 @@ export async function DealBillingPanel({
   status: DealStatus;
   agreedPriceExTax: number;
   paymentDueAt?: string | null;
+  platformFeeDueAt?: string | null;
 }) {
   const supabase = await createClient();
   const summary = summarizeDealBilling(agreedPriceExTax);
@@ -66,6 +68,7 @@ export async function DealBillingPanel({
         <SellerBilling
           summary={summary}
           status={status}
+          platformFeeDueAt={platformFeeDueAt}
           sellerDoc={sellerDoc}
           docKind={docKind(sellerDoc)}
         />
@@ -102,9 +105,15 @@ function BuyerBilling({
       <p className="text-xs text-emerald-300/90">
         買い手手数料0円 — 売り手へ直接お振込みください（MotoHubは資金を預かりません）
       </p>
+      <p className="text-xs text-muted">
+        車両代金は双方合意後3営業日以内が原則です。
+      </p>
       {paymentDueAt ? (
         <p className="text-xs text-amber-200/90">
-          振込期限: {new Date(paymentDueAt).toLocaleDateString("ja-JP")}
+          振込期限:{" "}
+          {new Date(paymentDueAt).toLocaleDateString("ja-JP", {
+            timeZone: "Asia/Tokyo",
+          })}
         </p>
       ) : null}
       {buyerDoc ? (
@@ -134,11 +143,13 @@ function BuyerBilling({
 function SellerBilling({
   summary,
   status,
+  platformFeeDueAt,
   sellerDoc,
   docKind,
 }: {
   summary: ReturnType<typeof summarizeDealBilling>;
   status: DealStatus;
+  platformFeeDueAt?: string | null;
   sellerDoc?: Invoice;
   docKind: string;
 }) {
@@ -160,6 +171,17 @@ function SellerBilling({
         <>
           <Row label="手数料消費税" value={formatYen(summary.platformFeeTax)} />
           <Row label="MotoHub請求総額（税込）" value={formatYen(summary.platformFeeIncTax)} bold />
+          <p className="text-xs text-muted">
+            MotoHub手数料は引渡完了後の請求書発行日から3営業日以内です。
+          </p>
+          {platformFeeDueAt ? (
+            <p className="text-xs text-amber-200/90">
+              手数料支払期限:{" "}
+              {new Date(platformFeeDueAt).toLocaleDateString("ja-JP", {
+                timeZone: "Asia/Tokyo",
+              })}
+            </p>
+          ) : null}
         </>
       ) : null}
       {sellerDoc ? (
@@ -184,7 +206,7 @@ function SellerBilling({
         <p className="text-xs text-zinc-500">
           {summary.feeWaived
             ? "手数料対象外のため、請求書の発行はありません"
-            : "入金確認後にMotoHub手数料請求書を発行します"}
+            : "引渡完了後にMotoHub手数料請求書を発行します"}
         </p>
       )}
       <PaymentHint status={status} role="seller" />
@@ -246,7 +268,7 @@ function PaymentHint({
 
   const text =
     status === "awaiting_payment"
-      ? "買い手からの入金を確認してください（確認後に手数料請求書を発行）"
+      ? "買い手からの入金を確認してください"
       : status === "funded"
         ? "入金確認済 — 引渡しへ進めます"
         : ["handover_done", "transfer_pending"].includes(status)

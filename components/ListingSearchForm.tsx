@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { normalizeIdentifierInput } from "@/lib/normalize";
 import { MobilePicker } from "@/components/MobilePicker";
 import { MAKERS, VEHICLE_CLASSES } from "@/lib/constants";
 import type { VehicleClass } from "@/lib/constants";
@@ -28,8 +29,8 @@ export function ListingSearchForm({ action = "/search" }: { action?: string }) {
     e.preventDefault();
     const sp = new URLSearchParams();
     if (maker) sp.set("maker", maker);
-    if (model.trim()) sp.set("model", model.trim());
-    if (frame.trim()) sp.set("frame", frame.trim());
+    if (model.trim()) sp.set("model", normalizeIdentifierInput(model.trim()));
+    if (frame.trim()) sp.set("frame", normalizeIdentifierInput(frame.trim()));
     if (vehicleClass) sp.set("vehicle_class", vehicleClass);
     if (motohubOnly) sp.set("motohub_only", "1");
     const q = sp.toString();
@@ -84,7 +85,7 @@ export function ListingSearchForm({ action = "/search" }: { action?: string }) {
           <input
             type="search"
             value={frame}
-            onChange={(e) => setFrame(e.target.value)}
+            onChange={(e) => setFrame(normalizeIdentifierInput(e.target.value))}
             placeholder="例: NC42-120"
             className="mt-1 w-full rounded-lg border border-border bg-zinc-950 px-3 py-2.5 font-mono text-sm"
           />

@@ -1,17 +1,29 @@
 import { GRADING_ITEMS } from "@/lib/vehicle-grading";
 import type { ListingGradesStored } from "@/lib/types";
 
+function formatYmdJa(ymd: string | null | undefined): string | null {
+  if (!ymd) return null;
+  const [y, m, d] = ymd.split("-").map(Number);
+  if (!y || !m || !d) return ymd;
+  return `${y}年${m}月${d}日`;
+}
+
 export function ListingGradingDisplay({
   grades,
   inspectionRemaining,
+  inspectionExpiryDate,
+  liabilityInsuranceExpiryDate,
   compact = false,
 }: {
   grades: ListingGradesStored;
   inspectionRemaining: string | null;
+  inspectionExpiryDate?: string | null;
+  liabilityInsuranceExpiryDate?: string | null;
   compact?: boolean;
 }) {
   const hasAny = GRADING_ITEMS.some((i) => grades[i.key] != null);
-  if (!hasAny && !inspectionRemaining) return null;
+  const hasDates = !!(inspectionExpiryDate || liabilityInsuranceExpiryDate);
+  if (!hasAny && !inspectionRemaining && !hasDates) return null;
 
   return (
     <div
@@ -40,9 +52,27 @@ export function ListingGradingDisplay({
           })}
         </div>
       ) : null}
+      {hasDates ? (
+        <dl
+          className={`grid gap-2 sm:grid-cols-2 ${hasAny ? "mt-3" : "mt-2"} ${compact ? "text-xs" : "text-sm"}`}
+        >
+          {inspectionExpiryDate ? (
+            <div>
+              <dt className="text-zinc-500">車検満了日</dt>
+              <dd>{formatYmdJa(inspectionExpiryDate)}</dd>
+            </div>
+          ) : null}
+          {liabilityInsuranceExpiryDate ? (
+            <div>
+              <dt className="text-zinc-500">自賠責満了日</dt>
+              <dd>{formatYmdJa(liabilityInsuranceExpiryDate)}</dd>
+            </div>
+          ) : null}
+        </dl>
+      ) : null}
       {inspectionRemaining ? (
-        <p className={`text-muted ${hasAny ? "mt-3" : "mt-2"} ${compact ? "text-xs" : "text-sm"}`}>
-          <span className="text-zinc-500">車検残：</span>
+        <p className={`text-muted ${hasAny || hasDates ? "mt-3" : "mt-2"} ${compact ? "text-xs" : "text-sm"}`}>
+          <span className="text-zinc-500">車検残メモ：</span>
           {inspectionRemaining}
         </p>
       ) : null}

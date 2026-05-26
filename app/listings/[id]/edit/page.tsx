@@ -50,6 +50,12 @@ export default async function EditListingPage({
     condition_comment: listing.condition_comment,
     grades: parseGradesToForm(listing),
     inspection_remaining: listing.inspection_remaining,
+    inspection_expiry_date: listing.inspection_expiry_date,
+    liability_insurance_expiry_date: listing.liability_insurance_expiry_date,
+    model_designation: listing.model_designation,
+    engine_model: listing.engine_model,
+    is_officially_stamped_vin: listing.is_officially_stamped_vin ?? false,
+    vin_note: listing.vin_note,
   };
 
   return (

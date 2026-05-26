@@ -1,4 +1,5 @@
 import { MAKERS, VEHICLE_CLASSES, type VehicleClass } from "@/lib/constants";
+import { normalizeIdentifierInput } from "@/lib/normalize";
 
 export const LISTINGS_PAGE_SIZE = 24;
 
@@ -26,8 +27,10 @@ export function parseListingSearch(query: ListingSearchQuery): ParsedListingSear
   const maker =
     makerRaw && (MAKERS as readonly string[]).includes(makerRaw) ? makerRaw : undefined;
 
-  const model = query.model?.trim() || undefined;
-  const frameNumber = query.frame?.trim() || undefined;
+  const modelRaw = query.model?.trim();
+  const model = modelRaw ? normalizeIdentifierInput(modelRaw) : undefined;
+  const frameRaw = query.frame?.trim();
+  const frameNumber = frameRaw ? normalizeIdentifierInput(frameRaw) : undefined;
   const vcRaw = query.vehicle_class?.trim();
   const vehicleClass =
     vcRaw && VEHICLE_CLASSES.some((v) => v.value === vcRaw)

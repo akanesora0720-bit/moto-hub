@@ -28,6 +28,12 @@ export async function GET(req: NextRequest) {
   if (tErr) results.transferError = tErr.message;
   else results.transfer = transfer;
 
+  const { data: paymentDeadline, error: pErr } = await supabase.rpc(
+    "run_payment_deadline_compliance_job",
+  );
+  if (pErr) results.paymentDeadlineError = pErr.message;
+  else results.paymentDeadline = paymentDeadline;
+
   const { data: risk, error: rErr } = await supabase.rpc(
     "run_risk_detection_job",
   );

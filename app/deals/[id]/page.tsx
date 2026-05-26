@@ -112,6 +112,9 @@ export async function DealDetailPageView(
     seller_intent_confirmed: row.seller_intent_confirmed ?? false,
     buyer_intent_confirmed: row.buyer_intent_confirmed ?? false,
     payment_due_at: row.payment_due_at ?? null,
+    platform_fee_invoice_issued_at: row.platform_fee_invoice_issued_at ?? null,
+    platform_fee_due_at: row.platform_fee_due_at ?? null,
+    platform_fee_paid_at: row.platform_fee_paid_at ?? null,
     seller_payment_confirmed_at: row.seller_payment_confirmed_at ?? null,
     buyer_payment_reported_at: row.buyer_payment_reported_at ?? null,
     pickup_scheduled_at: row.pickup_scheduled_at ?? null,
@@ -196,6 +199,7 @@ export async function DealDetailPageView(
         status={deal.status}
         agreedPriceExTax={deal.agreed_price_ex_tax}
         paymentDueAt={deal.payment_due_at}
+        platformFeeDueAt={deal.platform_fee_due_at}
       />
     </DealCard>
   );

@@ -4,15 +4,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { IdentifierField } from "@/components/IdentifierField";
 import { ListingGradingInput } from "@/components/ListingGradingInput";
 import { MobilePicker } from "@/components/MobilePicker";
+import { VinField } from "@/components/VinField";
 import { MAKERS, MILEAGE_ROLLBACK_OPTIONS, VEHICLE_CLASSES } from "@/lib/constants";
 import type { MileageRollbackStatus, VehicleClass } from "@/lib/constants";
 import {
-  gradesToDbPayload,
-  parsePriceYen,
-  validateListingGrades,
-} from "@/lib/listing-grades";
+  buildListingDbPayload,
+  validateListingFormCore,
+  type ListingFormVinState,
+} from "@/lib/listing-form";
 import { createClient } from "@/lib/supabase/client";
 import { EMPTY_LISTING_GRADES, type ListingGrades } from "@/lib/types";
 
@@ -28,6 +30,12 @@ export type ListingEditorInitial = {
   condition_comment: string;
   grades: ListingGrades;
   inspection_remaining: string | null;
+  inspection_expiry_date?: string | null;
+  liability_insurance_expiry_date?: string | null;
+  model_designation?: string | null;
+  engine_model?: string | null;
+  is_officially_stamped_vin?: boolean;
+  vin_note?: string | null;
 };
 
 type Props = {
@@ -68,7 +76,21 @@ export function ListingEditorForm({
   const [mileage, setMileage] = useState(
     initial?.mileage != null ? String(initial.mileage) : "",
   );
-  const [frameNumber, setFrameNumber] = useState(initial?.frame_number ?? "");
+  const [vin, setVin] = useState<ListingFormVinState>({
+    frameNumber: initial?.frame_number ?? "",
+    isOfficiallyStampedVin: initial?.is_officially_stamped_vin ?? false,
+    vinNote: initial?.vin_note ?? "",
+  });
+  const [modelDesignation, setModelDesignation] = useState(
+    initial?.model_designation ?? "",
+  );
+  const [engineModel, setEngineModel] = useState(initial?.engine_model ?? "");
+  const [inspectionExpiryDate, setInspectionExpiryDate] = useState(
+    initial?.inspection_expiry_date ?? "",
+  );
+  const [liabilityInsuranceExpiryDate, setLiabilityInsuranceExpiryDate] = useState(
+    initial?.liability_insurance_expiry_date ?? "",
+  );
   const [mileageRollback, setMileageRollback] = useState<MileageRollbackStatus>(
     initial?.mileage_rollback ?? "none",
   );
@@ -88,20 +110,23 @@ export function ListingEditorForm({
 
   const submit = async () => {
     setMessage("");
-    if (!model.trim() || !vehicleClass || !frameNumber.trim() || !price.trim() || !comment.trim()) {
-      setMessage("必須項目を入力してください。");
+    const core = validateListingFormCore({
+      model,
+      vehicleClass,
+      price,
+      comment,
+      grades,
+      vin,
+      dates: {
+        inspectionExpiryDate,
+        liabilityInsuranceExpiryDate,
+      },
+    });
+    if (core.error) {
+      setMessage(core.error);
       return;
     }
-    const priceExTax = parsePriceYen(price);
-    if (priceExTax == null) {
-      setMessage("税抜価格は正の整数（円）で入力してください。");
-      return;
-    }
-    const gradeError = validateListingGrades(grades);
-    if (gradeError) {
-      setMessage(gradeError);
-      return;
-    }
+    const priceExTax = core.priceExTax!;
     if (isCreate && (!files || files.length === 0)) {
       setMessage("写真を1枚以上添付してください。");
       return;
@@ -137,20 +162,25 @@ export function ListingEditorForm({
       mileageVal = m;
     }
 
-    const payload = {
+    const payload = buildListingDbPayload({
       maker,
-      model: model.trim(),
-      vehicle_class: vehicleClass,
-      displacement_cc: null,
-      year: yearVal,
-      mileage: mileageVal,
-      frame_number: frameNumber.trim(),
-      mileage_rollback: mileageRollback,
-      price_ex_tax: priceExTax,
-      condition_comment: comment.trim(),
-      inspection_remaining: inspectionRemaining.trim() || null,
-      ...gradesToDbPayload(grades),
-    };
+      model,
+      vehicleClass,
+      yearVal,
+      mileageVal,
+      vin,
+      modelDesignation,
+      engineModel,
+      mileageRollback,
+      priceExTax,
+      comment,
+      dates: {
+        inspectionExpiryDate,
+        liabilityInsuranceExpiryDate,
+      },
+      grades,
+      inspectionRemaining,
+    });
 
     if (isCreate) {
       const sellerId = sellerIdOverride ?? userData.user.id;
@@ -257,15 +287,14 @@ export function ListingEditorForm({
             onChange={setMaker}
             options={MAKERS.map((m) => ({ value: m, label: m }))}
           />
-          <label className="block text-sm">
-            <span className="text-muted">車名 *</span>
-            <input
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-border bg-zinc-950 px-3 py-2.5 text-sm"
-              placeholder="CB400SF など"
-            />
-          </label>
+          <IdentifierField
+            label="車名"
+            value={model}
+            onChange={setModel}
+            required
+            placeholder="CB400SF など"
+            hint="英字は自動で大文字化されます。"
+          />
           <MobilePicker
             label="車種区分"
             value={vehicleClass}
@@ -301,15 +330,23 @@ export function ListingEditorForm({
               />
             </label>
           </div>
-          <label className="block text-sm">
-            <span className="text-muted">車台番号（全文表示）*</span>
-            <input
-              value={frameNumber}
-              onChange={(e) => setFrameNumber(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-border bg-zinc-950 px-3 py-2.5 font-mono text-sm"
-              placeholder="例: NC42-1201234"
-            />
-          </label>
+          <VinField value={vin} onChange={setVin} />
+          <IdentifierField
+            label="型式"
+            value={modelDesignation}
+            onChange={setModelDesignation}
+            placeholder="例: EBL-NC42A"
+            hint="型式は半角で統一して保存されます。"
+            mono
+          />
+          <IdentifierField
+            label="エンジン型式"
+            value={engineModel}
+            onChange={setEngineModel}
+            placeholder="例: NC42E"
+            hint="エンジン型式は半角で統一して保存されます。"
+            mono
+          />
           <MobilePicker
             label="距離減算"
             value={mileageRollback}
@@ -322,6 +359,10 @@ export function ListingEditorForm({
           <ListingGradingInput
             grades={grades}
             onChange={setGrades}
+            inspectionExpiryDate={inspectionExpiryDate}
+            onInspectionExpiryDateChange={setInspectionExpiryDate}
+            liabilityInsuranceExpiryDate={liabilityInsuranceExpiryDate}
+            onLiabilityInsuranceExpiryDateChange={setLiabilityInsuranceExpiryDate}
             inspectionRemaining={inspectionRemaining}
             onInspectionRemainingChange={setInspectionRemaining}
           />
