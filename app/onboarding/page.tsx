@@ -170,16 +170,17 @@ export default function OnboardingPage() {
       if (antiqueFile) antiquePath = await uploadDoc(userData.user.id, "antique", antiqueFile);
       if (invoiceFile) invoicePath = await uploadDoc(userData.user.id, "invoice", invoiceFile);
 
-      const { error } = await supabase
-        .from("profiles")
-        .update(
-          buildDealerProfilePayload(dealerForm, {
-            antique_dealer_doc_path: antiquePath!,
-            invoice_doc_path: invoicePath!,
-            submitForReview: !!antiqueFile,
-          }),
-        )
-        .eq("id", userData.user.id);
+      const payload = buildDealerProfilePayload(dealerForm, {
+        antique_dealer_doc_path: antiquePath!,
+        invoice_doc_path: invoicePath!,
+        submitForReview: true,
+      });
+      const { error } = await supabase.rpc("complete_dealer_onboarding", {
+        p_payload: {
+          ...payload,
+          submit_for_review: true,
+        },
+      });
 
       setLoading(false);
       if (error) {

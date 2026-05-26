@@ -37,6 +37,9 @@ export type Profile = {
   bank_account_type: string | null;
   bank_account_number: string | null;
   bank_account_holder: string | null;
+  dealer_identity_id?: string | null;
+  membership_status?: "active" | "withdrawn" | "suspended" | null;
+  withdrawn_at?: string | null;
 };
 
 export type { MileageRollbackStatus };

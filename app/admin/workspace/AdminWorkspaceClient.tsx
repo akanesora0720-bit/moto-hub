@@ -22,6 +22,7 @@ import { COMPLAINT_TYPES } from "@/lib/trust";
 import type { ComplaintType, DealStatus, TrustRank, VerificationStatus } from "@/lib/types";
 import { normalizeVideoUrl } from "@/lib/video-url";
 import { filterActionableDealAlerts } from "@/lib/deal-alerts";
+import { MemberMembershipReviewBanner } from "@/components/MemberMembershipReviewBanner";
 import { createClient } from "@/lib/supabase/client";
 
 type Tab = "inquiries" | "listings" | "members" | "complaints" | "deals";
@@ -387,13 +388,17 @@ export function AdminWorkspaceClient() {
 
   const setVerification = async (id: string, status: VerificationStatus) => {
     const supabase = createClient();
-    const payload: {
-      verification_status: VerificationStatus;
-      verified_at?: string | null;
-    } = { verification_status: status };
-    if (status === "verified") payload.verified_at = new Date().toISOString();
-    if (status !== "verified") payload.verified_at = null;
-    const { error } = await supabase.from("profiles").update(payload).eq("id", id);
+    const member = members.find((m) => m.id === id);
+    const { error } =
+      member?.member_type === "dealer"
+        ? await supabase.rpc("admin_verify_dealer", {
+            p_profile_id: id,
+            p_status: status,
+          })
+        : await supabase.from("profiles").update({
+            verification_status: status,
+            verified_at: status === "verified" ? new Date().toISOString() : null,
+          }).eq("id", id);
     setMessage(
       error ? error.message : `古物商照合: ${VERIFICATION_STATUS_LABELS[status]} に更新しました。`,
     );
@@ -922,6 +927,9 @@ export function AdminWorkspaceClient() {
                     </td>
                     <td className="px-4 py-3">
                       <VerificationBadge status={row.verification_status} />
+                      {row.member_type === "dealer" && row.verification_status === "pending" ? (
+                        <MemberMembershipReviewBanner profileId={row.id} />
+                      ) : null}
                       {row.antique_dealer_doc_path ? (
                         <button
                           type="button"

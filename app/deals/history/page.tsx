@@ -34,7 +34,7 @@ export default async function DealsHistoryPage() {
   });
 
   return (
-    <AuthenticatedShell>
+    <AuthenticatedShell mode="dealer">
       <div className="mx-auto max-w-2xl space-y-6">
         <div>
           <Link href="/home" className="text-sm text-muted hover:text-accent">

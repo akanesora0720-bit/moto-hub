@@ -8,10 +8,11 @@ export default function SettingsPage() {
     { href: "/my/payments", label: "振込・月額入金報告", desc: "入金報告と確認" },
     { href: "/support", label: "運営サポート", desc: "書類・入金・名変の相談" },
     { href: "/notifications", label: "通知設定", desc: "運営からのお知らせ" },
+    { href: "/settings/withdraw", label: "退会", desc: "アカウント退会（信用履歴は保持）" },
   ];
 
   return (
-    <AuthenticatedShell>
+    <AuthenticatedShell mode="dealer">
       <div className="mx-auto max-w-xl space-y-6">
         <div>
           <Link href="/home" className="text-sm text-muted hover:text-accent">

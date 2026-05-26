@@ -34,7 +34,10 @@ export function AppShell({
 
   const isAdminRoute = pathname.startsWith("/admin");
   const isStaff = memberType === "staff";
-  const useAdminShell = mode === "admin" || isAdminRoute || isStaff;
+  const useAdminShell =
+    mode === "dealer"
+      ? false
+      : mode === "admin" || isAdminRoute || isStaff;
 
   useEffect(() => {
     if (memberTypeProp !== undefined) {

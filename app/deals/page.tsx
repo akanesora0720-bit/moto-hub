@@ -1,8 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
-import { canAccessAdmin } from "@/lib/auth";
-import { adminDealListPath } from "@/lib/admin-deal-routes";
 import {
   DEAL_STATUS_LABELS,
   buyerDealLabel,
@@ -13,13 +10,10 @@ import {
 import { formatYen } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/viewer";
-import type { DealStatus, Profile } from "@/lib/types";
+import type { DealStatus } from "@/lib/types";
 
 export default async function DealsPage() {
   const viewer = await getViewer();
-  if (canAccessAdmin(viewer!.profile as Profile)) {
-    redirect(adminDealListPath());
-  }
   const supabase = await createClient();
   const userId = viewer!.id;
 
@@ -60,7 +54,7 @@ export default async function DealsPage() {
   const closed = deals.filter((d) => !d.active && d.status !== "cancelled");
 
   return (
-    <AuthenticatedShell>
+    <AuthenticatedShell mode="dealer">
       <div className="mx-auto max-w-2xl space-y-8">
         <div>
           <h1 className="text-2xl font-semibold">取引</h1>

@@ -42,7 +42,7 @@ export async function DealDetailPageView(
   const userId = viewer!.id;
   const canAdminView = canAccessAdmin(viewer!.profile as Profile);
   const isAdmin = canAdminView;
-  const useAdminShell = opts?.forceAdminShell ?? canAdminView;
+  const useAdminShell = opts?.forceAdminShell === true;
   const dealsListHref = useAdminShell ? adminDealListPath() : "/deals";
 
   const { data: row } = await supabase
@@ -226,7 +226,7 @@ export async function DealDetailPageView(
   );
 
   return (
-    <AuthenticatedShell mode={useAdminShell ? "admin" : undefined}>
+    <AuthenticatedShell mode={useAdminShell ? "admin" : "dealer"}>
       <div className="mx-auto max-w-xl space-y-5">
         <DealDetailFocus enabled={focusPrimaryAction} />
         <Link href={dealsListHref} className="text-sm text-muted hover:text-accent">
