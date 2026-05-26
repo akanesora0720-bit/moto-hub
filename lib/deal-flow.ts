@@ -23,8 +23,8 @@ export const DEAL_STATUS_LABELS: Record<DealStatus, string> = {
   funded: "入金確認済",
   handover_done: "引渡完了",
   transfer_pending: "名義変更待ち",
-  payout_ready: "振込準備完了",
-  payout_done: "振込完了",
+  payout_ready: "完了確認済",
+  payout_done: "完了処理中",
   completed: "完了",
   cancelled: "取消",
   dispute: "紛争",
@@ -183,7 +183,7 @@ export function partyDealStatusBadge(status: DealStatus, role: DealPartyRole): s
     case "payout_ready":
       return "完了登録待ち";
     case "payout_done":
-      return "振込完了";
+      return "完了処理中";
     case "completed":
       return "完了";
     case "cancelled":

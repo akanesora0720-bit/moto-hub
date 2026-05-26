@@ -21,7 +21,7 @@
 | 入金 | awaiting_payment | 車両代金を売り手へ振込 | 入金確認 | 監視 |
 | 引渡 | funded | 引取日時登録 | 引渡完了 | 連絡板 |
 | 確認 | handover_done / transfer_pending | 完了確認 | 完了確認 | 名変コンプライアンス |
-| 完了登録 | payout_ready | 待ちのみ | 取引完了待ち | 取引を完了にする操作 |
+| 完了登録 | payout_ready（表示: 完了確認済） | 待ちのみ | 取引完了待ち | 取引を完了にする操作 |
 | 終了 | completed | 完了 | 完了 | — |
 
 **直接支払:** 車両代金は MotoHub を経由しない。  

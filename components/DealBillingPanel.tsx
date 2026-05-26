@@ -276,7 +276,7 @@ function PaymentHint({
           : status === "payout_ready"
             ? "双方確認済 — 運営が取引を完了にします（車両代金は買い手から入金済み）"
             : ["payout_done", "completed"].includes(status)
-              ? "振込・取引処理完了"
+              ? "取引の確認・処理は完了しています"
               : "—";
   return <p className="text-xs text-zinc-500">{text}</p>;
 }
