@@ -219,14 +219,14 @@ export function partyDealActionHint(status: DealStatus, role: DealPartyRole): st
 
   switch (status) {
     case "awaiting_payment":
-      return "買い手が「振込した」と報告したら口座を確認し、「買い手からの入金を確認」を押してください。確認後、MotoHub手数料請求書を発行します。";
+      return "買い手が「振込した」と報告したら口座を確認し、「買い手からの入金を確認」を押してください。";
     case "funded":
       return "買い手の引取予定を確認し、現地で車両・書類を引渡したら「引渡完了」を押してください。";
     case "handover_done":
     case "transfer_pending":
       return "名変・引渡に問題がなければ「取引完了を確認（売り手）」を押してください。";
     case "payout_ready":
-      return "双方の確認が終わりました。運営が取引を完了にします。車両代金は買い手からの入金確認済みです。MotoHub手数料請求書は入金確認時に発行済みです。";
+      return "双方の確認が終わりました。運営が取引を完了にします。車両代金は買い手からの入金確認済みです。MotoHub手数料請求書は引渡完了後に発行されます。";
     case "payout_done":
       return "運営による完了登録が進んでいます。まもなく取引が「完了」になります。";
     case "completed":
