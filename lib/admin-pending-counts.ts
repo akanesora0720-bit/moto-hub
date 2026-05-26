@@ -16,7 +16,6 @@ export type AdminPendingCounts = {
   unreadNotifications: number;
   paymentReportsPending: number;
   invoicesReviewPending: number;
-  payoutsAwaiting: number;
   transferOverdue: number;
   pickupSchedulePending: number;
   dealsClosurePending: number;
@@ -50,7 +49,6 @@ export async function fetchAdminPendingCounts(
     boardUnread,
     payments,
     invoices,
-    payouts,
     overdue,
     pickupPending,
     payoutReady,
@@ -84,10 +82,6 @@ export async function fetchAdminPendingCounts(
       .from("invoices")
       .select("id", { count: "exact", head: true })
       .eq("status", "review_pending"),
-    supabase
-      .from("payouts")
-      .select("id", { count: "exact", head: true })
-      .in("status", ["awaiting", "ready"]),
     supabase
       .from("deals")
       .select("id", { count: "exact", head: true })
@@ -195,7 +189,6 @@ export async function fetchAdminPendingCounts(
     unreadNotifications,
     paymentReportsPending: payments.count ?? 0,
     invoicesReviewPending: invoices.count ?? 0,
-    payoutsAwaiting: payouts.count ?? 0,
     transferOverdue: overdue.count ?? 0,
     pickupSchedulePending: pickupPending.count ?? 0,
     dealsClosurePending,

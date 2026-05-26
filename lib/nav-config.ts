@@ -20,6 +20,7 @@ export const dealerNavItems: NavItem[] = [
   { href: "/search", label: "業販検索" },
   { href: "/deals/history", label: "成約履歴" },
   { href: "/profile", label: "評価", matchPrefix: true },
+  { href: "/help", label: "操作説明" },
   { href: "/settings", label: "設定" },
 ];
 
@@ -53,6 +54,7 @@ export const adminNavItems: NavItem[] = [
     matchPrefix: true,
   },
   { href: "/admin/messages", label: "メール" },
+  { href: "/admin/help", label: "操作説明" },
 ];
 
 export const staffNavItems: NavItem[] = adminNavItems;

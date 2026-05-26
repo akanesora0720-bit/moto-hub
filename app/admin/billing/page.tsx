@@ -6,12 +6,11 @@ import { AppShell } from "@/components/AppShell";
 import {
   INVOICE_STATUS_LABELS,
   MONTHLY_PAYMENT_STATUS_LABELS,
-  PAYOUT_STATUS_LABELS,
   formatYen,
 } from "@/lib/billing";
 import { useAsyncAction } from "@/lib/use-async-action";
 import { createClient } from "@/lib/supabase/client";
-import type { Invoice, MonthlyPaymentReport, Payout } from "@/lib/types";
+import type { Invoice, MonthlyPaymentReport } from "@/lib/types";
 
 type PaymentRow = MonthlyPaymentReport & {
   user: { store_name: string | null; email: string } | null;
@@ -24,10 +23,6 @@ type InvoiceRow = Invoice & {
     status: string;
     listings: { maker: string; model: string } | null;
   } | null;
-};
-
-type PayoutRow = Payout & {
-  seller: { store_name: string | null; email: string } | null;
 };
 
 function docLabel(inv: InvoiceRow) {
@@ -54,12 +49,11 @@ function listingLabel(inv: InvoiceRow) {
 export default function AdminBillingPage() {
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
-  const [payouts, setPayouts] = useState<PayoutRow[]>([]);
   const { loading, message, success, run } = useAsyncAction();
 
   const load = useCallback(async () => {
     const supabase = createClient();
-    const [pay, inv, po] = await Promise.all([
+    const [pay, inv] = await Promise.all([
       supabase
         .from("monthly_payment_reports")
         .select("*, user:profiles!monthly_payment_reports_user_id_fkey ( store_name, email )")
@@ -73,15 +67,9 @@ export default function AdminBillingPage() {
         )
         .order("created_at", { ascending: false })
         .limit(50),
-      supabase
-        .from("payouts")
-        .select("*, seller:profiles!payouts_seller_id_fkey ( store_name, email )")
-        .order("created_at", { ascending: false })
-        .limit(50),
     ]);
     setPayments((pay.data ?? []) as PaymentRow[]);
     setInvoices((inv.data ?? []) as InvoiceRow[]);
-    setPayouts((po.data ?? []) as PayoutRow[]);
   }, []);
 
   useEffect(() => {
@@ -137,27 +125,6 @@ export default function AdminBillingPage() {
       if (error) return { error: error.message };
       load();
       return { okMessage: "入金確認しました。" };
-    });
-
-  const markPayoutPaid = (id: string) =>
-    run(async () => {
-      const supabase = createClient();
-      const { error } = await supabase.rpc("admin_mark_payout_paid", { p_payout_id: id });
-      if (error) return { error: error.message };
-      load();
-      return { okMessage: "振込完了にしました。" };
-    });
-
-  const setPayoutReady = (id: string) =>
-    run(async () => {
-      const supabase = createClient();
-      const { error } = await supabase.rpc("admin_set_payout_status", {
-        p_payout_id: id,
-        p_status: "ready",
-      });
-      if (error) return { error: error.message };
-      load();
-      return { okMessage: "双方確認済（運営完了待ち）にしました。" };
     });
 
   const reviewDealIds = [
@@ -361,43 +328,6 @@ export default function AdminBillingPage() {
                     className="text-xs text-accent disabled:opacity-50"
                   >
                     入金確認
-                  </button>
-                ) : null}
-              </span>
-            </div>
-          ))}
-        </section>
-
-        <section className="space-y-3">
-          <h2 className="font-medium">振込</h2>
-          {payouts.map((p) => (
-            <div
-              key={p.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border px-4 py-3 text-sm"
-            >
-              <span>
-                {p.seller?.store_name ?? p.seller?.email} · {formatYen(p.payout_amount)} ·{" "}
-                {PAYOUT_STATUS_LABELS[p.status]}
-              </span>
-              <span className="flex gap-2">
-                {p.status === "awaiting" ? (
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => setPayoutReady(p.id)}
-                    className="text-xs text-accent disabled:opacity-50"
-                  >
-                    準備完了
-                  </button>
-                ) : null}
-                {p.status === "ready" ? (
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => markPayoutPaid(p.id)}
-                    className="text-xs text-accent disabled:opacity-50"
-                  >
-                    振込完了
                   </button>
                 ) : null}
               </span>

@@ -172,7 +172,10 @@ export default async function DealerHomePage() {
               title="設定"
               description="会社情報・振込口座・本人確認"
               href="/settings"
-              sublinks={[{ label: "運営サポート", href: "/support" }]}
+              sublinks={[
+                { label: "操作説明", href: "/help" },
+                { label: "運営サポート", href: "/support" },
+              ]}
             />
             </>
             ) : (
@@ -192,6 +195,11 @@ export default async function DealerHomePage() {
                   />
                 ) : null}
                 <ActionCard
+                  title="操作説明"
+                  description="登録・検索・審査の流れ"
+                  href="/help"
+                />
+                <ActionCard
                   title="設定"
                   description="アカウント・会社情報"
                   href="/settings"
@@ -201,14 +209,20 @@ export default async function DealerHomePage() {
           </div>
         </section>
 
-        {tradingEnabled ? (
-          <p className="text-xs text-muted">
-            迷ったら <Link href="/deals" className="text-accent hover:underline">商談</Link>
-            または{" "}
-            <Link href="/support" className="text-accent hover:underline">運営サポート</Link>
-            へ。
-          </p>
-        ) : null}
+        <p className="text-xs text-muted">
+          {tradingEnabled ? (
+            <>
+              迷ったら <Link href="/deals" className="text-accent hover:underline">商談</Link>
+              ・
+              <Link href="/support" className="text-accent hover:underline">運営サポート</Link>
+              ・
+            </>
+          ) : null}
+          <Link href="/help" className="text-accent hover:underline">
+            操作説明
+          </Link>
+          をご覧ください。
+        </p>
       </div>
     </AuthenticatedShell>
   );

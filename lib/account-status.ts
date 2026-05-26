@@ -38,6 +38,7 @@ export function isDealerLimitedPathAllowed(pathname: string): boolean {
   if (LIMITED_DEALER_EXACT.some((p) => pathname === p)) return true;
   if (
     pathname === "/home" ||
+    pathname === "/help" ||
     pathname === "/onboarding" ||
     pathname.startsWith("/settings") ||
     pathname.startsWith("/search") ||
@@ -54,6 +55,6 @@ export function isDealerLimitedPathAllowed(pathname: string): boolean {
 
 /** 審査待ち・仮登録向けナビ（閲覧・設定のみ） */
 export function dealerNavForLimitedAccess<T extends { href: string }>(items: T[]): T[] {
-  const allowed = new Set(["/home", "/search", "/settings"]);
+  const allowed = new Set(["/home", "/search", "/settings", "/help"]);
   return items.filter((item) => allowed.has(item.href.split("?")[0]));
 }

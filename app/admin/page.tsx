@@ -90,9 +90,9 @@ export default async function AdminHubPage() {
                 />
                 <KpiCard
                   label="精算待ち"
-                  value={pending.payoutsAwaiting + pending.invoicesReviewPending}
+                  value={pending.invoicesReviewPending}
                   href="/admin/billing"
-                  highlight={pending.payoutsAwaiting + pending.invoicesReviewPending > 0}
+                  highlight={pending.invoicesReviewPending > 0}
                 />
                 <KpiCard label="加盟店数" value={dealerCount} href="/admin/credit" />
                 <KpiCard
@@ -174,11 +174,6 @@ export default async function AdminHubPage() {
                 title="② 精算管理"
                 items={[
                   {
-                    label: "振込待ち",
-                    count: pending.payoutsAwaiting,
-                    href: "/admin/billing",
-                  },
-                  {
                     label: "請求書確認待ち",
                     count: pending.invoicesReviewPending,
                     href: "/admin/billing",
@@ -234,6 +229,12 @@ export default async function AdminHubPage() {
             </div>
 
             <div className="flex flex-wrap gap-3 text-sm">
+              <Link
+                href="/admin/help"
+                className="rounded-lg border border-border px-4 py-2 hover:border-accent/40"
+              >
+                運営 操作説明
+              </Link>
               <Link
                 href="/admin/workspace"
                 className="rounded-lg bg-accent px-4 py-2 font-semibold text-black"

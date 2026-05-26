@@ -3,6 +3,7 @@ import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 
 export default function SettingsPage() {
   const items = [
+    { href: "/help", label: "操作説明", desc: "登録・出品・取引の流れ" },
     { href: "/onboarding", label: "会社情報・店舗情報", desc: "古物商番号・インボイス等" },
     { href: "/profile", label: "信用証・公開プロフィール", desc: "評価・ランクの確認" },
     { href: "/my/payments", label: "振込・月額入金報告", desc: "入金報告と確認" },
