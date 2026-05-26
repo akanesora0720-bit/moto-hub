@@ -34,12 +34,6 @@ export async function GET(req: NextRequest) {
   if (pErr) results.paymentDeadlineError = pErr.message;
   else results.paymentDeadline = paymentDeadline;
 
-  const { data: handoverDeadline, error: hErr } = await supabase.rpc(
-    "run_handover_deadline_compliance_job",
-  );
-  if (hErr) results.handoverDeadlineError = hErr.message;
-  else results.handoverDeadline = handoverDeadline;
-
   const { data: risk, error: rErr } = await supabase.rpc(
     "run_risk_detection_job",
   );

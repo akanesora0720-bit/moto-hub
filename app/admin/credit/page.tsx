@@ -250,7 +250,7 @@ export default function AdminCreditPage() {
             <h1 className="mt-2 text-2xl font-semibold">RideWorks 信用管理</h1>
             <p className="mt-1 max-w-2xl text-sm text-muted">
               減点・BAN・年末締め（全員100点）・監査ログ。GOLDは80点以上（誠実な通常取引の基準）。
-              入金・名変・引渡の期限超過は営業日ごとに自動 −5。その他は運営裁量です。
+              入金・名変の期限超過は営業日ごとに自動 −5。引渡はボードで調整（自動減点なし）。その他は運営裁量です。
             </p>
           </div>
           <button
