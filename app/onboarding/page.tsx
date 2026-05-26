@@ -11,6 +11,11 @@ import {
   type StaffProfileInput,
 } from "@/lib/auth";
 import { PrefectureSelect } from "@/components/PrefectureSelect";
+import { TermsConsentCheckbox } from "@/components/TermsConsentCheckbox";
+import {
+  CURRENT_TERMS_VERSION,
+  termsPdfAbsoluteUrl,
+} from "@/lib/terms";
 import { VERIFICATION_STATUS_LABELS } from "@/lib/constants";
 import { isValidPrefecture, PREFECTURE_PLACEHOLDER } from "@/lib/prefectures";
 import { createClient } from "@/lib/supabase/client";
@@ -63,6 +68,7 @@ export default function OnboardingPage() {
   const [existingInvoicePath, setExistingInvoicePath] = useState<string | null>(null);
   const [verificationStatus, setVerificationStatus] =
     useState<VerificationStatus>("unverified");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -100,6 +106,10 @@ export default function OnboardingPage() {
           phone: profile.phone ?? "",
         });
       }
+      const { data: hasTerms } = await supabase.rpc("has_accepted_terms", {
+        p_terms_version: CURRENT_TERMS_VERSION,
+      });
+      if (hasTerms) setTermsAccepted(true);
     });
   }, []);
 
@@ -154,6 +164,10 @@ export default function OnboardingPage() {
       setMessage("インボイス登録票の画像を1枚アップロードしてください。");
       return;
     }
+    if (!termsAccepted) {
+      setMessage("利用規約PDFを確認のうえ、同意にチェックを入れてください。");
+      return;
+    }
 
     setLoading(true);
     const supabase = createClient();
@@ -175,10 +189,14 @@ export default function OnboardingPage() {
         invoice_doc_path: invoicePath!,
         submitForReview: true,
       });
+      const pdfUrl = termsPdfAbsoluteUrl(window.location.origin);
       const { error } = await supabase.rpc("complete_dealer_onboarding", {
         p_payload: {
           ...payload,
           submit_for_review: true,
+          terms_accepted: true,
+          terms_version: CURRENT_TERMS_VERSION,
+          terms_pdf_url: pdfUrl,
         },
       });
 
@@ -317,6 +335,12 @@ export default function OnboardingPage() {
           {dealerField("bank_account_holder", "口座名義", true)}
         </div>
 
+        <TermsConsentCheckbox
+          checked={termsAccepted}
+          onChange={setTermsAccepted}
+          id="onboarding-terms-consent"
+        />
+
         {message ? (
           <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm">{message}</p>
         ) : null}
@@ -324,7 +348,7 @@ export default function OnboardingPage() {
         <button
           type="button"
           onClick={submitDealer}
-          disabled={loading}
+          disabled={loading || !termsAccepted}
           className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60"
         >
           {loading ? "保存中…" : "保存して在庫一覧へ"}

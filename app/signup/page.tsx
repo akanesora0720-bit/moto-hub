@@ -4,17 +4,27 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthLayout } from "@/components/AuthLayout";
+import { TermsConsentCheckbox } from "@/components/TermsConsentCheckbox";
 import { createClient } from "@/lib/supabase/client";
+import {
+  CURRENT_TERMS_VERSION,
+  termsPdfAbsoluteUrl,
+} from "@/lib/terms";
 
 export default function SignupPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
     setMessage("");
+    if (!termsAccepted) {
+      setMessage("利用規約PDFを確認のうえ、同意にチェックを入れてください。");
+      return;
+    }
     if (password.length < 8) {
       setMessage("パスワードは8文字以上にしてください。");
       return;
@@ -46,6 +56,16 @@ export default function SignupPage() {
       setMessage(
         "登録を受け付けました。確認メールのリンクを開いてからログインしてください。届かない場合は迷惑メールもご確認ください。",
       );
+      return;
+    }
+
+    const pdfUrl = termsPdfAbsoluteUrl(window.location.origin);
+    const { error: termsErr } = await supabase.rpc("record_terms_acceptance", {
+      p_terms_version: CURRENT_TERMS_VERSION,
+      p_pdf_url: pdfUrl,
+    });
+    if (termsErr) {
+      setMessage(termsErr.message);
       return;
     }
 
@@ -88,6 +108,12 @@ export default function SignupPage() {
           />
         </label>
 
+        <TermsConsentCheckbox
+          checked={termsAccepted}
+          onChange={setTermsAccepted}
+          id="signup-terms-consent"
+        />
+
         {message ? (
           <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
             {message}
@@ -97,7 +123,7 @@ export default function SignupPage() {
         <button
           type="button"
           onClick={submit}
-          disabled={loading}
+          disabled={loading || !termsAccepted}
           className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black hover:bg-accent-dim disabled:opacity-60"
         >
           {loading ? "処理中…" : "登録する"}
