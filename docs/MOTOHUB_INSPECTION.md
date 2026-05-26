@@ -9,6 +9,8 @@
 ## 料金・請求書
 
 - 1台 **税抜 3,000円**（`inspection_requests.fee_ex_tax`、デフォルト 3000）
+- **1依頼 = 1台 = 1請求書**（同一加盟店で複数台の場合も、現状は台ごとに請求書が発行されます）
+- **将来検討**: 複数台を1請求書にまとめる（振込手数料の削減）。未実装
 - **請求書の発行タイミング: 査定完了時**（スタッフが出品代行登録し `complete_motohub_inspection` が成功した直後）
 - `issue_motohub_inspection_invoice` が `invoices`（`document_kind = motohub_inspection`）を **issued** で作成し、消費税10%を加算
 - 加盟店は `/inspections` の依頼履歴から請求書PDFを開ける（`inspection_requests.invoice_id`）
@@ -41,6 +43,7 @@
 - `033_motohub_inspection_service.sql`
 - `034_inspection_invoice_on_complete.sql`（請求書発行）
 - `035_admin_as_inspection_staff.sql`（管理者も査定代行可）
+- `049_inspection_notify_and_schedule.sql`（依頼時の運営通知・日程確定時の `scheduled_at`）
 
 ## 検索
 

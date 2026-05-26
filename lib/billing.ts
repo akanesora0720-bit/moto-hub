@@ -123,7 +123,7 @@ export const PAYOUT_STATUS_LABELS: Record<
   string
 > = {
   awaiting: "振込待ち",
-  ready: "振込準備完了",
+  ready: "双方確認済（運営完了待ち）",
   paid: "振込済",
   cancelled: "取消",
 };

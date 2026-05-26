@@ -157,7 +157,7 @@ export default function AdminBillingPage() {
       });
       if (error) return { error: error.message };
       load();
-      return { okMessage: "振込準備完了にしました。" };
+      return { okMessage: "双方確認済（運営完了待ち）にしました。" };
     });
 
   const reviewDealIds = [

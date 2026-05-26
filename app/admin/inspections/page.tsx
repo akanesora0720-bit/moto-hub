@@ -129,7 +129,12 @@ export default function AdminInspectionsPage() {
                             type="button"
                             disabled={actionId === r.id}
                             className="block text-sky-300 hover:underline disabled:opacity-50"
-                            onClick={() => void updateRequest(r.id, { status: "scheduled" })}
+                            onClick={() =>
+                              void updateRequest(r.id, {
+                                status: "scheduled",
+                                scheduled_at: r.preferred_at ?? undefined,
+                              })
+                            }
                           >
                             日程確定へ
                           </button>

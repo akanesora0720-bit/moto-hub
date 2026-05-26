@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { TrustBadge } from "@/components/TrustBadge";
-import { DEAL_STATUS_LABELS } from "@/lib/deal-flow";
+import { ADMIN_DEAL_STATUS_LABELS } from "@/lib/deal-flow";
 import {
   DISPUTE_STATUS_LABELS,
   disputeCategoryLabel,
@@ -410,7 +410,7 @@ export default function AdminDisputesPage() {
               onChange={(e) => setDealStatus(e.target.value as DealStatus)}
               className="rounded-lg border border-border bg-zinc-950 px-3 py-2 text-sm"
             >
-              {Object.entries(DEAL_STATUS_LABELS).map(([k, v]) => (
+              {Object.entries(ADMIN_DEAL_STATUS_LABELS).map(([k, v]) => (
                 <option key={k} value={k}>
                   {v}
                 </option>

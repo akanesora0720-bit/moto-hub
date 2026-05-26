@@ -134,7 +134,10 @@ export function AppShell({
                   加盟店画面へ
                 </Link>
               ) : null}
-              <Link href="/notifications" className="text-muted hover:text-foreground">
+              <Link
+                href={useAdminShell ? "/admin/notifications" : "/notifications"}
+                className="text-muted hover:text-foreground"
+              >
                 通知
                 {badges.unreadNotifications ? (
                   <span className="ml-1 text-rose-400">({badges.unreadNotifications})</span>

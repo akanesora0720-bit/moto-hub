@@ -8,11 +8,14 @@ import { resolveNotificationHref } from "@/lib/admin-deal-routes";
 import { createClient } from "@/lib/supabase/client";
 import type { UserNotification } from "@/lib/types";
 
+export type NotificationsContext = "dealer" | "admin";
+
 export function NotificationsClient({
-  isAdminContext,
+  context,
 }: {
-  isAdminContext: boolean;
+  context: NotificationsContext;
 }) {
+  const isAdminContext = context === "admin";
   const [items, setItems] = useState<UserNotification[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -144,7 +147,7 @@ export function NotificationsClient({
   const unreadCount = items.filter((n) => !n.read_at).length;
 
   return (
-    <AppShell mode={isAdminContext ? "admin" : undefined}>
+    <AppShell mode={isAdminContext ? "admin" : "dealer"}>
       <div className="mx-auto max-w-2xl space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>

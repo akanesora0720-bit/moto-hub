@@ -23,6 +23,7 @@
 | 入金確認 | `seller_payment_confirmed_at` / `funded_at` |
 | 名変期限 | `transfer_deadline_at` |
 | 名変完了 | `transfer_completed_at` |
+| 名変後書類 | `deal_transfer_documents` + Storage `deal-docs`（車検証 / 記録事項） |
 
 ※ 書類は車両と同時引渡のため「書類発送」工程はなし（`documents_shipped_at` は未使用）
 | 追跡番号 | `tracking_number` |

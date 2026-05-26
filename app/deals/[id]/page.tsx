@@ -3,6 +3,8 @@ import { DealBillingPanel } from "@/components/DealBillingPanel";
 import { DealBoardPanel } from "@/components/DealBoardPanel";
 import { DealCard } from "@/components/DealCard";
 import { DealMilestonesPanel } from "@/components/DealMilestonesPanel";
+import { DealTransferProofPanel } from "@/components/DealTransferProofPanel";
+import type { DealTransferDocument } from "@/lib/deal-transfer-proof";
 import { canFileDispute } from "@/lib/disputes";
 import { notFound } from "next/navigation";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
@@ -155,6 +157,18 @@ export async function DealDetailPageView(
   const platformFeeInvoice = invoices.find(
     (i) => i.party === "seller" && i.document_kind === "platform_fee",
   );
+
+  const { data: transferDocRows } = showMilestones
+    ? await supabase
+        .from("deal_transfer_documents")
+        .select(
+          "id, deal_id, document_kind, storage_path, original_filename, mime_type, byte_size, uploaded_by, uploaded_at, seller_acknowledged_at, seller_acknowledged_by",
+        )
+        .eq("deal_id", id)
+        .order("uploaded_at", { ascending: false })
+    : { data: [] };
+
+  const transferDocuments = (transferDocRows ?? []) as DealTransferDocument[];
 
   const adminOpsInput: AdminDealOpsInput | null = adminViewOnly
     ? {
@@ -323,6 +337,16 @@ export async function DealDetailPageView(
                     section="transfer"
                     readOnly={adminViewOnly}
                   />
+                  <div className="mt-4 border-t border-border/60 pt-4">
+                    <DealTransferProofPanel
+                      dealId={id}
+                      status={deal.status}
+                      requiresNameTransfer={deal.requires_name_transfer}
+                      viewerRole={adminViewOnly ? "admin" : role}
+                      readOnly={adminViewOnly}
+                      documents={transferDocuments}
+                    />
+                  </div>
                 </DealCard>
               </>
             ) : null}

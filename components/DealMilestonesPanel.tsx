@@ -108,7 +108,7 @@ export function DealMilestonesPanel({
     role === "seller" &&
     ["funded", "handover_done", "transfer_pending"].includes(deal.status);
   const canEditTransfer =
-    !readOnly && (role === "buyer" || role === "seller");
+    !readOnly && role === "buyer" && deal.status === "transfer_pending";
   const canEditTracking = !readOnly;
 
   const showPickup = section === "all" || section === "pickup";

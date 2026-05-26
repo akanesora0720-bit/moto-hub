@@ -4,6 +4,7 @@ import {
   countNegotiationPhaseDeals,
   countOrphanOpenInquiries,
 } from "@/lib/open-inquiry-count";
+import { filterActionableDealAlerts } from "@/lib/deal-alerts";
 import { createServiceClient } from "@/lib/server-supabase";
 
 export type AdminPendingCounts = {
@@ -55,7 +56,8 @@ export async function fetchAdminPendingCounts(
     payoutReady,
     payoutDone,
     buyerPaymentReported,
-    dealAlerts,
+    openAlertsResult,
+    dealsForAlertsResult,
     handoverPhase,
     unreadNotif,
   ] = await Promise.all([
@@ -111,8 +113,13 @@ export async function fetchAdminPendingCounts(
       .not("buyer_payment_reported_at", "is", null),
     supabase
       .from("deal_alerts")
-      .select("id", { count: "exact", head: true })
-      .eq("resolved", false),
+      .select("id, alert_type, deal_id")
+      .eq("resolved", false)
+      .limit(500),
+    supabase
+      .from("deals")
+      .select("id, status, seller_payment_confirmed_at, funded_at, transfer_completed_at, requires_name_transfer, transfer_overdue, transfer_deadline_at")
+      .limit(2000),
     supabase
       .from("deals")
       .select("id", { count: "exact", head: true })
@@ -141,7 +148,10 @@ export async function fetchAdminPendingCounts(
 
   const dealsClosurePending = (payoutReady.count ?? 0) + (payoutDone.count ?? 0);
   const buyerPaymentReportedPending = buyerPaymentReported.count ?? 0;
-  const unresolvedDealAlerts = dealAlerts.count ?? 0;
+  const unresolvedDealAlerts = filterActionableDealAlerts(
+    openAlertsResult.data ?? [],
+    dealsForAlertsResult.data ?? [],
+  ).length;
   const handoverPhasePending = handoverPhase.count ?? 0;
   const unreadNotifications = unreadNotif.count ?? 0;
 

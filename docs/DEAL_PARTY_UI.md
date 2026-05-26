@@ -1,7 +1,7 @@
 # 取引 UI：当事者別の進捗・バッジ・案内
 
-`DEAL_STATUS_LABELS` は**運営・DB上のステータス名**（例: `payout_ready` = 振込準備完了）。  
-画面では **`partyDealStatusBadge` / `buyerDealLabel` / `sellerDealLabel` / `partyDealActionHint`** を使い、買い手・売り手で文言を分ける。
+`DEAL_STATUS_LABELS` は加盟店向けの汎用ラベル。運営ワークスペースでは **`ADMIN_DEAL_STATUS_LABELS`**（例: `payout_ready` = 双方確認済（運営が取引完了へ））を使う。  
+当事者画面では **`partyDealStatusBadge` / `buyerDealLabel` / `sellerDealLabel` / `partyDealActionHint`** で買い手・売り手の文言を分ける。
 
 ## 用語（ユーザー向けに使い分ける）
 

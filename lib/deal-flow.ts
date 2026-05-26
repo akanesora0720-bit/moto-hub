@@ -30,6 +30,14 @@ export const DEAL_STATUS_LABELS: Record<DealStatus, string> = {
   dispute: "紛争",
 };
 
+/** 運営画面用（車両代金は当事者間直接振込。旧「振込」表記の誤解を避ける） */
+export const ADMIN_DEAL_STATUS_LABELS: Record<DealStatus, string> = {
+  ...DEAL_STATUS_LABELS,
+  payout_ready: "双方確認済（運営が取引完了へ）",
+  payout_done: "完了処理中",
+  awaiting_payment: "入金待ち（入金指示承認）",
+};
+
 /** 購入側の進捗表示 */
 export function buyerDealLabel(
   status: DealStatus,

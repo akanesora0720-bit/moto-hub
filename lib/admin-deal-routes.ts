@@ -9,13 +9,24 @@ export function adminDealDetailPath(dealId: string, hash?: string): string {
   return hash ? `${base}#${hash.replace(/^#/, "")}` : base;
 }
 
-/** 通知の link_url を運営コンテキスト用に書き換え */
+/**
+ * 通知の link_url を表示コンテキストに合わせて書き換え。
+ * 加盟店画面では /deals のまま。運営画面では /admin/deals へ。
+ */
 export function resolveNotificationHref(
   linkUrl: string | null | undefined,
   isAdminContext: boolean,
 ): string | null {
   if (!linkUrl?.trim()) return null;
-  if (!isAdminContext) return linkUrl;
+  if (!isAdminContext) {
+    if (linkUrl.startsWith("/admin/deals")) {
+      return linkUrl.replace(/^\/admin\/deals/, "/deals");
+    }
+    if (linkUrl.startsWith("/admin/workspace")) {
+      return "/deals";
+    }
+    return linkUrl;
+  }
   if (linkUrl === "/deals" || linkUrl.startsWith("/deals?")) {
     return adminDealListPath();
   }

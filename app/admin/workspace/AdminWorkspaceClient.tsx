@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { AdminDealFinalizePanel } from "@/components/AdminDealFinalizePanel";
 import { AdminEmergencyContactLog } from "@/components/AdminEmergencyContactLog";
-import { ConfirmStatusSelect } from "@/components/ConfirmStatusSelect";
 import { TrustBadge } from "@/components/TrustBadge";
 import { VerificationBadge } from "@/components/VerificationBadge";
 import { formatYen } from "@/lib/format";
@@ -15,13 +14,14 @@ import { resolveDealFeeRates } from "@/lib/billing";
 import { pickPrimaryDealForInquiry } from "@/lib/admin-inquiry-deal";
 import {
   DEAL_STATUSES,
-  DEAL_STATUS_LABELS,
+  ADMIN_DEAL_STATUS_LABELS,
   formatPickupSchedule,
   formatTransferDeadline,
 } from "@/lib/deal-flow";
 import { COMPLAINT_TYPES } from "@/lib/trust";
 import type { ComplaintType, DealStatus, TrustRank, VerificationStatus } from "@/lib/types";
 import { normalizeVideoUrl } from "@/lib/video-url";
+import { filterActionableDealAlerts } from "@/lib/deal-alerts";
 import { createClient } from "@/lib/supabase/client";
 
 type Tab = "inquiries" | "listings" | "members" | "complaints" | "deals";
@@ -301,8 +301,7 @@ export function AdminWorkspaceClient() {
         };
       }),
     );
-    setDeals(
-      (d.data ?? []).map((row) => {
+    const dealRows = (d.data ?? []).map((row) => {
         const listing = Array.isArray(row.listings) ? row.listings[0] : row.listings;
         const buyer = Array.isArray(row.buyer) ? row.buyer[0] : row.buyer;
         const seller = Array.isArray(row.seller) ? row.seller[0] : row.seller;
@@ -324,9 +323,11 @@ export function AdminWorkspaceClient() {
           buyer: buyer as { store_name: string | null } | null,
           seller: seller as { store_name: string | null } | null,
         };
-      }),
-    );
-    setDealAlerts((a.data ?? []) as typeof dealAlerts);
+      });
+    setDeals(dealRows);
+    const alertRows = (a.data ?? []) as typeof dealAlerts;
+    setDealAlerts(alertRows);
+    const actionableAlerts = filterActionableDealAlerts(alertRows, dealRows);
     setPending({
       openInquiries: pcInq.count ?? 0,
       openSupport: pcSup.count ?? 0,
@@ -339,7 +340,7 @@ export function AdminWorkspaceClient() {
       dealsClosurePending: (pcPayoutReady.count ?? 0) + (pcPayoutDone.count ?? 0),
       buyerPaymentReportedPending: pcBuyerPaymentReported.count ?? 0,
       handoverPhasePending: pcHandover.count ?? 0,
-      unresolvedDealAlerts: (a.data ?? []).length,
+      unresolvedDealAlerts: actionableAlerts.length,
       adminNegotiationPending: pcNegotiation.count ?? 0,
     });
   }, []);
@@ -347,6 +348,11 @@ export function AdminWorkspaceClient() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const actionableDealAlerts = useMemo(
+    () => filterActionableDealAlerts(dealAlerts, deals),
+    [dealAlerts, deals],
+  );
 
   const removeListing = async (id: string) => {
     const supabase = createClient();
@@ -459,6 +465,7 @@ export function AdminWorkspaceClient() {
     load();
   };
 
+  // NOTE: ワークスペース一覧ではステータスを手動変更しない（フローは詳細ページのボタンで進める）
   const advanceDeal = async (id: string, status: DealStatus) => {
     const supabase = createClient();
     const { error } = await supabase.rpc("admin_advance_deal", {
@@ -466,7 +473,7 @@ export function AdminWorkspaceClient() {
       p_status: status,
     });
     if (error) return { error: error.message };
-    setMessage(`取引を「${DEAL_STATUS_LABELS[status]}」に更新しました。`);
+    setMessage(`取引を「${ADMIN_DEAL_STATUS_LABELS[status]}」に更新しました。`);
     load();
     return { okMessage: "更新しました。" };
   };
@@ -703,7 +710,7 @@ export function AdminWorkspaceClient() {
                               : "text-emerald-300 hover:underline"
                           }
                         >
-                          {DEAL_STATUS_LABELS[row.deal_status]}（取引を見る）
+                          {ADMIN_DEAL_STATUS_LABELS[row.deal_status]}（取引を見る）
                         </Link>
                       ) : row.linked_deal_count > 0 ? (
                         <span className="text-xs text-amber-200">
@@ -1024,10 +1031,10 @@ export function AdminWorkspaceClient() {
               </label>
             </div>
 
-            {dealAlerts.length > 0 ? (
+            {actionableDealAlerts.length > 0 ? (
               <div className="space-y-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
                 <p className="text-sm font-medium text-amber-200">取引警告</p>
-                {dealAlerts.map((a) => (
+                {actionableDealAlerts.map((a) => (
                   <p key={a.id} className="text-xs text-amber-100/90">
                     {a.message}
                   </p>
@@ -1078,14 +1085,9 @@ export function AdminWorkspaceClient() {
                         <span className="block text-xs text-muted">{sellerFeeLabel(row.agreed_price_ex_tax)}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <ConfirmStatusSelect
-                          value={row.status}
-                          options={DEAL_STATUSES.map((s) => ({
-                            value: s,
-                            label: DEAL_STATUS_LABELS[s],
-                          }))}
-                          onConfirm={(next) => advanceDeal(row.id, next)}
-                        />
+                        <span className="inline-flex rounded bg-zinc-800 px-2 py-0.5 text-xs">
+                          {ADMIN_DEAL_STATUS_LABELS[row.status]}
+                        </span>
                         <AdminDealFinalizePanel
                           dealId={row.id}
                           sellerIntent={row.seller_intent_confirmed}
@@ -1138,56 +1140,12 @@ export function AdminWorkspaceClient() {
                         ) : null}
                       </td>
                       <td className="px-4 py-3 space-y-1 text-xs">
-                        {row.status === "awaiting_payment" ? (
-                          <button
-                            type="button"
-                            disabled={!!actionLoading}
-                            onClick={() =>
-                              runDealAction(`${row.id}:funded`, async () => {
-                                await advanceDeal(row.id, "funded");
-                              })
-                            }
-                            className="block text-emerald-300 hover:underline disabled:opacity-50"
-                          >
-                            {actionLoading === `${row.id}:funded` ? "処理中…" : "入金確認"}
-                          </button>
-                        ) : null}
-                        {row.status === "payout_ready" ? (
-                          <button
-                            type="button"
-                            disabled={!!actionLoading}
-                            onClick={() =>
-                              runDealAction(`${row.id}:payout`, async () => {
-                                await advanceDeal(row.id, "payout_done");
-                              })
-                            }
-                            className="mb-1 block w-full min-h-9 rounded-lg border border-amber-500/50 bg-amber-950/50 px-2 py-1.5 text-xs font-semibold text-amber-100 disabled:opacity-50"
-                          >
-                            {actionLoading === `${row.id}:payout` ? "処理中…" : "① 完了登録"}
-                          </button>
-                        ) : null}
-                        {row.status === "payout_done" ? (
-                          <button
-                            type="button"
-                            disabled={!!actionLoading}
-                            onClick={() =>
-                              runDealAction(`${row.id}:complete`, async () => {
-                                await advanceDeal(row.id, "completed");
-                              })
-                            }
-                            className="mb-1 block w-full min-h-9 rounded-lg bg-accent px-2 py-1.5 text-xs font-bold text-black disabled:opacity-50"
-                          >
-                            {actionLoading === `${row.id}:complete` ? "処理中…" : "② 取引完了"}
-                          </button>
-                        ) : null}
-                        {row.status === "payout_ready" ? (
-                          <Link
-                            href={`/admin/deals/${row.id}`}
-                            className="block text-[10px] text-accent hover:underline"
-                          >
-                            詳細で一括完了 →
-                          </Link>
-                        ) : null}
+                        <Link
+                          href={`/admin/deals/${row.id}`}
+                          className="block font-medium text-accent hover:underline"
+                        >
+                          詳細で処理 →
+                        </Link>
                         {row.status !== "cancelled" && row.status !== "completed" ? (
                           <button
                             type="button"
