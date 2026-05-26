@@ -4,12 +4,15 @@ import { DEAL_STATUS_LABELS } from "@/lib/deal-flow";
 import { formatYen } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/viewer";
-import type { DealStatus } from "@/lib/types";
+import { isDealerApproved } from "@/lib/account-status";
+import type { DealStatus, Profile } from "@/lib/types";
 
 export default async function DealsHistoryPage() {
   const viewer = await getViewer();
   const supabase = await createClient();
   const userId = viewer!.id;
+
+  const canRecords = isDealerApproved(viewer!.profile as Profile);
 
   const { data: rows } = await supabase
     .from("deals")
@@ -21,6 +24,15 @@ export default async function DealsHistoryPage() {
     .in("status", ["completed", "payout_done"])
     .order("updated_at", { ascending: false });
 
+  const dealIds = (rows ?? []).map((r) => r.id);
+  const { data: recordRows } =
+    canRecords && dealIds.length > 0
+      ? await supabase.from("transaction_records").select("id, deal_id").in("deal_id", dealIds)
+      : { data: [] };
+  const recordByDeal = new Map(
+    (recordRows ?? []).map((r) => [r.deal_id as string, r.id as string]),
+  );
+
   const deals = (rows ?? []).map((row) => {
     const listing = Array.isArray(row.listings) ? row.listings[0] : row.listings;
     return {
@@ -30,6 +42,7 @@ export default async function DealsHistoryPage() {
       role: row.buyer_id === userId ? "購入" : "売却",
       price: row.agreed_price_ex_tax,
       completedAt: row.completed_at,
+      recordId: recordByDeal.get(row.id) ?? null,
     };
   });
 
@@ -49,11 +62,11 @@ export default async function DealsHistoryPage() {
         ) : (
           <ul className="space-y-3">
             {deals.map((d) => (
-              <li key={d.id}>
-                <Link
-                  href={`/deals/${d.id}`}
-                  className="block rounded-xl border border-border bg-card p-4 transition hover:border-accent/40"
-                >
+              <li
+                key={d.id}
+                className="rounded-xl border border-border bg-card transition hover:border-accent/40"
+              >
+                <Link href={`/deals/${d.id}`} className="block p-4">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
                       <p className="font-medium">{d.title}</p>
@@ -64,6 +77,16 @@ export default async function DealsHistoryPage() {
                     <p className="font-semibold text-accent">{formatYen(d.price)}</p>
                   </div>
                 </Link>
+                {d.recordId ? (
+                  <div className="border-t border-border/60 px-4 py-2">
+                    <Link
+                      href={`/transaction-records/${d.recordId}`}
+                      className="text-xs text-accent hover:underline"
+                    >
+                      取引記録書 →
+                    </Link>
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>

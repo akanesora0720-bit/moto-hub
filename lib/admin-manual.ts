@@ -21,6 +21,7 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
           ["商談・取引", "/admin/workspace"],
           ["取引連絡", "/admin/deals"],
           ["精算", "/admin/billing"],
+          ["取引記録", "/admin/transaction-records"],
           ["加盟店・信用", "/admin/credit"],
           ["MotoHub査定", "/admin/inspections"],
           ["サポート / トラブル", "/admin/support · /admin/disputes"],
@@ -81,7 +82,7 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
       {
         kind: "ul",
         items: [
-          "① 入金指示書を承認して送る — 成約後、買い手が売り手へ振込できるよう PDF を送信（awaiting_payment）",
+          "① 入金指示書を承認して送る — 合意（agreed）確定後、取引記録書が自動作成され、買い手が売り手へ振込できるよう入金指示 PDF を送信",
           "② 当事者の入金・引渡・完了確認 — 売り手の入金確認、買い手の振込報告、引取日時、双方の完了ボタンを監視",
           "③ 取引を完了にする — ステータスが「双方確認済（運営が取引完了へ）」のとき実行。車両代の送金はしない",
           "④ MotoHub手数料の入金確認 — 税抜3万円超の成約で売り手宛請求書の入金を記録",
@@ -115,8 +116,40 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
     ],
   },
   {
+    id: "records",
+    title: "6. 取引記録書",
+    blocks: [
+      {
+        kind: "p",
+        text: "業者間取引の記録を DB（transaction_records）に保存し、当事者・運営が PDF 出力できます。admin_finalize_agreement（合意確定）または deals 更新トリガーで同期されます。",
+      },
+      {
+        kind: "ul",
+        items: [
+          "一覧・検索：/admin/transaction-records — 取引ID・車両名・売主店名・買主店名・成約日（範囲）で検索",
+          "取引詳細：/admin/deals/[id] 下部に当事者と同様のパネル表示",
+          "詳細・PDF：/transaction-records/[id] および /api/transaction-records/[id]/pdf",
+          "成約（agreed）以降の取引のみ。商談中・取消は記録なし（取消時は削除）",
+        ],
+      },
+      {
+        kind: "table",
+        headers: ["データ", "扱い"],
+        rows: [
+          ["売主・買主・車両", "初回作成時のスナップショット（後から profiles / listings を変えても不変）"],
+          ["支払状況・引渡・書類状況", "取引の進行に合わせて自動更新"],
+          ["登録番号", "出品の型式指定（model_designation）があれば記録（専用欄がない場合は空）"],
+        ],
+      },
+      {
+        kind: "callout",
+        text: "加盟店の閲覧は account_status = approved のみ（RLS）。運営・スタッフは全件検索・閲覧可能。PDFは「売買契約書ではない」注意書き付き。",
+      },
+    ],
+  },
+  {
     id: "billing",
-    title: "6. 精算（/admin/billing）",
+    title: "7. 精算（/admin/billing）",
     blocks: [
       {
         kind: "ul",
@@ -134,7 +167,7 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
   },
   {
     id: "dealers",
-    title: "7. 加盟店審査・信用（/admin/credit）",
+    title: "8. 加盟店審査・信用（/admin/credit）",
     blocks: [
       {
         kind: "ul",
@@ -149,7 +182,7 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
   },
   {
     id: "inspection",
-    title: "8. MotoHub査定（/admin/inspections）",
+    title: "9. MotoHub査定（/admin/inspections）",
     blocks: [
       {
         kind: "ul",
@@ -163,7 +196,7 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
   },
   {
     id: "support",
-    title: "9. サポート・トラブル",
+    title: "10. サポート・トラブル",
     blocks: [
       {
         kind: "ul",
@@ -178,7 +211,7 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
   },
   {
     id: "tips",
-    title: "10. 運用上の注意",
+    title: "11. 運用上の注意",
     blocks: [
       {
         kind: "ul",
@@ -186,6 +219,7 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
           "サイドバーのバッジは未対応件数の目安。詳細は各画面で確認",
           "取引詳細の運営手順と管理センターの「取引完了待ち」は同じ payout_ready / payout_done を指す",
           "加盟店向けの画面説明は加盟店画面の /help（運営は /admin/help）",
+          "取引記録の問い合わせ時は記録ID・取引IDを控えて対応",
         ],
       },
     ],

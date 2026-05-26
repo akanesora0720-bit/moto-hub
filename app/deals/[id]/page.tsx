@@ -22,7 +22,12 @@ import { createClient } from "@/lib/supabase/server";
 import { canAccessAdmin } from "@/lib/auth";
 import { adminDealListPath } from "@/lib/admin-deal-routes";
 import { getViewer } from "@/lib/viewer";
-import type { Deal, DealStatus, InvoiceStatus, Profile } from "@/lib/types";
+import { TransactionRecordPanel } from "@/components/TransactionRecordPanel";
+import {
+  canViewTransactionRecords,
+  dealStatusMayHaveTransactionRecord,
+} from "@/lib/transaction-record";
+import type { Deal, DealStatus, InvoiceStatus, Profile, TransactionRecord } from "@/lib/types";
 
 export default async function DealDetailPage({
   params,
@@ -172,6 +177,26 @@ export async function DealDetailPageView(
     : { data: [] };
 
   const transferDocuments = (transferDocRows ?? []) as DealTransferDocument[];
+
+  let transactionRecord: TransactionRecord | null = null;
+  if (
+    dealStatusMayHaveTransactionRecord(deal.status) &&
+    (isParty || isAdmin) &&
+    canViewTransactionRecords(viewer!.profile as Profile)
+  ) {
+    const { data: tr } = await supabase
+      .from("transaction_records")
+      .select("*")
+      .eq("deal_id", id)
+      .maybeSingle();
+    transactionRecord = (tr as TransactionRecord | null) ?? null;
+  }
+
+  const recordRole: "seller" | "buyer" | "admin" = adminViewOnly
+    ? "admin"
+    : role === "seller"
+      ? "seller"
+      : "buyer";
 
   const adminOpsInput: AdminDealOpsInput | null = adminViewOnly
     ? {
@@ -385,6 +410,10 @@ export async function DealDetailPageView(
             )}
           </DealCard>
         )}
+
+        {transactionRecord ? (
+          <TransactionRecordPanel record={transactionRecord} role={recordRole} />
+        ) : null}
 
         <div className="space-y-2">
           <Link

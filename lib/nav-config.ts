@@ -44,6 +44,7 @@ export const adminNavItems: NavItem[] = [
     matchPrefix: true,
   },
   { href: "/admin/billing", label: "精算", matchPrefix: true },
+  { href: "/admin/transaction-records", label: "取引記録", matchPrefix: true },
   { href: "/admin/support", label: "サポート", badgeKey: "openSupport", matchPrefix: true },
   { href: "/admin/disputes", label: "トラブル", badgeKey: "openDisputes", matchPrefix: true },
   { href: "/admin/credit", label: "加盟店・信用", matchPrefix: true },

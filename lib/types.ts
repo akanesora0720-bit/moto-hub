@@ -179,6 +179,48 @@ export type Deal = {
   updated_at: string;
 };
 
+export type TransactionPartySnapshot = {
+  store_name?: string | null;
+  trade_name?: string | null;
+  contact_name?: string | null;
+  antique_dealer_number?: string | null;
+  invoice_number?: string | null;
+  prefecture?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+};
+
+export type TransactionRecord = {
+  id: string;
+  deal_id: string;
+  vehicle_id: string;
+  seller_id: string;
+  buyer_id: string;
+  contracted_at: string;
+  vehicle_name: string;
+  manufacturer: string;
+  displacement: number | null;
+  model_year: number | null;
+  mileage: number | null;
+  vin: string;
+  registration_number: string;
+  sale_price_ex_tax: number;
+  sale_price_inc_tax: number;
+  platform_fee_ex_tax: number;
+  platform_fee_inc_tax: number;
+  seller_snapshot_json: TransactionPartySnapshot;
+  buyer_snapshot_json: TransactionPartySnapshot;
+  vehicle_snapshot_json: Record<string, unknown>;
+  handover_due_at: string | null;
+  handover_completed_at: string | null;
+  documents_status: string;
+  payment_status: string;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type ComplaintStatus = "pending" | "approved" | "rejected";
 
 export type ComplaintType =
