@@ -1,4 +1,4 @@
--- 利用規約・プライバシーポリシー同意を policy_type で統一管理
+-- 061 がスタブ適用・terms_acceptances 未存在で失敗した環境の修復
 
 do $$ begin
   create type public.policy_type as enum ('terms', 'privacy');
@@ -21,11 +21,6 @@ create index if not exists policy_acceptances_user_id_idx on public.policy_accep
 create index if not exists policy_acceptances_type_version_idx
   on public.policy_acceptances (policy_type, policy_version);
 
-comment on table public.policy_acceptances is '利用規約・プライバシーポリシー等への同意記録';
-comment on column public.policy_acceptances.policy_type is 'terms=利用規約 / privacy=プライバシーポリシー';
-comment on column public.policy_acceptances.policy_version is '文書バージョン（例: v1）';
-
--- 060 terms_acceptances から移行（テーブルが残っている場合のみ）
 do $$
 begin
   if exists (
@@ -166,71 +161,3 @@ end;
 $$;
 
 grant execute on function public.record_registration_policy_acceptances(text, text, text, text) to authenticated;
-
-create or replace function public.complete_dealer_onboarding(p_payload jsonb)
-returns public.profiles
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  v_profile public.profiles%rowtype;
-begin
-  if auth.uid() is null then raise exception 'login required'; end if;
-
-  if coalesce((p_payload->>'terms_accepted')::boolean, false) is not true then
-    raise exception '利用規約への同意が必要です';
-  end if;
-  if coalesce((p_payload->>'privacy_accepted')::boolean, false) is not true then
-    raise exception 'プライバシーポリシーへの同意が必要です';
-  end if;
-
-  perform public.record_policy_acceptance(
-    'terms'::public.policy_type,
-    coalesce(nullif(trim(p_payload->>'terms_version'), ''), 'v1'),
-    coalesce(
-      nullif(trim(p_payload->>'terms_pdf_url'), ''),
-      '/terms/Motohub Terms Of Service V1.pdf'
-    )
-  );
-  perform public.record_policy_acceptance(
-    'privacy'::public.policy_type,
-    coalesce(nullif(trim(p_payload->>'privacy_version'), ''), 'v1'),
-    coalesce(
-      nullif(trim(p_payload->>'privacy_pdf_url'), ''),
-      '/legal/privacy_policy.pdf'
-    )
-  );
-
-  update public.profiles
-  set
-    store_name = trim(p_payload->>'store_name'),
-    trade_name = trim(p_payload->>'trade_name'),
-    contact_name = trim(p_payload->>'contact_name'),
-    antique_dealer_number = trim(p_payload->>'antique_dealer_number'),
-    invoice_number = trim(p_payload->>'invoice_number'),
-    prefecture = p_payload->>'prefecture',
-    address = trim(p_payload->>'address'),
-    phone = trim(p_payload->>'phone'),
-    bank_name = trim(p_payload->>'bank_name'),
-    bank_branch = nullif(trim(p_payload->>'bank_branch'), ''),
-    bank_account_type = coalesce(nullif(trim(p_payload->>'bank_account_type'), ''), '普通'),
-    bank_account_number = trim(p_payload->>'bank_account_number'),
-    bank_account_holder = trim(p_payload->>'bank_account_holder'),
-    antique_dealer_doc_path = p_payload->>'antique_dealer_doc_path',
-    invoice_doc_path = p_payload->>'invoice_doc_path',
-    profile_completed = true,
-    verification_status = case
-      when coalesce((p_payload->>'submit_for_review')::boolean, false) then 'pending'::public.verification_status
-      else verification_status
-    end,
-    updated_at = now()
-  where id = auth.uid()
-  returning * into v_profile;
-
-  perform public.ensure_dealer_identity_for_profile(auth.uid());
-
-  select * into v_profile from public.profiles where id = auth.uid();
-  return v_profile;
-end;
-$$;
