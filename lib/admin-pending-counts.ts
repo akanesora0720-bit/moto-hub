@@ -113,7 +113,7 @@ export async function fetchAdminPendingCounts(
       .not("buyer_payment_reported_at", "is", null),
     supabase
       .from("deal_alerts")
-      .select("id, alert_type, deal_id")
+      .select("id, alert_type, deal_id, message")
       .eq("resolved", false)
       .limit(500),
     supabase

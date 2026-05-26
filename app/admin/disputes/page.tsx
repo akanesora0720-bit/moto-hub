@@ -304,7 +304,7 @@ export default function AdminDisputesPage() {
                 </p>
                 {selected.deal?.status ? (
                   <p className="text-xs text-muted">
-                    取引: {DEAL_STATUS_LABELS[selected.deal.status]}
+                    取引: {ADMIN_DEAL_STATUS_LABELS[selected.deal.status]}
                   </p>
                 ) : null}
                 {selected.status === "open" ? (
