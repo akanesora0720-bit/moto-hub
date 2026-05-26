@@ -9,6 +9,13 @@ export type TrustRank = "GOLD" | "BLUE" | "YELLOW" | "RED";
 
 export type VerificationStatus = "unverified" | "pending" | "verified" | "rejected";
 
+export type AccountStatus =
+  | "pre_registered"
+  | "pending_review"
+  | "approved"
+  | "rejected"
+  | "suspended";
+
 export type Profile = {
   id: string;
   email: string;
@@ -28,6 +35,8 @@ export type Profile = {
   is_admin: boolean;
   profile_completed: boolean;
   verification_status: VerificationStatus;
+  account_status: AccountStatus | null;
+  contract_established_at: string | null;
   antique_dealer_doc_path: string | null;
   invoice_doc_path: string | null;
   trade_name: string | null;

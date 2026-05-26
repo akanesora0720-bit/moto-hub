@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isDealerLimitedPathAllowed } from "@/lib/account-status";
 import { encodeProfile, type ViewerProfile } from "@/lib/viewer";
+import type { AccountStatus } from "@/lib/types";
 
 export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
@@ -62,10 +64,12 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && !isPublic && path !== "/onboarding") {
+  if (user && !isPublic) {
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("profile_completed, is_active, is_banned, is_admin, member_type")
+      .select(
+        "profile_completed, is_active, is_banned, is_admin, member_type, account_status",
+      )
       .eq("id", user.id)
       .maybeSingle();
 
@@ -85,7 +89,9 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    if (!profile.is_active || profile.is_banned) {
+    const accountStatus = (profile.account_status ?? "pre_registered") as AccountStatus;
+
+    if (profile.is_banned || accountStatus === "suspended" || !profile.is_active) {
       await supabase.auth.signOut();
       const url = request.nextUrl.clone();
       url.pathname = "/login";
@@ -93,7 +99,27 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    if (!profile.profile_completed) {
+    const isDealer = profile.member_type === "dealer";
+
+    if (isDealer && accountStatus === "rejected") {
+      const rejectedAllowed =
+        path.startsWith("/settings") ||
+        path.startsWith("/membership") ||
+        path === "/home";
+      if (!rejectedAllowed) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/membership/rejected";
+        return NextResponse.redirect(url);
+      }
+    }
+
+    if (isDealer && (accountStatus === "pre_registered" || accountStatus === "pending_review")) {
+      if (!isDealerLimitedPathAllowed(path) && path !== "/onboarding") {
+        const url = request.nextUrl.clone();
+        url.pathname = "/home";
+        return NextResponse.redirect(url);
+      }
+    } else if (isDealer && !profile.profile_completed && path !== "/onboarding") {
       const url = request.nextUrl.clone();
       url.pathname = "/onboarding";
       return NextResponse.redirect(url);

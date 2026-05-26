@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import type { MemberType } from "@/lib/types";
+import type { AccountStatus, MemberType } from "@/lib/types";
 
 export type ViewerProfile = {
   profile_completed: boolean;
@@ -9,6 +9,7 @@ export type ViewerProfile = {
   is_banned: boolean;
   is_admin: boolean;
   member_type: MemberType;
+  account_status: AccountStatus | null;
 };
 
 export type Viewer = {
@@ -49,7 +50,7 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
   const { data: row } = await supabase
     .from("profiles")
     .select(
-      "profile_completed, is_active, is_banned, is_admin, member_type",
+      "profile_completed, is_active, is_banned, is_admin, member_type, account_status",
     )
     .eq("id", user.id)
     .maybeSingle();

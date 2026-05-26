@@ -5,9 +5,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { SidebarNav } from "@/components/layout/SidebarNav";
 import { canAccessAdmin } from "@/lib/auth";
+import { dealerNavForLimitedAccess } from "@/lib/account-status";
 import { adminNavItems, dealerNavItems, staffNavItems } from "@/lib/nav-config";
 import { createClient } from "@/lib/supabase/client";
-import type { MemberType, Profile } from "@/lib/types";
+import type { AccountStatus, MemberType, Profile } from "@/lib/types";
 
 export function AppShell({
   children,
@@ -31,6 +32,7 @@ export function AppShell({
     showAdminNavProp ?? !!isAdminProp,
   );
   const [badges, setBadges] = useState<Record<string, number>>({});
+  const [accountStatus, setAccountStatus] = useState<AccountStatus | null>(null);
 
   const isAdminRoute = pathname.startsWith("/admin");
   const isStaff = memberType === "staff";
@@ -50,13 +52,14 @@ export function AppShell({
       if (!auth.user) return;
       supabase
         .from("profiles")
-        .select("member_type, is_admin, is_active")
+        .select("member_type, is_admin, is_active, account_status")
         .eq("id", auth.user.id)
         .maybeSingle()
         .then(({ data }) => {
           if (!data) return;
-          const p = data as Pick<Profile, "member_type" | "is_admin" | "is_active">;
+          const p = data as Pick<Profile, "member_type" | "is_admin" | "is_active" | "account_status">;
           setMemberType(p.member_type ?? "dealer");
+          setAccountStatus(p.account_status ?? "pre_registered");
           setShowAdmin(isAdminProp ?? canAccessAdmin(p as Profile));
         });
     });
@@ -94,11 +97,16 @@ export function AppShell({
     router.refresh();
   };
 
+  const dealerNav =
+    !useAdminShell && accountStatus && accountStatus !== "approved"
+      ? dealerNavForLimitedAccess(dealerNavItems)
+      : dealerNavItems;
+
   const navItems = useAdminShell
     ? isStaff
       ? staffNavItems
       : adminNavItems
-    : dealerNavItems;
+    : dealerNav;
   const homeHref = useAdminShell ? "/admin" : "/home";
 
   return (

@@ -62,7 +62,7 @@ export default function SignupPage() {
     }
 
     const origin = window.location.origin;
-    const { error: policiesErr } = await supabase.rpc("record_registration_policy_acceptances", {
+    const { error: policiesErr } = await supabase.rpc("finalize_dealer_pre_registration", {
       p_terms_version: CURRENT_TERMS_VERSION,
       p_terms_pdf_url: termsPdfAbsoluteUrl(origin),
       p_privacy_version: CURRENT_PRIVACY_VERSION,
@@ -73,7 +73,7 @@ export default function SignupPage() {
       return;
     }
 
-    router.replace("/onboarding");
+    router.replace("/home");
     router.refresh();
   };
 

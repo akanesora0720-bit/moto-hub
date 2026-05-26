@@ -17,7 +17,10 @@ import {
   CURRENT_TERMS_VERSION,
   registrationPolicyPayload,
 } from "@/lib/legal-policies";
+import { DealerMembershipBanner } from "@/components/DealerMembershipBanner";
+import { ACCOUNT_STATUS_LABELS } from "@/lib/account-status";
 import { VERIFICATION_STATUS_LABELS } from "@/lib/constants";
+import type { AccountStatus } from "@/lib/types";
 import { isValidPrefecture, PREFECTURE_PLACEHOLDER } from "@/lib/prefectures";
 import { createClient } from "@/lib/supabase/client";
 import type { MemberType, VerificationStatus } from "@/lib/types";
@@ -69,6 +72,7 @@ export default function OnboardingPage() {
   const [existingInvoicePath, setExistingInvoicePath] = useState<string | null>(null);
   const [verificationStatus, setVerificationStatus] =
     useState<VerificationStatus>("unverified");
+  const [accountStatus, setAccountStatus] = useState<AccountStatus>("pre_registered");
   const [policiesAccepted, setPoliciesAccepted] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -85,6 +89,7 @@ export default function OnboardingPage() {
       if (profile) {
         setMemberType(profile.member_type ?? "dealer");
         setVerificationStatus(profile.verification_status ?? "unverified");
+        setAccountStatus(profile.account_status ?? "pre_registered");
         setExistingAntiquePath(profile.antique_dealer_doc_path);
         setExistingInvoicePath(profile.invoice_doc_path);
         setDealerForm({
@@ -210,7 +215,7 @@ export default function OnboardingPage() {
         setMessage(error.message);
         return;
       }
-      router.replace("/");
+      router.replace("/home");
       router.refresh();
     } catch (e) {
       setLoading(false);
@@ -281,15 +286,20 @@ export default function OnboardingPage() {
   return (
     <AppShell>
       <div className="mx-auto max-w-lg space-y-6">
+        <DealerMembershipBanner
+          accountStatus={accountStatus}
+          profileCompleted={accountStatus === "pending_review"}
+        />
         <div>
           <h1 className="text-2xl font-semibold">店舗情報</h1>
           <p className="mt-1 text-sm text-muted">
-            インボイス登録事業者として、古物商・振込口座を登録してください。
+            インボイス登録事業者として、古物商・振込口座を登録してください。送信後は運営審査（
+            {ACCOUNT_STATUS_LABELS.pending_review}）となり、承認後に正式加盟となります。
           </p>
           <div className="mt-3">
             <VerificationBadge status={verificationStatus} />
             <span className="ml-2 text-xs text-muted">
-              {VERIFICATION_STATUS_LABELS[verificationStatus]}
+              {VERIFICATION_STATUS_LABELS[verificationStatus]} · {ACCOUNT_STATUS_LABELS[accountStatus]}
             </span>
           </div>
         </div>
@@ -356,7 +366,7 @@ export default function OnboardingPage() {
           disabled={loading || !policiesAccepted}
           className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60"
         >
-          {loading ? "保存中…" : "保存して在庫一覧へ"}
+          {loading ? "送信中…" : "審査に提出する"}
         </button>
       </div>
     </AppShell>

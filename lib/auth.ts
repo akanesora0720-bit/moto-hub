@@ -1,3 +1,4 @@
+import { isDealerApproved } from "@/lib/account-status";
 import type { MemberType, Profile, VerificationStatus } from "@/lib/types";
 
 export type DealerProfileInput = {
@@ -55,6 +56,13 @@ export function canAccessAdmin(profile: Profile | null): boolean {
 export function canPerformMotohubInspection(profile: Profile | null): boolean {
   if (!profile?.is_active) return false;
   return profile.member_type === "staff" || profile.is_admin;
+}
+
+/** 出品・商談など加盟店の本番機能（加盟審査承認後） */
+export function canUseDealerTradingFeatures(profile: Profile | null): boolean {
+  if (!profile?.is_active || profile.is_banned) return false;
+  if (profile.member_type === "staff" || profile.is_admin) return true;
+  return isProfileComplete(profile) && isDealerApproved(profile);
 }
 
 export function buildDealerProfilePayload(

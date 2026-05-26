@@ -49,6 +49,8 @@ export const MILEAGE_ROLLBACK_OPTIONS = [
 
 export type MileageRollbackStatus = (typeof MILEAGE_ROLLBACK_OPTIONS)[number]["value"];
 
+export { ACCOUNT_STATUS_LABELS } from "@/lib/account-status";
+
 export const VERIFICATION_STATUS_LABELS: Record<
   "unverified" | "pending" | "verified" | "rejected",
   string

@@ -4,8 +4,11 @@ import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { ActionCard, StatBadge } from "@/components/layout/DashboardCard";
 import { fetchDealerActionStats } from "@/lib/dealer-action-stats";
 import { createClient } from "@/lib/supabase/server";
+import { DealerMembershipBanner } from "@/components/DealerMembershipBanner";
+import { isDealerApproved } from "@/lib/account-status";
 import { fetchDealerDashboardStats } from "@/lib/dealer-dashboard";
 import { getViewer } from "@/lib/viewer";
+import type { AccountStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -22,14 +25,23 @@ export default async function DealerHomePage() {
   const supabase = await createClient();
   const { data: profileRow } = await supabase
     .from("profiles")
-    .select("store_name, email")
+    .select("store_name, email, account_status, profile_completed")
     .eq("id", viewer.id)
     .maybeSingle();
   const storeName = profileRow?.store_name ?? profileRow?.email ?? "加盟店";
+  const accountStatus = (profileRow?.account_status ?? "pre_registered") as AccountStatus;
+  const tradingEnabled = isDealerApproved({
+    member_type: "dealer",
+    account_status: accountStatus,
+  });
 
   return (
     <AuthenticatedShell>
       <div className="mx-auto max-w-4xl space-y-8">
+        <DealerMembershipBanner
+          accountStatus={accountStatus}
+          profileCompleted={profileRow?.profile_completed ?? false}
+        />
         <div>
           <h1 className="text-2xl font-semibold">ホーム</h1>
           <p className="mt-1 text-sm text-muted">
@@ -40,6 +52,7 @@ export default async function DealerHomePage() {
           </p>
         </div>
 
+        {tradingEnabled ? (
         <section>
           <h2 className="mb-3 text-sm font-medium text-muted">要対応</h2>
           <div className="flex flex-wrap gap-3">
@@ -87,8 +100,9 @@ export default async function DealerHomePage() {
             ) : null}
           </div>
         </section>
+        ) : null}
 
-        {stats ? (
+        {tradingEnabled && stats ? (
           <section className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-border bg-card px-4 py-3">
               <p className="text-xs text-muted">出品中</p>
@@ -108,8 +122,12 @@ export default async function DealerHomePage() {
         ) : null}
 
         <section>
-          <h2 className="mb-3 text-sm font-medium text-muted">業務メニュー</h2>
+          <h2 className="mb-3 text-sm font-medium text-muted">
+            {tradingEnabled ? "業務メニュー" : "利用可能なメニュー"}
+          </h2>
           <div className="grid gap-4 sm:grid-cols-2">
+            {tradingEnabled ? (
+            <>
             <ActionCard
               title="① 出品する"
               description="車両を登録して業販に出す"
@@ -154,15 +172,39 @@ export default async function DealerHomePage() {
               href="/settings"
               sublinks={[{ label: "運営サポート", href: "/support" }]}
             />
+            </>
+            ) : (
+              <>
+                <ActionCard
+                  title="業販検索"
+                  description="在庫の閲覧（仮登録・審査中も利用可）"
+                  href="/search"
+                />
+                {!profileRow?.profile_completed ? (
+                  <ActionCard
+                    title="加盟店情報の登録"
+                    description="審査に必要な会社情報・書類を入力"
+                    href="/onboarding"
+                  />
+                ) : null}
+                <ActionCard
+                  title="設定"
+                  description="アカウント・会社情報"
+                  href="/settings"
+                />
+              </>
+            )}
           </div>
         </section>
 
-        <p className="text-xs text-muted">
-          迷ったら <Link href="/deals" className="text-accent hover:underline">商談</Link>
-          または{" "}
-          <Link href="/support" className="text-accent hover:underline">運営サポート</Link>
-          へ。
-        </p>
+        {tradingEnabled ? (
+          <p className="text-xs text-muted">
+            迷ったら <Link href="/deals" className="text-accent hover:underline">商談</Link>
+            または{" "}
+            <Link href="/support" className="text-accent hover:underline">運営サポート</Link>
+            へ。
+          </p>
+        ) : null}
       </div>
     </AuthenticatedShell>
   );

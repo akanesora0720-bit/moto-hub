@@ -9,7 +9,9 @@ import { AdminEmergencyContactLog } from "@/components/AdminEmergencyContactLog"
 import { TrustBadge } from "@/components/TrustBadge";
 import { VerificationBadge } from "@/components/VerificationBadge";
 import { formatYen } from "@/lib/format";
+import { ACCOUNT_STATUS_LABELS } from "@/lib/account-status";
 import { VERIFICATION_STATUS_LABELS } from "@/lib/constants";
+import type { AccountStatus } from "@/lib/types";
 import { resolveDealFeeRates } from "@/lib/billing";
 import { pickPrimaryDealForInquiry } from "@/lib/admin-inquiry-deal";
 import {
@@ -88,6 +90,7 @@ export function AdminWorkspaceClient() {
       trust_score: number;
       trust_rank: TrustRank;
       verification_status: VerificationStatus;
+      account_status: AccountStatus | null;
       antique_dealer_doc_path: string | null;
     }[]
   >([]);
@@ -182,7 +185,7 @@ export function AdminWorkspaceClient() {
       supabase
         .from("profiles")
         .select(
-          "id, email, store_name, member_type, antique_dealer_number, is_active, trust_score, trust_rank, verification_status, antique_dealer_doc_path",
+          "id, email, store_name, member_type, antique_dealer_number, is_active, trust_score, trust_rank, verification_status, account_status, antique_dealer_doc_path",
         )
         .order("created_at", { ascending: false }),
       supabase
@@ -400,7 +403,11 @@ export function AdminWorkspaceClient() {
             verified_at: status === "verified" ? new Date().toISOString() : null,
           }).eq("id", id);
     setMessage(
-      error ? error.message : `古物商照合: ${VERIFICATION_STATUS_LABELS[status]} に更新しました。`,
+      error
+        ? error.message
+        : status === "verified"
+          ? "加盟審査を承認しました（正式加盟・全機能解放）。"
+          : `審査: ${VERIFICATION_STATUS_LABELS[status]} に更新しました。`,
     );
     load();
   };
@@ -451,7 +458,20 @@ export function AdminWorkspaceClient() {
 
   const toggleMember = async (id: string, active: boolean) => {
     const supabase = createClient();
-    const { error } = await supabase.from("profiles").update({ is_active: !active }).eq("id", id);
+    const member = members.find((m) => m.id === id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        is_active: !active,
+        account_status: active
+          ? "suspended"
+          : member?.verification_status === "verified"
+            ? "approved"
+            : member?.account_status === "rejected"
+              ? "rejected"
+              : "pending_review",
+      })
+      .eq("id", id);
     setMessage(error ? error.message : active ? "会員を停止しました。" : "会員を再開しました。");
     load();
   };
@@ -939,7 +959,13 @@ export function AdminWorkspaceClient() {
                         </button>
                       ) : null}
                     </td>
-                    <td className="px-4 py-3">{row.is_active ? "有効" : "停止"}</td>
+                    <td className="px-4 py-3 text-xs">
+                      {row.member_type === "dealer" && row.account_status
+                        ? ACCOUNT_STATUS_LABELS[row.account_status]
+                        : row.is_active
+                          ? "有効"
+                          : "停止"}
+                    </td>
                     <td className="px-4 py-3 space-y-1 text-xs">
                       {row.verification_status === "pending" ? (
                         <>
@@ -948,7 +974,7 @@ export function AdminWorkspaceClient() {
                             onClick={() => setVerification(row.id, "verified")}
                             className="block text-emerald-300 hover:underline"
                           >
-                            照合OK
+                            加盟承認
                           </button>
                           <button
                             type="button"
