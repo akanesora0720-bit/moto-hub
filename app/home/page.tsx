@@ -105,7 +105,7 @@ export default async function DealerHomePage() {
         {tradingEnabled && stats ? (
           <section className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-border bg-card px-4 py-3">
-              <p className="text-xs text-muted">出品中</p>
+              <p className="text-xs text-muted">出品</p>
               <p className="mt-1 text-xl font-semibold">{stats.listing_count} 台</p>
             </div>
             <div className="rounded-xl border border-border bg-card px-4 py-3">
