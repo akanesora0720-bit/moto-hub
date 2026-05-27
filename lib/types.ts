@@ -254,12 +254,44 @@ export type DisputeCategory =
 
 export type DisputeStatus = "open" | "reviewing" | "resolved" | "rejected";
 
+export type DisputeType =
+  | "vehicle_defect"
+  | "document_issue"
+  | "payment_issue"
+  | "cancellation_request"
+  | "suspected_fraud";
+
+export type DefectSeverity = "minor" | "major" | "critical";
+
+export type DisputeRequestedOutcome = "continue" | "discount" | "cancel" | "consult";
+
+export type DisputeFeeHandling = "charge" | "waive" | "partial" | "pending";
+
+export type DisputeEvidence = {
+  id: string;
+  storage_path: string;
+  original_filename: string;
+  mime_type: string;
+  byte_size: number;
+};
+
 export type Dispute = {
   id: string;
   deal_id: string;
   reporter_id: string;
   target_user_id: string;
   category: DisputeCategory;
+  dispute_type?: DisputeType | null;
+  defect_severity?: DefectSeverity | null;
+  requested_outcome?: DisputeRequestedOutcome | null;
+  cancellation_reason?: string | null;
+  admin_decision?: string | null;
+  seller_penalty_points?: number | null;
+  buyer_penalty_points?: number | null;
+  fee_handling?: DisputeFeeHandling | null;
+  fraud_suspected?: boolean;
+  admin_notes?: string | null;
+  evidence?: DisputeEvidence[];
   message: string;
   images: string[];
   status: DisputeStatus;
@@ -351,12 +383,15 @@ export type InvoiceDocumentKind =
   | "legacy"
   | "payment_instruction"
   | "platform_fee"
-  | "motohub_inspection";
+  | "motohub_inspection"
+  | "monthly_membership";
 
 export type Invoice = {
   id: string;
   deal_id: string | null;
   inspection_request_id?: string | null;
+  billing_month?: string | null;
+  billing_trust_rank?: TrustRank | null;
   user_id: string;
   party: InvoiceParty;
   document_kind?: InvoiceDocumentKind;
@@ -365,6 +400,7 @@ export type Invoice = {
   total_tax: number;
   total_inc_tax: number;
   issued_at: string | null;
+  payment_due_at?: string | null;
   paid_at: string | null;
 };
 

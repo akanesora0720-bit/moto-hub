@@ -1,5 +1,6 @@
 import { createPdfWriter } from "@/lib/pdf-font";
 import type { MotohubIssuer } from "@/lib/motohub-issuer";
+import { createPdfTemplate } from "@/lib/pdf-template";
 
 export type InvoicePdfLineItem = {
   label: string;
@@ -31,56 +32,68 @@ function yen(n: number): string {
 
 export async function buildInvoicePdf(input: InvoicePdfInput): Promise<Uint8Array> {
   const { doc, writer } = await createPdfWriter();
+  const t = createPdfTemplate(writer, {
+    brandName: "MotoHub",
+    companyName: input.issuer?.companyName ?? "株式会社RideWorks",
+    qualifiedInvoiceNumber: input.issuer?.qualifiedInvoiceNumber ?? null,
+    contact: "info@moto-hub.jp",
+  });
 
-  writer.draw("MotoHub", 20, true);
-  writer.draw(input.partyLabel, 14, true);
-  writer.y -= 6;
+  await t.header({
+    documentTitle: input.partyLabel,
+    issuedAt: input.issuedAt,
+    documentNo: input.invoiceId.slice(0, 8),
+    dealId: input.dealId ?? null,
+    recordId: input.referenceId ?? null,
+  });
 
-  if (input.issuer) {
-    writer.draw("【発行元】", 12, true);
-    writer.draw(input.issuer.companyName);
-    if (input.issuer.address) writer.draw(`住所: ${input.issuer.address}`);
-    if (input.issuer.phone) writer.draw(`電話: ${input.issuer.phone}`);
-    writer.draw(`適格請求書番号: ${input.issuer.qualifiedInvoiceNumber}`);
-    writer.y -= 6;
-  }
+  t.sectionTitle("基本情報");
+  t.keyValueGrid(
+    [
+      { label: "請求先", value: input.billToName },
+      { label: "対象", value: input.vehicleLabel },
+      ...(input.referenceId
+        ? [{ label: input.referenceLabel ?? "参照ID", value: input.referenceId.slice(0, 8) }]
+        : []),
+      ...(input.paymentDueAt ? [{ label: "お支払期限", value: input.paymentDueAt }] : []),
+    ],
+    2,
+  );
 
-  writer.draw("【請求先】", 12, true);
-  writer.draw(input.billToName);
-  writer.y -= 4;
+  t.sectionTitle("請求明細");
+  t.table({
+    headers: ["項目", "税抜", "消費税", "税込"],
+    colWidths: [0.52, 0.16, 0.16, 0.16],
+    align: ["left", "right", "right", "right"],
+    rows: input.items.map((i) => [i.label, yen(i.amountExTax), yen(i.taxAmount), yen(i.amountIncTax)]),
+  });
 
-  writer.draw(`請求書ID: ${input.invoiceId.slice(0, 8)}`);
-  if (input.dealId) {
-    writer.draw(`取引ID: ${input.dealId.slice(0, 8)}`);
-  } else if (input.referenceId) {
-    writer.draw(`${input.referenceLabel ?? "参照ID"}: ${input.referenceId.slice(0, 8)}`);
-  }
-  writer.draw(`車両: ${input.vehicleLabel}`);
-  writer.draw(`発行日: ${input.issuedAt}`);
-  if (input.paymentDueAt) writer.draw(`お支払期限: ${input.paymentDueAt}`);
-  writer.y -= 8;
-
-  writer.draw("【請求明細】", 12, true);
-  for (const item of input.items) {
-    writer.draw(item.label);
-    writer.draw(`  税抜 ${yen(item.amountExTax)}  消費税 ${yen(item.taxAmount)}  税込 ${yen(item.amountIncTax)}`);
-  }
-
-  writer.y -= 4;
-  writer.draw(`税抜合計  ${yen(input.totalExTax)}`);
-  writer.draw(`消費税  ${yen(input.totalTax)}`);
-  writer.y -= 6;
-  writer.draw(`請求総額（税込）  ${yen(input.totalIncTax)}`, 13, true);
+  t.keyValueGrid(
+    [
+      { label: "税抜合計", value: yen(input.totalExTax) },
+      { label: "消費税", value: yen(input.totalTax) },
+      { label: "請求総額（税込）", value: yen(input.totalIncTax) },
+    ],
+    3,
+  );
 
   if (input.issuer?.bankLine) {
-    writer.y -= 10;
-    writer.draw("【お振込先（MotoHub運営）】", 12, true);
-    writer.draw(input.issuer.bankLine);
-    writer.draw("・振込名義は請求先（貴社）の登録名義でお願いします。");
-  } else if (input.issuer) {
-    writer.y -= 8;
-    writer.draw("※ 振込先口座は運営までお問い合わせください（info@moto-hub.jp）");
+    t.sectionTitle("お振込先（MotoHub運営）");
+    t.keyValueGrid(
+      [
+        { label: "振込先", value: input.issuer.bankLine },
+        { label: "振込名義", value: "請求先（貴社）の登録名義" },
+      ],
+      1,
+    );
   }
+
+  t.footer({
+    notes: [
+      "本書はMotoHubにより自動生成されています。",
+      "振込先口座は請求書の記載内容をご確認ください。",
+    ],
+  });
 
   return doc.save();
 }

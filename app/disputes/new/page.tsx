@@ -6,12 +6,21 @@ import { Suspense, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { DEAL_STATUS_LABELS } from "@/lib/deal-flow";
 import {
-  DISPUTE_CATEGORIES,
+  DEFECT_SEVERITIES,
+  DISPUTE_REQUESTED_OUTCOMES,
+  DISPUTE_TYPES,
   canFileDispute,
   disputeSuggestedPenalty,
 } from "@/lib/disputes";
+import {
+  buildDisputeEvidenceStoragePath,
+  DISPUTE_EVIDENCE_MAX_BYTES,
+  DISPUTE_EVIDENCE_MAX_FILES,
+  isAllowedDisputeEvidenceMime,
+  type DisputeEvidenceItem,
+} from "@/lib/dispute-evidence";
 import { createClient } from "@/lib/supabase/client";
-import type { DealStatus, DisputeCategory } from "@/lib/types";
+import type { DealStatus, DefectSeverity, DisputeRequestedOutcome, DisputeType } from "@/lib/types";
 
 function DisputeForm() {
   const router = useRouter();
@@ -20,9 +29,13 @@ function DisputeForm() {
 
   const [dealTitle, setDealTitle] = useState("");
   const [dealStatus, setDealStatus] = useState<DealStatus | null>(null);
-  const [category, setCategory] = useState<DisputeCategory>("defect");
+  const [disputeType, setDisputeType] = useState<DisputeType>("vehicle_defect");
+  const [defectSeverity, setDefectSeverity] = useState<DefectSeverity>("minor");
+  const [requestedOutcome, setRequestedOutcome] =
+    useState<DisputeRequestedOutcome>("consult");
+  const [cancellationReason, setCancellationReason] = useState("");
   const [message, setMessage] = useState("");
-  const [imageNote, setImageNote] = useState("");
+  const [evidence, setEvidence] = useState<DisputeEvidenceItem[]>([]);
   const [statusMsg, setStatusMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -58,6 +71,53 @@ function DisputeForm() {
       });
   }, [dealId]);
 
+  const uploadEvidence = async (file: File) => {
+    if (!dealId) return;
+    if (!isAllowedDisputeEvidenceMime(file.type)) {
+      setStatusMsg("証拠は PDF / 画像（JPEG/PNG/HEIC）/ 動画（MP4/MOV）のみアップロードできます。");
+      return;
+    }
+    if (file.size > DISPUTE_EVIDENCE_MAX_BYTES) {
+      setStatusMsg("ファイルサイズは 10MB 以下にしてください。");
+      return;
+    }
+    if (evidence.length >= DISPUTE_EVIDENCE_MAX_FILES) {
+      setStatusMsg(`証拠は最大 ${DISPUTE_EVIDENCE_MAX_FILES} 件までです。`);
+      return;
+    }
+
+    setLoading(true);
+    setStatusMsg("");
+    const supabase = createClient();
+    const evidenceId = crypto.randomUUID();
+    const storagePath = buildDisputeEvidenceStoragePath(dealId, evidenceId, file.type);
+    if (!storagePath) {
+      setLoading(false);
+      setStatusMsg("このファイル形式はアップロードできません。");
+      return;
+    }
+
+    const { error: uploadError } = await supabase.storage
+      .from("deal-docs")
+      .upload(storagePath, file, { upsert: false, contentType: file.type });
+    if (uploadError) {
+      setLoading(false);
+      setStatusMsg(uploadError.message);
+      return;
+    }
+
+    const item: DisputeEvidenceItem = {
+      id: evidenceId,
+      storage_path: storagePath,
+      original_filename: file.name,
+      mime_type: file.type,
+      byte_size: file.size,
+    };
+    setEvidence((prev) => [...prev, item]);
+    setLoading(false);
+    setStatusMsg("証拠をアップロードしました。");
+  };
+
   const submit = async () => {
     setStatusMsg("");
     if (!dealId || !message.trim()) {
@@ -66,16 +126,18 @@ function DisputeForm() {
     }
     setLoading(true);
     const supabase = createClient();
-    const images = imageNote
-      .split("\n")
-      .map((s) => s.trim())
-      .filter(Boolean);
 
     const { error } = await supabase.rpc("submit_dispute", {
       p_deal_id: dealId,
-      p_category: category,
+      p_category: DISPUTE_TYPES.find((t) => t.value === disputeType)?.legacyCategory ?? "defect",
       p_message: message.trim(),
-      p_images: images,
+      p_images: [],
+      p_dispute_type: disputeType,
+      p_defect_severity: disputeType === "vehicle_defect" ? defectSeverity : null,
+      p_requested_outcome: requestedOutcome,
+      p_cancellation_reason:
+        disputeType === "cancellation_request" ? cancellationReason.trim() || null : null,
+      p_evidence: evidence,
     });
 
     setLoading(false);
@@ -106,22 +168,67 @@ function DisputeForm() {
       </div>
 
       <label className="block space-y-2 text-sm">
-        <span className="text-muted">カテゴリ</span>
+        <span className="text-muted">報告の種類</span>
         <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value as DisputeCategory)}
+          value={disputeType}
+          onChange={(e) => setDisputeType(e.target.value as DisputeType)}
           className="w-full rounded-lg border border-border bg-zinc-950 px-3 py-2"
         >
-          {DISPUTE_CATEGORIES.map((c) => (
-            <option key={c.value} value={c.value}>
-              {c.label}（運営裁量・目安 −{c.suggestedPoints}点）
+          {DISPUTE_TYPES.map((t) => (
+            <option key={t.value} value={t.value}>
+              {t.label}
             </option>
           ))}
         </select>
         <p className="text-xs text-zinc-500">
-          {DISPUTE_CATEGORIES.find((c) => c.value === category)?.description}
+          {DISPUTE_TYPES.find((t) => t.value === disputeType)?.description}
         </p>
       </label>
+
+      {disputeType === "vehicle_defect" ? (
+        <label className="block space-y-2 text-sm">
+          <span className="text-muted">瑕疵の程度</span>
+          <select
+            value={defectSeverity}
+            onChange={(e) => setDefectSeverity(e.target.value as DefectSeverity)}
+            className="w-full rounded-lg border border-border bg-zinc-950 px-3 py-2"
+          >
+            {DEFECT_SEVERITIES.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+
+      <label className="block space-y-2 text-sm">
+        <span className="text-muted">希望対応</span>
+        <select
+          value={requestedOutcome}
+          onChange={(e) => setRequestedOutcome(e.target.value as DisputeRequestedOutcome)}
+          className="w-full rounded-lg border border-border bg-zinc-950 px-3 py-2"
+        >
+          {DISPUTE_REQUESTED_OUTCOMES.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {requestedOutcome === "cancel" || disputeType === "cancellation_request" ? (
+        <label className="block space-y-2 text-sm">
+          <span className="text-muted">キャンセル希望理由（任意）</span>
+          <textarea
+            value={cancellationReason}
+            onChange={(e) => setCancellationReason(e.target.value)}
+            rows={3}
+            className="w-full rounded-lg border border-border bg-zinc-950 px-3 py-2"
+            placeholder="例: 現車の状態が説明と異なるため / 取引継続が困難 など"
+          />
+        </label>
+      ) : null}
 
       <label className="block space-y-2 text-sm">
         <span className="text-muted">詳細（必須）</span>
@@ -132,22 +239,47 @@ function DisputeForm() {
           className="w-full rounded-lg border border-border bg-zinc-950 px-3 py-2"
           placeholder="事実関係・日時・希望対応を記載"
         />
+        <p className="text-xs text-zinc-500">
+          このフォームは「キャンセル申請」ではなく、事実確認・協議のための報告です。虚偽申告や口裏合わせ、
+          手数料回避目的の申告はペナルティ対象になり得ます。
+        </p>
       </label>
 
-      <label className="block space-y-2 text-sm">
-        <span className="text-muted">画像URL（任意・1行1件）</span>
-        <textarea
-          value={imageNote}
-          onChange={(e) => setImageNote(e.target.value)}
-          rows={3}
-          className="w-full rounded-lg border border-border bg-zinc-950 px-3 py-2 font-mono text-xs"
-          placeholder="https://..."
+      <div className="space-y-2 text-sm">
+        <p className="text-muted">写真・動画など証拠（任意）</p>
+        <input
+          type="file"
+          accept="application/pdf,image/jpeg,image/png,image/heic,image/heif,video/mp4,video/quicktime"
+          disabled={loading || evidence.length >= DISPUTE_EVIDENCE_MAX_FILES}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (!f) return;
+            void uploadEvidence(f);
+            e.currentTarget.value = "";
+          }}
+          className="block w-full text-xs"
         />
-      </label>
+        <p className="text-xs text-zinc-500">
+          最大 {DISPUTE_EVIDENCE_MAX_FILES} 件 / 1件 10MB。PDF・画像・動画のみ。
+        </p>
+        {evidence.length ? (
+          <ul className="space-y-1 text-xs">
+            {evidence.map((ev) => (
+              <li key={ev.id} className="rounded border border-border bg-card px-2 py-1">
+                {ev.original_filename}（{Math.round(ev.byte_size / 1024)}KB）
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
 
       <p className="text-xs text-zinc-500">
         期限超過系は原則自動減点（1営業日 −5）。その他は運営が悪質性・故意性等を踏まえて判断（目安 −
-        {disputeSuggestedPenalty(category)}点）。
+        {disputeSuggestedPenalty(
+          disputeType,
+          disputeType === "vehicle_defect" ? defectSeverity : null,
+        )}
+        点）。
       </p>
 
       {statusMsg ? (
@@ -176,6 +308,7 @@ export default function NewDisputePage() {
         <h1 className="text-2xl font-semibold">トラブル申告（dispute）</h1>
         <p className="text-sm text-muted">
           書類・虚偽・瑕疵・不正など、必要最低限の事案のみ。運営が審査します。
+          報告しても取引は自動キャンセル・自動停止されません。
         </p>
         <Suspense fallback={<p className="text-sm text-muted">読込中…</p>}>
           <DisputeForm />

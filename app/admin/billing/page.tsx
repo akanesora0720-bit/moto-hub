@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import {
   INVOICE_STATUS_LABELS,
+  MONTHLY_MEMBERSHIP_DUE_DAY,
+  MONTHLY_MEMBERSHIP_ISSUE_DAY,
   MONTHLY_PAYMENT_STATUS_LABELS,
   formatYen,
 } from "@/lib/billing";
@@ -30,6 +32,7 @@ function docLabel(inv: InvoiceRow) {
   if (kind === "payment_instruction") return "入金指示書";
   if (kind === "platform_fee") return "MotoHub手数料請求";
   if (kind === "motohub_inspection") return "MotoHub査定";
+  if (kind === "monthly_membership") return "月額会費";
   return inv.party === "buyer" ? "買い手" : "売り手";
 }
 
@@ -39,6 +42,14 @@ function listingLabel(inv: InvoiceRow) {
     return inv.inspection_request_id
       ? `査定 ${inv.inspection_request_id.slice(0, 8)}`
       : "査定サービス";
+  }
+  if (kind === "monthly_membership" && inv.billing_month) {
+    const month = new Date(inv.billing_month).toLocaleDateString("ja-JP", {
+      year: "numeric",
+      month: "long",
+    });
+    const rank = (inv as Invoice & { billing_trust_rank?: string }).billing_trust_rank;
+    return rank ? `${month}（${rank}）` : month;
   }
   const li = inv.deal?.listings;
   const listing = Array.isArray(li) ? li[0] : li;
@@ -127,6 +138,25 @@ export default function AdminBillingPage() {
       return { okMessage: "入金確認しました。" };
     });
 
+  const issueMonthlyInvoices = () =>
+    run(async () => {
+      if (
+        !window.confirm(
+          `今月分の月額会費請求書を発行します（通常は毎月${MONTHLY_MEMBERSHIP_ISSUE_DAY}日に自動発行）。よろしいですか？`,
+        )
+      ) {
+        return { error: null };
+      }
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc("admin_issue_monthly_membership_invoices", {});
+      if (error) return { error: error.message };
+      const r = data as { created?: number; skipped_existing?: number } | null;
+      load();
+      return {
+        okMessage: `月額請求を発行しました（新規 ${r?.created ?? 0} 件・既存スキップ ${r?.skipped_existing ?? 0} 件）。`,
+      };
+    });
+
   const reviewDealIds = [
     ...new Set(
       invoices
@@ -152,8 +182,19 @@ export default function AdminBillingPage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold">請求・入出金</h1>
-            <p className="mt-1 text-sm text-muted">月額入金報告の一覧。取引ごとの承認・完了は取引詳細で行います。</p>
+            <p className="mt-1 text-sm text-muted">
+              月額会費は毎月{MONTHLY_MEMBERSHIP_ISSUE_DAY}日に自動発行・{MONTHLY_MEMBERSHIP_DUE_DAY}
+              日までに支払い。取引ごとの承認は取引詳細で行います。
+            </p>
           </div>
+          <button
+            type="button"
+            disabled={loading}
+            onClick={issueMonthlyInvoices}
+            className="rounded-lg border border-accent/40 px-3 py-2 text-sm text-accent hover:bg-accent/10 disabled:opacity-50"
+          >
+            今月分の月額請求を発行
+          </button>
           <Link href="/admin" className="text-sm text-accent hover:underline">
             管理画面
           </Link>

@@ -40,6 +40,13 @@ export async function GET(req: NextRequest) {
   if (rErr) results.riskError = rErr.message;
   else results.risk = risk;
 
+  const { data: monthlyBilling, error: mErr } = await supabase.rpc(
+    "run_monthly_membership_billing_job",
+    { p_force: false },
+  );
+  if (mErr) results.monthlyMembershipError = mErr.message;
+  else results.monthlyMembership = monthlyBilling;
+
   try {
     results.notifications = await processNotificationQueue(40);
   } catch (e) {

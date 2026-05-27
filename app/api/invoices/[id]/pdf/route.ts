@@ -73,8 +73,46 @@ export async function GET(
     (invoice as { document_kind?: string }).document_kind ?? "legacy";
   const inspectionRequestId = (invoice as { inspection_request_id?: string | null })
     .inspection_request_id;
+  const billingMonth = (invoice as { billing_month?: string | null }).billing_month;
+  const invoicePaymentDueAt = (invoice as { payment_due_at?: string | null }).payment_due_at;
 
   try {
+    if (documentKind === "monthly_membership") {
+      const issuer = await getMotohubIssuer(supabase);
+      const monthLabel = billingMonth
+        ? new Date(billingMonth).toLocaleDateString("ja-JP", {
+            year: "numeric",
+            month: "long",
+          })
+        : "—";
+      const paymentDueAt = invoicePaymentDueAt
+        ? new Date(invoicePaymentDueAt).toLocaleDateString("ja-JP")
+        : null;
+
+      const pdfBytes = await buildInvoicePdf({
+        invoiceId: invoice.id,
+        referenceLabel: "対象月",
+        referenceId: billingMonth ?? invoice.id,
+        partyLabel: "MotoHub加盟店 月額会費請求書",
+        billToName: profile?.store_name ?? profile?.email ?? "—",
+        vehicleLabel: monthLabel,
+        items: (items ?? []).map((i) => ({
+          label: i.label,
+          amountExTax: i.amount_ex_tax,
+          taxAmount: i.tax_amount,
+          amountIncTax: i.amount_inc_tax,
+        })),
+        totalExTax: invoice.total_ex_tax,
+        totalTax: invoice.total_tax,
+        totalIncTax: invoice.total_inc_tax,
+        issuedAt,
+        issuer,
+        paymentDueAt,
+      });
+
+      return pdfResponse(pdfBytes, `membership-invoice-${invoice.id.slice(0, 8)}.pdf`);
+    }
+
     if (documentKind === "motohub_inspection") {
       let vehicleLabel = "—";
       let referenceId = inspectionRequestId ?? invoice.id;

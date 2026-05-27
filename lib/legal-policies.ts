@@ -1,10 +1,10 @@
 export type PolicyType = "terms" | "privacy";
 
 /** 現行バージョン（改定時に更新） */
-export const CURRENT_TERMS_VERSION = "v1";
+export const CURRENT_TERMS_VERSION = "v2";
 export const CURRENT_PRIVACY_VERSION = "v1";
 
-export const TERMS_PDF_FILENAME = "Motohub Terms Of Service V1.pdf";
+export const TERMS_PDF_FILENAME = "Motohub Terms Of Service Jp V1.pdf";
 export const TERMS_PDF_PATH = `/terms/${TERMS_PDF_FILENAME}`;
 export const PRIVACY_PDF_PATH = "/legal/privacy_policy.pdf";
 

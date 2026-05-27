@@ -6,6 +6,7 @@ import {
   formatRecordDate,
 } from "@/lib/transaction-record";
 import type { TransactionPartySnapshot, TransactionRecord } from "@/lib/types";
+import { createPdfTemplate } from "@/lib/pdf-template";
 
 function yen(n: number): string {
   return `¥${n.toLocaleString("ja-JP")}`;
@@ -26,82 +27,82 @@ export async function buildTransactionRecordPdf(
   const { doc, writer } = await createPdfWriter();
   const seller = record.seller_snapshot_json as TransactionPartySnapshot;
   const buyer = record.buyer_snapshot_json as TransactionPartySnapshot;
+  const t = createPdfTemplate(writer, {
+    brandName: "MotoHub",
+    companyName: "株式会社RideWorks",
+    contact: "info@moto-hub.jp",
+  });
 
-  writer.draw("MotoHub取引記録書", 18, true);
-  writer.draw("（売買契約書ではありません）", 11);
-  writer.y -= 4;
+  await t.header({
+    documentTitle: "取引記録書",
+    issuedAt: new Date().toLocaleDateString("ja-JP"),
+    documentNo: record.id.slice(0, 8),
+    dealId: record.deal_id,
+    recordId: record.id,
+  });
 
-  drawLabelValue(writer.draw, "記録ID", record.id.slice(0, 8));
-  drawLabelValue(writer.draw, "取引ID", record.deal_id);
-  drawLabelValue(writer.draw, "成約日時", formatContractedAt(record.contracted_at));
-  if (opts?.viewerRole) {
-    drawLabelValue(
-      writer.draw,
-      "出力時の立場",
-      opts.viewerRole === "admin" ? "運営" : opts.viewerRole === "seller" ? "売主" : "買主",
-    );
-  }
-  writer.y -= 6;
-
-  writer.draw("【車両情報】", 12, true);
-  drawLabelValue(writer.draw, "車両名", record.vehicle_name);
-  drawLabelValue(writer.draw, "メーカー", record.manufacturer);
-  drawLabelValue(
-    writer.draw,
-    "排気量",
-    record.displacement != null ? `${record.displacement} cc` : "—",
+  t.sectionTitle("基本情報");
+  t.keyValueGrid(
+    [
+      { label: "成約日時", value: formatContractedAt(record.contracted_at) },
+      ...(opts?.viewerRole
+        ? [
+            {
+              label: "出力時の立場",
+              value: opts.viewerRole === "admin" ? "運営" : opts.viewerRole === "seller" ? "売主" : "買主",
+            },
+          ]
+        : []),
+    ],
+    2,
   );
-  drawLabelValue(
-    writer.draw,
-    "年式",
-    record.model_year != null ? `${record.model_year}年` : "—",
+
+  t.sectionTitle("車両情報");
+  t.keyValueGrid(
+    [
+      { label: "車両名", value: record.vehicle_name },
+      { label: "メーカー", value: record.manufacturer },
+      { label: "排気量", value: record.displacement != null ? `${record.displacement} cc` : "—" },
+      { label: "年式", value: record.model_year != null ? `${record.model_year}年` : "—" },
+      { label: "走行距離", value: record.mileage != null ? `${record.mileage.toLocaleString("ja-JP")} km` : "—" },
+      { label: "車台番号", value: record.vin || "—" },
+      { label: "登録番号等", value: record.registration_number || "—" },
+    ],
+    2,
   );
-  drawLabelValue(
-    writer.draw,
-    "走行距離",
-    record.mileage != null ? `${record.mileage.toLocaleString("ja-JP")} km` : "—",
+
+  t.sectionTitle("金額・状況");
+  t.table({
+    headers: ["項目", "内容"],
+    colWidths: [0.35, 0.65],
+    rows: [
+      ["売買金額（税抜）", yen(record.sale_price_ex_tax)],
+      ["売買金額（税込）", yen(record.sale_price_inc_tax)],
+      ["MotoHub手数料（税込）", record.platform_fee_inc_tax > 0 ? yen(record.platform_fee_inc_tax) : "対象外"],
+      ["支払状況", record.payment_status],
+      ["引渡予定", formatRecordDate(record.handover_due_at)],
+      ["引渡完了", formatRecordDate(record.handover_completed_at)],
+      ["書類引渡状況", record.documents_status],
+    ],
+  });
+
+  t.sectionTitle("売主 / 買主");
+  t.keyValueGrid(
+    [
+      { label: "売主", value: formatPartySnapshot(seller) },
+      { label: "買主", value: formatPartySnapshot(buyer) },
+    ],
+    2,
   );
-  drawLabelValue(writer.draw, "車台番号", record.vin || "—");
-  drawLabelValue(writer.draw, "登録番号等", record.registration_number || "—");
-  writer.y -= 4;
-
-  writer.draw("【売買条件】", 12, true);
-  drawLabelValue(writer.draw, "売買金額（税抜）", yen(record.sale_price_ex_tax));
-  drawLabelValue(writer.draw, "売買金額（税込）", yen(record.sale_price_inc_tax));
-  drawLabelValue(
-    writer.draw,
-    "MotoHub手数料（税込）",
-    record.platform_fee_inc_tax > 0 ? yen(record.platform_fee_inc_tax) : "対象外",
-  );
-  drawLabelValue(writer.draw, "支払状況", record.payment_status);
-  writer.y -= 4;
-
-  writer.draw("【引渡・書類】", 12, true);
-  drawLabelValue(writer.draw, "引渡予定日時", formatRecordDate(record.handover_due_at));
-  drawLabelValue(writer.draw, "引渡完了日時", formatRecordDate(record.handover_completed_at));
-  drawLabelValue(writer.draw, "書類引渡状況", record.documents_status);
-  writer.y -= 4;
-
-  writer.draw("【売主】", 12, true);
-  for (const line of formatPartySnapshot(seller).split("\n")) {
-    writer.draw(line, 10);
-  }
-  writer.y -= 4;
-
-  writer.draw("【買主】", 12, true);
-  for (const line of formatPartySnapshot(buyer).split("\n")) {
-    writer.draw(line, 10);
-  }
 
   if (record.notes?.trim()) {
-    writer.y -= 4;
-    writer.draw("【備考】", 12, true);
-    writer.draw(record.notes.trim(), 10);
+    t.sectionTitle("備考");
+    t.keyValueGrid([{ label: "備考", value: record.notes.trim() }], 1);
   }
 
-  writer.y -= 10;
-  writer.draw("— 注意 —", 10, true);
-  writer.draw(TRANSACTION_RECORD_DISCLAIMER, 9);
+  t.footer({
+    notes: [TRANSACTION_RECORD_DISCLAIMER],
+  });
 
   return doc.save();
 }

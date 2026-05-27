@@ -48,7 +48,7 @@ export default async function DealerHomePage() {
             {storeName} さん、今日の業務状況です。
           </p>
           <p className="mt-2 inline-block rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-200">
-            買い手手数料0円 · 税抜3万円超は売り手5%（3万円以下は双方0円） · ゴールド会員 月額¥15,000
+            買い手手数料0円 · 税抜3万円超は売り手5%（3万円以下は双方0円） · 月額会費は信用ランクにより異なる（初年度は多くの加盟店がゴールド）
           </p>
         </div>
 

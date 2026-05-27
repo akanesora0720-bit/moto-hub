@@ -1,4 +1,5 @@
 import { createPdfWriter } from "@/lib/pdf-font";
+import { createPdfTemplate } from "@/lib/pdf-template";
 
 export type PaymentInstructionPdfInput = {
   dealId: string;
@@ -23,41 +24,64 @@ export async function buildPaymentInstructionPdf(
   input: PaymentInstructionPdfInput,
 ): Promise<Uint8Array> {
   const { doc, writer } = await createPdfWriter();
+  const t = createPdfTemplate(writer, {
+    brandName: "MotoHub",
+    companyName: "株式会社RideWorks",
+    contact: "info@moto-hub.jp",
+  });
 
-  writer.draw("MotoHub", 20, true);
-  writer.draw("入金指示書", 14, true);
-  writer.y -= 4;
-  writer.draw(`取引ID: ${input.dealId.slice(0, 8)}`);
-  writer.draw(`発行日: ${input.issuedAt}`);
-  if (input.paymentDueAt) writer.draw(`振込期限: ${input.paymentDueAt}`);
-  writer.y -= 8;
+  await t.header({
+    documentTitle: "入金指示書",
+    issuedAt: input.issuedAt,
+    documentNo: input.dealId.slice(0, 8),
+    dealId: input.dealId,
+  });
 
-  writer.draw("【お振込先（売り手）】", 12, true);
-  writer.draw(`会社名: ${input.seller.storeName}`);
-  if (input.seller.tradeName) writer.draw(`屋号: ${input.seller.tradeName}`);
-  if (input.seller.contactName) writer.draw(`担当者: ${input.seller.contactName}`);
-  if (input.seller.invoiceNumber) writer.draw(`インボイス登録番号: ${input.seller.invoiceNumber}`);
-  if (input.seller.phone) writer.draw(`電話: ${input.seller.phone}`);
-  if (input.seller.bankLine) writer.draw(`振込先: ${input.seller.bankLine}`);
-  writer.y -= 8;
+  t.sectionTitle("基本情報");
+  t.keyValueGrid(
+    [
+      { label: "支払期限", value: input.paymentDueAt ?? "—" },
+      { label: "車両", value: input.vehicleLabel },
+      { label: "車台番号", value: input.frameNumber },
+    ],
+    2,
+  );
 
-  writer.draw("【車両】", 12, true);
-  writer.draw(input.vehicleLabel);
-  writer.draw(`車台番号: ${input.frameNumber}`);
-  writer.y -= 8;
+  t.sectionTitle("お振込先（売り手）");
+  t.keyValueGrid(
+    [
+      { label: "会社名", value: input.seller.storeName },
+      ...(input.seller.tradeName ? [{ label: "屋号", value: input.seller.tradeName }] : []),
+      ...(input.seller.contactName ? [{ label: "担当者", value: input.seller.contactName }] : []),
+      ...(input.seller.invoiceNumber
+        ? [{ label: "インボイス登録番号", value: input.seller.invoiceNumber }]
+        : []),
+      ...(input.seller.phone ? [{ label: "電話", value: input.seller.phone }] : []),
+      ...(input.seller.bankLine ? [{ label: "振込先", value: input.seller.bankLine }] : []),
+    ],
+    1,
+  );
 
-  writer.draw("【お支払い金額】", 12, true);
-  writer.draw(`車両代（税抜）  ¥${input.vehiclePriceExTax.toLocaleString("ja-JP")}`);
-  writer.draw(`消費税（10%）  ¥${input.vehicleTax.toLocaleString("ja-JP")}`);
-  writer.y -= 4;
-  writer.draw(`支払総額（税込）  ¥${input.totalIncTax.toLocaleString("ja-JP")}`, 13, true);
-  writer.y -= 12;
+  t.sectionTitle("お支払い金額");
+  t.table({
+    headers: ["項目", "金額"],
+    colWidths: [0.7, 0.3],
+    align: ["left", "right"],
+    rows: [
+      ["車両代（税抜）", `¥${input.vehiclePriceExTax.toLocaleString("ja-JP")}`],
+      ["消費税（10%）", `¥${input.vehicleTax.toLocaleString("ja-JP")}`],
+      ["支払総額（税込）", `¥${input.totalIncTax.toLocaleString("ja-JP")}`],
+    ],
+  });
 
-  writer.draw("【注意事項】", 12, true);
-  writer.draw("・MotoHubは資金を預かりません。上記売り手口座へ直接お振込みください。");
-  writer.draw("・振込名義は貴社名（または登録店舗名）でお願いします。");
-  writer.draw("・入金後、売り手が入金確認を行います。");
-  writer.draw("・名義変更・書類のやり取りは売買当事者間で行ってください。");
+  t.footer({
+    notes: [
+      "MotoHubは資金を預かりません。上記口座へ直接お振込みください。",
+      "振込名義は貴社名（または登録店舗名）でお願いします。",
+      "入金後、売り手が入金確認を行います。",
+      "名義変更・書類のやり取りは売買当事者間で行ってください。",
+    ],
+  });
 
   return doc.save();
 }

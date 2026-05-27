@@ -8,15 +8,20 @@ import { ADMIN_DEAL_STATUS_LABELS } from "@/lib/deal-flow";
 import {
   DISPUTE_STATUS_LABELS,
   disputeCategoryLabel,
+  disputeTypeLabel,
+  feeHandlingLabel,
   disputeSuggestedPenalty,
 } from "@/lib/disputes";
 import { createClient } from "@/lib/supabase/client";
-import type { DealStatus, DisputeCategory, TrustRank } from "@/lib/types";
+import type { DealStatus, DisputeCategory, DisputeFeeHandling, DisputeType, TrustRank } from "@/lib/types";
 
 type DisputeRow = {
   id: string;
   deal_id: string;
   category: DisputeCategory;
+  dispute_type: DisputeType | null;
+  fee_handling: DisputeFeeHandling | null;
+  fraud_suspected: boolean;
   message: string;
   status: string;
   resolution: string | null;
@@ -118,7 +123,8 @@ export default function AdminDisputesPage() {
         .from("disputes")
         .select(
           `
-          id, deal_id, category, message, status, resolution, penalty_points, created_at,
+          id, deal_id, category, dispute_type, fee_handling, fraud_suspected,
+          message, status, resolution, penalty_points, created_at,
           reporter:profiles!disputes_reporter_id_fkey ( store_name, email ),
           target:profiles!disputes_target_user_id_fkey ( store_name, email, trust_score, trust_rank ),
           deal:deals ( status, listings ( maker, model ) )
@@ -142,7 +148,9 @@ export default function AdminDisputesPage() {
 
   useEffect(() => {
     if (selected) {
-      setPenaltyPoints(disputeSuggestedPenalty(selected.category));
+      setPenaltyPoints(
+        disputeSuggestedPenalty(selected.dispute_type ?? "vehicle_defect", null),
+      );
       setResolution("");
     }
   }, [selected]);
@@ -257,26 +265,35 @@ export default function AdminDisputesPage() {
                 const listing = row.deal?.listings;
                 const li = Array.isArray(listing) ? listing[0] : listing;
                 return (
-                  <button
+                  <Link
                     key={row.id}
-                    type="button"
-                    onClick={() => setSelected(row)}
-                    className={`w-full rounded-xl border px-4 py-3 text-left text-sm ${
+                    href={`/admin/disputes/${row.id}`}
+                    className={`block w-full rounded-xl border px-4 py-3 text-left text-sm ${
                       selected?.id === row.id
                         ? "border-accent/50 bg-accent/5"
                         : "border-border bg-card"
                     }`}
+                    onClick={(e) => {
+                      // keep the right pane usable without navigation if desired
+                      if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+                      e.preventDefault();
+                      setSelected(row);
+                    }}
                   >
                     <p className="font-medium">
-                      {disputeCategoryLabel(row.category)} ·{" "}
+                      {(row.dispute_type ? disputeTypeLabel(row.dispute_type) : disputeCategoryLabel(row.category))} ·{" "}
                       {DISPUTE_STATUS_LABELS[row.status] ?? row.status}
                     </p>
                     <p className="mt-1 text-xs text-muted">
                       {li ? `${li.maker} ${li.model}` : row.deal_id.slice(0, 8)} ·{" "}
                       {new Date(row.created_at).toLocaleString("ja-JP")}
                     </p>
+                    <p className="mt-1 text-[11px] text-muted">
+                      手数料: {feeHandlingLabel(row.fee_handling)}{" "}
+                      {row.fraud_suspected ? " · fraud_suspected" : null}
+                    </p>
                     <p className="mt-2 line-clamp-2 text-xs">{row.message}</p>
-                  </button>
+                  </Link>
                 );
               })
             )}

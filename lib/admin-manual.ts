@@ -155,7 +155,8 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
         kind: "ul",
         items: [
           "入金指示書 確認待ち — 一覧からの一括承認は補助用。基本は取引詳細で承認",
-          "月額入金報告 — 加盟店のゴールド会員等の報告を確認・差戻し",
+          "月額会費 — 毎月20日に自動発行（cron）。金額は発行時点の trust_rank 別（system_settings.billing.monthly_membership_fee_by_rank）。初年度は100点スタートのため多くがゴールド",
+          "月額入金報告 — 加盟店の振込報告を確認・差戻し（請求書の入金確認と連動可）",
           "請求書一覧 — 入金指示・手数料・査定の PDF と入金確認",
         ],
       },
@@ -206,6 +207,14 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
           "/admin/messages — 一斉メール送信（必要時）",
           "/admin/notifications — 運営向け通知の確認",
         ],
+      },
+      {
+        kind: "p",
+        text: "dispute は「キャンセル申請」ではなく、事実確認・協議のためのトラブル報告です。虚偽瑕疵申告、手数料回避目的のキャンセル、口裏合わせ等が疑われる場合は、運営裁量で調査・点数調整・利用制限の対象とします。",
+      },
+      {
+        kind: "p",
+        text: "運営判断では、(1) 瑕疵の程度（軽微／重大／致命的）、(2) 希望対応（継続／値引き／キャンセル／相談）、(3) 手数料扱い（通常請求／免除／部分／保留）、(4) fraud_suspected（不正疑い）を記録し、売主・買主それぞれに点数調整を設定します。",
       },
     ],
   },

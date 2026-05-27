@@ -1,9 +1,34 @@
+import type { TrustRank } from "@/lib/types";
+
 export const BUYER_FEE_RATE = 0;
 export const SELLER_FEE_RATE = 0.05;
 export const FEE_FREE_MAX_PRICE_EX_TAX = 30_000;
 export const MIN_FEE_EX_TAX = 0;
 export const CONSUMPTION_TAX_RATE = 0.1;
 export const PAYMENT_DUE_DAYS = 7;
+
+/** 加盟店月額会費（税抜）— DB system_settings.billing.monthly_membership_fee_by_rank と同期 */
+export const MONTHLY_MEMBERSHIP_FEE_BY_RANK: Record<TrustRank, number> = {
+  GOLD: 15_000,
+  BLUE: 18_000,
+  YELLOW: 25_000,
+  RED: 30_000,
+};
+
+/** @deprecated 単一金額。ランク別は MONTHLY_MEMBERSHIP_FEE_BY_RANK を使用 */
+export const MONTHLY_MEMBERSHIP_FEE_EX_TAX = MONTHLY_MEMBERSHIP_FEE_BY_RANK.GOLD;
+
+export const MONTHLY_MEMBERSHIP_ISSUE_DAY = 20;
+export const MONTHLY_MEMBERSHIP_DUE_DAY = 26;
+
+export function monthlyMembershipFeeExTax(rank: TrustRank): number {
+  return MONTHLY_MEMBERSHIP_FEE_BY_RANK[rank] ?? MONTHLY_MEMBERSHIP_FEE_EX_TAX;
+}
+
+export function monthlyMembershipFeeIncTax(rank: TrustRank): number {
+  const ex = monthlyMembershipFeeExTax(rank);
+  return ex + calcTax(ex);
+}
 
 export type FeeTier = "waived_low_price" | "standard";
 
@@ -100,12 +125,14 @@ export function formatBankAccount(profile: {
 }
 
 export const DOCUMENT_KIND_LABELS: Record<
-  "legacy" | "payment_instruction" | "platform_fee",
+  "legacy" | "payment_instruction" | "platform_fee" | "motohub_inspection" | "monthly_membership",
   string
 > = {
   legacy: "請求書",
   payment_instruction: "入金指示書",
   platform_fee: "MotoHub手数料請求書",
+  motohub_inspection: "MotoHub査定",
+  monthly_membership: "月額会費請求書",
 };
 
 export const MONTHLY_PAYMENT_STATUS_LABELS: Record<
