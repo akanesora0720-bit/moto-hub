@@ -4,7 +4,11 @@ import {
   LISTINGS_PAGE_SIZE,
   type ParsedListingSearch,
 } from "@/lib/listing-search";
+import { prefecturesInListingSearchRegion } from "@/lib/prefectures";
 import { LISTING_SELLER_PUBLIC_SELECT } from "@/lib/seller-public";
+
+const LISTING_SELLER_PUBLIC_INNER_SELECT =
+  "profiles_public!inner ( id, prefecture, trust_score, trust_rank, verification_status )";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function applyListingSearchFilters(query: any, search: ParsedListingSearch) {
@@ -18,7 +22,19 @@ export function applyListingSearchFilters(query: any, search: ParsedListingSearc
   if (search.motohubOnly) {
     q = q.eq("inspection_badge_type", "motohub_inspected");
   }
+  if (search.prefecture) {
+    q = q.eq("profiles_public.prefecture", search.prefecture);
+  } else if (search.region) {
+    const prefs = [...prefecturesInListingSearchRegion(search.region)];
+    if (prefs.length > 0) {
+      q = q.in("profiles_public.prefecture", prefs);
+    }
+  }
   return q;
+}
+
+export function listingSearchUsesAreaFilter(search: ParsedListingSearch): boolean {
+  return !!(search.prefecture || search.region);
 }
 
 export async function fetchActiveListings(
@@ -28,12 +44,15 @@ export async function fetchActiveListings(
   const from = (search.page - 1) * LISTINGS_PAGE_SIZE;
   const to = from + LISTINGS_PAGE_SIZE - 1;
 
+  const areaFilter = listingSearchUsesAreaFilter(search);
+  const sellerSelect = areaFilter ? LISTING_SELLER_PUBLIC_INNER_SELECT : LISTING_SELLER_PUBLIC_SELECT;
+
   let query = supabase
     .from("listings")
     .select(
       `
       *,
-      ${LISTING_SELLER_PUBLIC_SELECT},
+      ${sellerSelect},
       listing_images ( storage_path, sort_order )
     `,
       { count: "exact" },

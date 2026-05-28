@@ -1,11 +1,18 @@
 "use client";
 
+import { useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { normalizeIdentifierInput } from "@/lib/normalize";
 import { MobilePicker } from "@/components/MobilePicker";
 import { MAKERS, VEHICLE_CLASSES } from "@/lib/constants";
 import type { VehicleClass } from "@/lib/constants";
+import {
+  isPrefectureInListingSearchRegion,
+  isValidPrefecture,
+  LISTING_SEARCH_REGIONS,
+  PREFECTURES,
+} from "@/lib/prefectures";
 import { parseListingSearch } from "@/lib/listing-search";
 
 export function ListingSearchForm({ action = "/search" }: { action?: string }) {
@@ -16,6 +23,8 @@ export function ListingSearchForm({ action = "/search" }: { action?: string }) {
     model: searchParams.get("model") ?? undefined,
     frame: searchParams.get("frame") ?? undefined,
     vehicle_class: searchParams.get("vehicle_class") ?? undefined,
+    region: searchParams.get("region") ?? undefined,
+    prefecture: searchParams.get("prefecture") ?? undefined,
     motohub_only: searchParams.get("motohub_only") ?? undefined,
   });
 
@@ -23,7 +32,36 @@ export function ListingSearchForm({ action = "/search" }: { action?: string }) {
   const [model, setModel] = useState(parsed.model ?? "");
   const [frame, setFrame] = useState(parsed.frameNumber ?? "");
   const [vehicleClass, setVehicleClass] = useState(parsed.vehicleClass ?? "");
+  const [region, setRegion] = useState(parsed.region ?? "");
+  const [prefecture, setPrefecture] = useState(parsed.prefecture ?? "");
   const [motohubOnly, setMotohubOnly] = useState(parsed.motohubOnly ?? false);
+
+  const prefectureOptions = useMemo(() => {
+    const base = [{ value: "", label: "すべて" }];
+    if (!region) {
+      return [...base, ...PREFECTURES.map((p) => ({ value: p, label: p }))];
+    }
+    const group = LISTING_SEARCH_REGIONS.find((r) => r.slug === region);
+    const prefs = group?.prefectures ?? [];
+    return [
+      { value: "", label: "エリア内すべて" },
+      ...prefs.map((p) => ({ value: p, label: p })),
+    ];
+  }, [region]);
+
+  const onRegionChange = (next: string) => {
+    setRegion(next);
+    if (
+      prefecture &&
+      next &&
+      !isPrefectureInListingSearchRegion(
+        prefecture,
+        next as (typeof LISTING_SEARCH_REGIONS)[number]["slug"],
+      )
+    ) {
+      setPrefecture("");
+    }
+  };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +70,8 @@ export function ListingSearchForm({ action = "/search" }: { action?: string }) {
     if (model.trim()) sp.set("model", normalizeIdentifierInput(model.trim()));
     if (frame.trim()) sp.set("frame", normalizeIdentifierInput(frame.trim()));
     if (vehicleClass) sp.set("vehicle_class", vehicleClass);
+    if (region) sp.set("region", region);
+    if (prefecture && isValidPrefecture(prefecture)) sp.set("prefecture", prefecture);
     if (motohubOnly) sp.set("motohub_only", "1");
     const q = sp.toString();
     router.push(q ? `${action}?${q}` : action);
@@ -42,6 +82,8 @@ export function ListingSearchForm({ action = "/search" }: { action?: string }) {
     setModel("");
     setFrame("");
     setVehicleClass("");
+    setRegion("");
+    setPrefecture("");
     setMotohubOnly(false);
     router.push(action);
   };
@@ -52,7 +94,27 @@ export function ListingSearchForm({ action = "/search" }: { action?: string }) {
       className="rounded-xl border border-border bg-card p-4"
     >
       <p className="text-sm font-medium">在庫を検索</p>
+      <p className="mt-1 text-xs text-muted">
+        直引き・引取の目安として、出品店舗の所在地（都道府県）で絞り込めます。
+      </p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <MobilePicker
+          label="広域エリア"
+          value={region}
+          onChange={onRegionChange}
+          options={[
+            { value: "", label: "全国" },
+            ...LISTING_SEARCH_REGIONS.map((r) => ({ value: r.slug, label: r.label })),
+          ]}
+          placeholder="全国"
+        />
+        <MobilePicker
+          label="都道府県"
+          value={prefecture}
+          onChange={setPrefecture}
+          options={prefectureOptions}
+          placeholder="すべて"
+        />
         <MobilePicker
           label="メーカー"
           value={maker}

@@ -79,7 +79,13 @@ export function ListingCard({
           {listing.vehicle_class
             ? `${VEHICLE_CLASS_LABELS[listing.vehicle_class as VehicleClass]} · `
             : ""}
-          {formatYear(listing.year)} · {listing.seller_prefecture ?? "—"}
+          {formatYear(listing.year)}
+        </p>
+        <p className="text-xs">
+          <span className="text-muted">引取エリア: </span>
+          <span className="font-medium text-foreground">
+            {listing.seller_prefecture ?? "未登録"}
+          </span>
         </p>
       </div>
       </Link>
