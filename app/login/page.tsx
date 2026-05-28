@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { AuthLayout } from "@/components/AuthLayout";
+import { BRAND } from "@/lib/brand";
 import { createClient } from "@/lib/supabase/client";
 
 function LoginForm() {
@@ -94,7 +95,7 @@ function LoginForm() {
         <p className="text-center text-sm text-muted">
           業者の会員登録は{" "}
           <Link href="/signup" className="text-accent hover:underline">
-            こちら
+            {BRAND.ctaApply}
           </Link>
         </p>
       </div>

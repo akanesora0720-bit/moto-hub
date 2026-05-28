@@ -1,3 +1,6 @@
+import { MotohubLogo } from "@/components/MotohubLogo";
+import { BRAND } from "@/lib/brand";
+
 export function AuthLayout({
   title,
   subtitle,
@@ -11,9 +14,17 @@ export function AuthLayout({
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <section className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
         <div className="border-b border-border px-6 py-5">
-          <p className="text-xs font-medium tracking-[0.2em] text-accent uppercase">MotoHub</p>
+          <div className="flex items-center gap-3">
+            <MotohubLogo width={120} height={40} className="h-9 w-auto" priority />
+          </div>
           <h1 className="mt-2 text-xl font-semibold">{title}</h1>
           <p className="mt-1 text-sm text-muted">{subtitle}</p>
+          <p className="mt-2 text-xs text-muted">
+            {BRAND.companyName} ·{" "}
+            <a href={`mailto:${BRAND.contactEmail}`} className="text-accent hover:underline">
+              {BRAND.contactEmail}
+            </a>
+          </p>
         </div>
         <div className="p-6">{children}</div>
       </section>

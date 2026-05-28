@@ -1,8 +1,7 @@
 import type { PDFPage, PDFFont } from "pdf-lib";
 import { rgb } from "pdf-lib";
 import type { PdfWriter } from "@/lib/pdf-font";
-import { promises as fs } from "fs";
-import path from "path";
+import { loadMotohubLogoBytes } from "@/lib/motohub-logo";
 
 export type PdfDocumentHeader = {
   documentTitle: string; // 書類名
@@ -50,58 +49,6 @@ const COLORS = {
   line: rgb(0.78, 0.78, 0.78),
   headFill: rgb(0.94, 0.94, 0.94),
 };
-
-type EmbeddedLogo =
-  | { format: "jpg" | "png"; bytes: Uint8Array }
-  | null;
-
-let cachedLogo: EmbeddedLogo = null;
-
-async function loadLogoBytesFromPublic(): Promise<EmbeddedLogo> {
-  if (cachedLogo) return cachedLogo;
-
-  // Deployment-safe path: Next.js `public/` is bundled by default.
-  // If logo is not present, we gracefully fall back to text.
-  const candidates: { file: string; format: "jpg" | "png" }[] = [
-    // Common: served static files
-    { file: "logo.jpg", format: "jpg" },
-    { file: "logo.jpeg", format: "jpg" },
-    { file: "motohub-logo.jpg", format: "jpg" },
-    { file: "motohub-logo.jpeg", format: "jpg" },
-    { file: "logo.png", format: "png" },
-    { file: "motohub-logo.png", format: "png" },
-  ];
-
-  for (const c of candidates) {
-    const abs = path.join(/*turbopackIgnore: true*/ process.cwd(), "public", c.file);
-    try {
-      const buf = await fs.readFile(abs);
-      cachedLogo = { format: c.format, bytes: new Uint8Array(buf) };
-      return cachedLogo;
-    } catch {
-      // ignore missing / unreadable
-    }
-  }
-
-  // Dev fallback: logo stored at repo root.
-  const devCandidates: { file: string; format: "jpg" | "png" }[] = [
-    { file: "LOGO.jpg", format: "jpg" },
-    { file: "logo.jpg", format: "jpg" },
-  ];
-  for (const c of devCandidates) {
-    const abs = path.join(/*turbopackIgnore: true*/ process.cwd(), c.file);
-    try {
-      const buf = await fs.readFile(abs);
-      cachedLogo = { format: c.format, bytes: new Uint8Array(buf) };
-      return cachedLogo;
-    } catch {
-      // ignore
-    }
-  }
-
-  cachedLogo = null;
-  return null;
-}
 
 function widthOf(font: PDFFont, text: string, size: number): number {
   return font.widthOfTextAtSize(text, size);
@@ -334,16 +281,15 @@ export function createPdfTemplate(writer: PdfWriter, issuer?: PdfIssuerBlock) {
 
       ensureSpace(t, 92);
 
-      // Brand/logo (optional)
-      // We render a logo image if `public/logo.(jpg|png)` exists; otherwise we show plain text.
+      let logoRendered = false;
       try {
-        const logo = await loadLogoBytesFromPublic();
+        const logo = await loadMotohubLogoBytes();
         if (logo) {
           const img =
             logo.format === "jpg"
               ? await page.doc.embedJpg(logo.bytes)
               : await page.doc.embedPng(logo.bytes);
-          const logoW = 70;
+          const logoW = 108;
           const logoH = (logoW * img.height) / img.width;
           page.drawImage(img, {
             x: MARGIN_X,
@@ -351,19 +297,23 @@ export function createPdfTemplate(writer: PdfWriter, issuer?: PdfIssuerBlock) {
             width: logoW,
             height: logoH,
           });
+          t.y = t.y - logoH - 10;
+          logoRendered = true;
         }
       } catch {
         // ignore rendering failure
       }
 
-      // Company + fallback brand text
-      t.y = t.drawText(brand, {
-        x: MARGIN_X,
-        y: t.y,
-        size: 18,
-        bold: true,
-        maxWidth: leftW,
-      });
+      if (!logoRendered) {
+        t.y = t.drawText(brand, {
+          x: MARGIN_X,
+          y: t.y,
+          size: 18,
+          bold: true,
+          maxWidth: leftW,
+        });
+      }
+
       t.y = t.drawText(company, {
         x: MARGIN_X,
         y: t.y + 2,

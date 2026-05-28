@@ -1,5 +1,6 @@
 "use client";
 
+import { MotohubLogo } from "@/components/MotohubLogo";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { NavItem } from "@/lib/nav-config";
@@ -25,8 +26,9 @@ export function SidebarNav({
   return (
   <aside className="flex w-full shrink-0 flex-col border-b border-border bg-zinc-950/50 md:w-52 md:border-b-0 md:border-r md:min-h-[calc(100vh-3.5rem)]">
       <div className="hidden p-4 md:block">
-        <Link href={homeHref} className="text-lg font-semibold text-accent">
-          MotoHub
+        <Link href={homeHref} className="flex items-center gap-2">
+          <MotohubLogo width={88} height={28} className="h-7 w-auto" priority />
+          <span className="text-sm font-semibold text-accent">MotoHub</span>
         </Link>
       </div>
       <nav className="flex gap-1 overflow-x-auto p-2 md:flex-col md:overflow-visible md:p-3">

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthLayout } from "@/components/AuthLayout";
+import { BRAND } from "@/lib/brand";
 import { LegalPoliciesConsent } from "@/components/LegalPoliciesConsent";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -130,7 +131,7 @@ export default function SignupPage() {
           disabled={loading || !policiesAccepted}
           className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black hover:bg-accent-dim disabled:opacity-60"
         >
-          {loading ? "処理中…" : "登録する"}
+          {loading ? "処理中…" : BRAND.ctaApply}
         </button>
 
         <p className="text-center text-sm text-muted">
