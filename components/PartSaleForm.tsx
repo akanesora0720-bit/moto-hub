@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PartFeeNotice } from "@/components/PartFeeNotice";
 import { ActionButton, AsyncMessage, AsyncStatusBanner } from "@/components/ui/async-ui";
 import { useAsyncAction } from "@/lib/use-async-action";
 
@@ -30,7 +31,10 @@ export function PartSaleForm({ partId }: { partId: string }) {
   return (
     <div className="rounded-xl border border-amber-500/40 bg-amber-950/20 p-5">
       <h3 className="text-lg font-semibold text-amber-100">成約登録（売主）</h3>
-      <p className="mt-1 text-sm text-amber-200/90">買い手IDと成約価格を入力して成約を確定します。入金指示書は自動発行されます。</p>
+      <p className="mt-1 text-sm text-amber-200/90">
+        買い手IDと成約価格（税抜）を入力して成約を確定します。買主向け入金指示書は自動発行されます。
+      </p>
+      <PartFeeNotice className="mt-3 border-amber-500/30 bg-amber-950/40 text-amber-100/90" />
       <div className="mt-3 space-y-3">
         <AsyncStatusBanner loading={loading} />
         <input className="w-full rounded border border-border bg-zinc-950 px-3 py-2" placeholder="buyer_id (UUID)" value={buyerId} onChange={(e) => setBuyerId(e.target.value)} />

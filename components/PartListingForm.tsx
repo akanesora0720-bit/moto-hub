@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { PartFeeNotice } from "@/components/PartFeeNotice";
 import { PartModelSuggest } from "@/components/PartModelSuggest";
 import { ActionButton, AsyncMessage, AsyncStatusBanner } from "@/components/ui/async-ui";
 import type { PartCategory, PartManufacturer } from "@/lib/part-catalog";
@@ -79,6 +80,7 @@ export function PartListingForm({
       <p className="text-sm text-muted">
         メーカー・カテゴリは一覧から選択。車種は候補から選ぶか入力（初出の車種は自動登録されます）。
       </p>
+      <PartFeeNotice variant="compact" />
       <AsyncStatusBanner loading={loading} />
       <div className="grid gap-3 md:grid-cols-2">
         <label className="block text-sm">

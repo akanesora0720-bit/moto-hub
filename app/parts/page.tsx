@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
+import { PartFeeNotice } from "@/components/PartFeeNotice";
 import { PartSearchForm } from "@/components/PartSearchForm";
 import { fetchPartCatalog, partModelLabel } from "@/lib/part-catalog";
 import { formatYen } from "@/lib/format";
@@ -55,6 +56,7 @@ export default async function PartsPage({
             <p className="mt-1 text-sm text-muted">
               メーカー・車種・カテゴリ・品番で検索。車種は入力のたびにマスタが育ちます。
             </p>
+            <PartFeeNotice variant="compact" className="mt-3" />
           </div>
           <Link
             href="/parts/new"
