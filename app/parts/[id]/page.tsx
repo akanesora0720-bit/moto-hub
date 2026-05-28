@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { PartInquiryForm } from "@/components/PartInquiryForm";
 import { PartSaleForm } from "@/components/PartSaleForm";
+import { partModelLabel } from "@/lib/part-catalog";
 import { formatYen } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/viewer";
@@ -42,7 +43,12 @@ export default async function PartDetailPage({ params }: { params: Promise<{ id:
         <div className="rounded-xl border border-border bg-card p-5">
           <p className="text-sm text-muted">{part.manufacturer} / {part.category}</p>
           <h1 className="mt-1 text-2xl font-semibold">{part.part_name}</h1>
-          <p className="mt-2 text-sm text-muted">対応車種: {part.compatible_models || "—"}</p>
+          <p className="mt-2 text-sm text-muted">対応車種: {partModelLabel(part)}</p>
+          {part.manufacturer_part_number ? (
+            <p className="mt-1 font-mono text-sm text-muted">
+              品番: {part.manufacturer_part_number}
+            </p>
+          ) : null}
           <p className="mt-2 text-sm text-muted">状態: {part.part_condition}</p>
           <p className="mt-2 text-sm text-muted">送料: {part.shipping_bearer === "buyer" ? "買い手負担" : part.shipping_bearer === "seller" ? "売り手負担" : "要相談"}</p>
           <p className="mt-3 text-xl font-semibold text-accent">
