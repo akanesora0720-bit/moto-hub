@@ -75,8 +75,100 @@ export async function GET(
     .inspection_request_id;
   const billingMonth = (invoice as { billing_month?: string | null }).billing_month;
   const invoicePaymentDueAt = (invoice as { payment_due_at?: string | null }).payment_due_at;
+  const partSaleId = (invoice as { part_sale_id?: string | null }).part_sale_id;
 
   try {
+    if (
+      (documentKind === "part_payment_instruction" || documentKind === "part_platform_fee") &&
+      partSaleId
+    ) {
+      const { data: sale, error: saleError } = await supabase
+        .from("part_sales")
+        .select(
+          "id, agreed_price_ex_tax, seller_id, part_listings ( part_name, manufacturer )",
+        )
+        .eq("id", partSaleId)
+        .maybeSingle();
+
+      if (saleError || !sale) {
+        return NextResponse.json({ error: "part sale not found" }, { status: 404 });
+      }
+
+      const partRaw = sale.part_listings;
+      const part = Array.isArray(partRaw) ? partRaw[0] : partRaw;
+      const partLabel = part
+        ? `${part.manufacturer ?? ""} ${part.part_name}`.trim()
+        : "パーツ";
+
+      if (documentKind === "part_payment_instruction") {
+        let seller: Record<string, string | null | undefined> | null = null;
+        const extended = await supabase
+          .from("profiles")
+          .select(SELLER_PROFILE_EXTENDED)
+          .eq("id", sale.seller_id)
+          .maybeSingle();
+        if (!extended.error && extended.data) {
+          seller = extended.data;
+        } else {
+          const fallback = await supabase
+            .from("profiles")
+            .select(SELLER_PROFILE_BASE)
+            .eq("id", sale.seller_id)
+            .maybeSingle();
+          seller = fallback.data;
+        }
+
+        const pdfBytes = await buildPaymentInstructionPdf({
+          dealId: partSaleId,
+          vehicleLabel: partLabel,
+          frameNumber: "—",
+          seller: {
+            storeName: seller?.store_name ?? "—",
+            tradeName: (seller as { trade_name?: string })?.trade_name ?? null,
+            contactName: seller?.contact_name ?? null,
+            invoiceNumber: seller?.invoice_number ?? null,
+            phone: seller?.phone ?? null,
+            bankLine: seller ? formatBankAccount(seller) : null,
+          },
+          vehiclePriceExTax: invoice.total_ex_tax,
+          vehicleTax: invoice.total_tax,
+          totalIncTax: invoice.total_inc_tax,
+          paymentDueAt: invoicePaymentDueAt
+            ? new Date(invoicePaymentDueAt).toLocaleDateString("ja-JP")
+            : null,
+          issuedAt,
+        });
+
+        return pdfResponse(pdfBytes, `part-payment-${invoice.id.slice(0, 8)}.pdf`);
+      }
+
+      const issuer = await getMotohubIssuer(supabase);
+      const pdfBytes = await buildInvoicePdf({
+        invoiceId: invoice.id,
+        referenceLabel: "パーツ成約ID",
+        referenceId: partSaleId,
+        partyLabel: "MotoHubパーツ手数料請求書",
+        billToName: profile?.store_name ?? profile?.email ?? "—",
+        vehicleLabel: partLabel,
+        items: (items ?? []).map((i) => ({
+          label: i.label,
+          amountExTax: i.amount_ex_tax,
+          taxAmount: i.tax_amount,
+          amountIncTax: i.amount_inc_tax,
+        })),
+        totalExTax: invoice.total_ex_tax,
+        totalTax: invoice.total_tax,
+        totalIncTax: invoice.total_inc_tax,
+        issuedAt,
+        issuer,
+        paymentDueAt: invoicePaymentDueAt
+          ? new Date(invoicePaymentDueAt).toLocaleDateString("ja-JP")
+          : null,
+      });
+
+      return pdfResponse(pdfBytes, `part-fee-${invoice.id.slice(0, 8)}.pdf`);
+    }
+
     if (documentKind === "monthly_membership") {
       const issuer = await getMotohubIssuer(supabase);
       const monthLabel = billingMonth

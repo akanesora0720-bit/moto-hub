@@ -9,6 +9,7 @@ export const dealerNavItems: NavItem[] = [
   { href: "/home", label: "ホーム" },
   { href: "/inspections", label: "MotoHub査定", matchPrefix: true },
   { href: "/listings/new", label: "出品", matchPrefix: true, badgeKey: "newInquiries" },
+  { href: "/parts", label: "パーツ", matchPrefix: true },
   {
     href: "/deals",
     label: "商談",
@@ -45,6 +46,8 @@ export const adminNavItems: NavItem[] = [
   },
   { href: "/admin/billing", label: "精算", matchPrefix: true },
   { href: "/admin/transaction-records", label: "取引記録", matchPrefix: true },
+  { href: "/admin/parts", label: "パーツ出品", matchPrefix: true },
+  { href: "/admin/parts/sales", label: "パーツ成約", matchPrefix: true },
   { href: "/admin/support", label: "サポート", badgeKey: "openSupport", matchPrefix: true },
   { href: "/admin/disputes", label: "トラブル", badgeKey: "openDisputes", matchPrefix: true },
   { href: "/admin/credit", label: "加盟店・信用", matchPrefix: true },
