@@ -132,8 +132,13 @@ export default async function DealerHomePage() {
               primary
               ctaLabel="在庫を見る"
               title="車両を探す"
-              description="業販在庫を検索・仕入れ"
+              description="業販在庫を検索・仕入れ（エリア・都道府県で引取目安）"
               href="/search"
+            />
+            <ActionCard
+              title="パーツを探す"
+              description="パーツ検索・出品・問い合わせ"
+              href="/parts"
             />
             <ActionCard
               title="出品する"

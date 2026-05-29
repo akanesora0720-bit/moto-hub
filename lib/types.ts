@@ -384,12 +384,15 @@ export type InvoiceDocumentKind =
   | "payment_instruction"
   | "platform_fee"
   | "motohub_inspection"
-  | "monthly_membership";
+  | "monthly_membership"
+  | "part_payment_instruction"
+  | "part_platform_fee";
 
 export type Invoice = {
   id: string;
   deal_id: string | null;
   inspection_request_id?: string | null;
+  part_sale_id?: string | null;
   billing_month?: string | null;
   billing_trust_rank?: TrustRank | null;
   user_id: string;

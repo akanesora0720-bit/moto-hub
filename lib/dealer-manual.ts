@@ -7,7 +7,7 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "MotoHub は B2B 中古バイクの業販マーケットです。加盟店（古物商）同士が在庫を検索・出品し、成約後は車両代金を買い手→売り手へ直接振込します。MotoHub は車両代の決済代行をしません。",
+        text: "MotoHub は B2B 中古バイクの業販マーケットです。加盟店（古物商）同士が在庫を検索・出品し、成約後は車両代金を買い手→売り手へ直接振込します。MotoHub は車両代の決済代行をしません。パーツ売買（/parts）は車両とは別モジュールで、問い合わせ〜成約・請求まで軽量フローです。",
       },
       {
         kind: "table",
@@ -15,15 +15,16 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
         rows: [
           ["車両代金", "買い手が売り手の口座へ振り込む金額（税込）"],
           ["MotoHub手数料", "成約時のプラットフォーム手数料（売り手宛・請求書）"],
-          ["業販検索", "他店の出品在庫を探す（/search）"],
-          ["商談", "問い合わせ〜取引まで（/deals）"],
+          ["業販検索", "他店の出品在庫を探す（/search）。広域エリア・都道府県で引取目安を絞り込み可"],
+          ["パーツ売買", "パーツの検索・出品・問い合わせ・成約（/parts）"],
+          ["商談", "車両の問い合わせ〜取引まで（/deals）"],
           ["取引記録書", "成約後に自動作成される取引の記録（PDF可・契約書ではない）"],
           ["完了確認済", "双方が取引完了を確認した状態（画面上のステータス名）"],
         ],
       },
       {
         kind: "callout",
-        text: "手数料：買い手0円 · 税抜3万円以下は双方0円 · 税抜3万円超は売り手5%（税抜＋消費税） · 月額会費は信用ランク（ゴールド/ブルー/イエロー/レッド）ごとに税抜金額が異なる。毎月20日に当月ランクで請求書自動発行・26日までに振込（/my/payments）",
+        text: "【車両】買い手0円 · 税抜3万円以下は双方0円 · 税抜3万円超は売り手5%（税抜＋消費税）。\n【パーツ】買い手0円 · 税抜1万円未満は売主0% · 税抜1万円以上は売主10%（成約時に手数料請求書。1万円未満は買主向け入金指示書のみ）。\n【月額会費】信用ランク（ゴールド/ブルー/イエロー/レッド）ごとに税抜金額が異なる。毎月20日に当月ランクで請求書自動発行・26日までに振込（/my/payments）",
       },
     ],
   },
@@ -38,8 +39,8 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
       {
         kind: "ul",
         items: [
-          "審査前でも使える：業販検索・ホーム・設定・この操作説明",
-          "審査前は不可：出品・商談・MotoHub査定依頼など",
+          "審査前でも使える：業販検索（/search）・ホーム・設定・この操作説明",
+          "審査前は不可：車両・パーツの出品・問い合わせ・成約、商談、MotoHub査定依頼など（/parts も加盟完了後）",
         ],
       },
     ],
@@ -56,8 +57,9 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
           ["MotoHub査定 /inspections", "現車査定・出品代行の依頼"],
           ["出品 /listings/new", "新規出品"],
           ["商談 /deals", "進行中取引・連絡板"],
-          ["業販検索 /search", "在庫検索"],
-          ["成約履歴 /deals/history", "完了した取引"],
+          ["業販検索 /search", "在庫検索（広域エリア・都道府県＝引取目安）"],
+          ["パーツ /parts", "パーツ検索・出品"],
+          ["成約履歴 /deals/history", "車両の完了した取引"],
           ["評価 /profile", "信用スコア"],
           ["設定 /settings", "会社情報・口座・サポート"],
         ],
@@ -75,13 +77,38 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
           "1台につき同時に進行できる商談は1件（他店の問い合わせ中は商談中表示）",
           "MotoHub査定済バッジはスタッフが現車確認して代行出品した車両のみ",
           "仕入れ：/search で在庫を探し、詳細から問い合わせ → 商談画面へ",
+          "検索のエリア：出品店舗の都道府県が「引取エリア」として表示・絞り込みされます（直引き・引取の目安）",
         ],
       },
     ],
   },
   {
+    id: "parts",
+    title: "5. パーツ売買",
+    blocks: [
+      {
+        kind: "p",
+        text: "車両取引（商談）とは独立した軽量マーケットです。名変・取引記録書・重い dispute フローはありません。送料・配送は表示のみ（原則買主負担、当事者調整）。",
+      },
+      {
+        kind: "ul",
+        items: [
+          "検索（/parts）：メーカー・カテゴリ（プルダウン）、車種（サジェスト）、キーワード、品番、ASK除外、価格帯",
+          "車種は初出入力でマスタに学習。「汎用」出品は車種検索時にもヒット",
+          "出品（/parts/new）：メーカー品番（manufacturer_part_number）を入れると品番検索に載ります",
+          "問い合わせ：詳細からメッセージ送信（複数買主可）",
+          "成約（売主）：買主ID・成約価格（税抜）を登録 → 買主向け入金指示書PDF、条件を満たせば売主向け手数料請求書",
+        ],
+      },
+      {
+        kind: "callout",
+        text: "パーツ手数料（税抜成約価格）：1万円未満＝売主0% · 1万円以上＝売主10% · 買主は常に0%。",
+      },
+    ],
+  },
+  {
     id: "deal-flow",
-    title: "5. 取引の流れ（4ステップ）",
+    title: "6. 車両取引の流れ（4ステップ）",
     blocks: [
       {
         kind: "p",
@@ -115,7 +142,7 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
   },
   {
     id: "board",
-    title: "6. 取引連絡板",
+    title: "7. 取引連絡板",
     blocks: [
       {
         kind: "p",
@@ -132,7 +159,7 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
   },
   {
     id: "inspection",
-    title: "7. MotoHub査定",
+    title: "8. MotoHub査定",
     blocks: [
       {
         kind: "ul",
@@ -146,7 +173,7 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
   },
   {
     id: "records",
-    title: "8. 取引記録書（MotoHub取引記録書）",
+    title: "9. 取引記録書（MotoHub取引記録書）",
     blocks: [
       {
         kind: "p",
@@ -177,7 +204,7 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
   },
   {
     id: "payments",
-    title: "9. 月額・その他",
+    title: "10. 月額・その他",
     blocks: [
       {
         kind: "ul",
@@ -200,7 +227,7 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
   },
   {
     id: "help",
-    title: "10. 困ったとき",
+    title: "11. 困ったとき",
     blocks: [
       {
         kind: "ul",

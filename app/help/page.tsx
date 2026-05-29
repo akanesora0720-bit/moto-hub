@@ -32,6 +32,10 @@ export default async function HelpPage() {
               <Link href="/deals" className="text-accent hover:underline">
                 商談
               </Link>
+              （車両）または{" "}
+              <Link href="/parts" className="text-accent hover:underline">
+                パーツ
+              </Link>
               画面の案内に従ってください。{" "}
               <Link href="/support" className="text-accent hover:underline">
                 運営サポート

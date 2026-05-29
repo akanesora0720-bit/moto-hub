@@ -22,6 +22,7 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
           ["取引連絡", "/admin/deals"],
           ["精算", "/admin/billing"],
           ["取引記録", "/admin/transaction-records"],
+          ["パーツ出品 / 成約", "/admin/parts · /admin/parts/sales"],
           ["加盟店・信用", "/admin/credit"],
           ["MotoHub査定", "/admin/inspections"],
           ["サポート / トラブル", "/admin/support · /admin/disputes"],
@@ -116,6 +117,29 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
     ],
   },
   {
+    id: "parts",
+    title: "6.5 パーツ売買（/admin/parts）",
+    blocks: [
+      {
+        kind: "p",
+        text: "車両 deals とは別の part_listings / part_sales モジュールです。加盟店画面は /parts、運営は一覧のみ（編集・成約操作は加盟店側）。",
+      },
+      {
+        kind: "ul",
+        items: [
+          "/admin/parts — パーツ出品一覧（ステータス・メーカー・カテゴリ）",
+          "/admin/parts/sales — 成約一覧・売主手数料（税抜）の確認",
+          "成約時：complete_part_sale RPC で part_sales 作成、入金指示書（買主）、1万円以上で手数料請求（売主）",
+          "手数料：税抜1万円未満0% · 1万円以上売主10% · 買主0%",
+        ],
+      },
+      {
+        kind: "callout",
+        text: "パーツ取引には取引記録書（transaction_records）・名変フロー・商談連絡板は紐づきません。請求は invoices.part_sale_id 経由。",
+      },
+    ],
+  },
+  {
     id: "records",
     title: "6. 取引記録書",
     blocks: [
@@ -157,7 +181,7 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
           "入金指示書 確認待ち — 一覧からの一括承認は補助用。基本は取引詳細で承認",
           "月額会費 — 毎月20日に自動発行（cron）。金額は発行時点の trust_rank 別（system_settings.billing.monthly_membership_fee_by_rank）。初年度は100点スタートのため多くがゴールド",
           "月額入金報告 — 加盟店の振込報告を確認・差戻し（請求書の入金確認と連動可）",
-          "請求書一覧 — 入金指示・手数料・査定の PDF と入金確認",
+          "請求書一覧 — 入金指示・手数料・査定・月額会費・パーツ（入金指示/手数料）の PDF と入金確認",
         ],
       },
       {

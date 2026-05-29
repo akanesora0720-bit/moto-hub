@@ -33,6 +33,8 @@ function docLabel(inv: InvoiceRow) {
   if (kind === "platform_fee") return "MotoHub手数料請求";
   if (kind === "motohub_inspection") return "MotoHub査定";
   if (kind === "monthly_membership") return "月額会費";
+  if (kind === "part_payment_instruction") return "パーツ入金指示書";
+  if (kind === "part_platform_fee") return "パーツ手数料請求";
   return inv.party === "buyer" ? "買い手" : "売り手";
 }
 
@@ -50,6 +52,10 @@ function listingLabel(inv: InvoiceRow) {
     });
     const rank = (inv as Invoice & { billing_trust_rank?: string }).billing_trust_rank;
     return rank ? `${month}（${rank}）` : month;
+  }
+  const partSaleId = (inv as Invoice & { part_sale_id?: string | null }).part_sale_id;
+  if (kind === "part_payment_instruction" || kind === "part_platform_fee") {
+    return partSaleId ? `パーツ成約 ${partSaleId.slice(0, 8)}` : "パーツ成約";
   }
   const li = inv.deal?.listings;
   const listing = Array.isArray(li) ? li[0] : li;
