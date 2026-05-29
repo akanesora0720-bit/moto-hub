@@ -1,12 +1,15 @@
-import { MARKET_STATS_PLACEHOLDER } from "@/lib/market-stats-placeholder";
+import type { MarketStats } from "@/lib/market-stats";
 
-export function MarketStatsBar() {
-  const items = [MARKET_STATS_PLACEHOLDER.listings, MARKET_STATS_PLACEHOLDER.parts];
+export function MarketStatsBar({ stats }: { stats: MarketStats }) {
+  const items = [
+    { label: "掲載車両", value: stats.listings, unit: "台" },
+    { label: "掲載パーツ", value: stats.parts, unit: "点" },
+  ];
 
   return (
     <section
       className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-card/80 p-4"
-      aria-label="Moto-Hub 掲載規模（参考値）"
+      aria-label="Moto-Hub 掲載規模"
     >
       {items.map((item) => (
         <div key={item.label} className="text-center sm:text-left">
@@ -17,9 +20,6 @@ export function MarketStatsBar() {
           </p>
         </div>
       ))}
-      <p className="col-span-2 border-t border-border/60 pt-2 text-center text-[10px] text-muted sm:text-left">
-        ※ 参考値（β版・今後リアルタイム集計に差し替え予定）
-      </p>
     </section>
   );
 }

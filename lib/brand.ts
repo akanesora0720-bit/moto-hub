@@ -4,6 +4,8 @@ const APP_ORIGIN =
 
 export const BRAND = {
   productName: "Moto-Hub",
+  /** ロゴ横ワードマーク（UI用・ハイフンなし） */
+  logoLockupLabel: "MotoHub",
   companyName: "（株）RideWorks",
   /** マーケLP用ドメイン（Xserver・未公開時はLP未設置）。ログインは appOrigin を使う */
   siteUrl: "https://moto-hub.jp",
@@ -14,8 +16,10 @@ export const BRAND = {
   signupUrl: `${APP_ORIGIN}/signup`,
   contactEmail: "info@moto-hub.jp",
   ctaApply: "無料で先行加盟申請する",
-  /** アプリ・PDF共通の公式ロゴ（public/ に配置） */
+  /** 横組みフルロゴ（PDF 等） */
   logoSrc: "/logo.png",
+  /** UI用マークのみ（logo.png 左のアイコン切り出し） */
+  logoMarkSrc: "/logo-mark.png",
 } as const;
 
 /** DBテンプレート等に残る旧表記を送信・表示時に正規化 */

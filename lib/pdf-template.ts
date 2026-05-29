@@ -191,7 +191,7 @@ export function createPdfTemplate(writer: PdfWriter, issuer?: PdfIssuerBlock) {
       ensureSpace(t, totalH);
 
       const x0 = MARGIN_X;
-      let y = t.y;
+      const y = t.y;
 
       // header background
       page.drawRectangle({

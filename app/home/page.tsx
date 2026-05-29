@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { MarketStatsBar } from "@/components/MarketStatsBar";
+import { fetchMarketStats } from "@/lib/market-stats";
 import { ActionCard, StatBadge } from "@/components/layout/DashboardCard";
 import { fetchDealerActionStats } from "@/lib/dealer-action-stats";
 import { createClient } from "@/lib/supabase/server";
@@ -18,12 +19,13 @@ export default async function DealerHomePage() {
   if (!viewer) redirect("/login");
   if (viewer.profile.member_type === "staff") redirect("/admin");
 
-  const [actions, stats] = await Promise.all([
+  const supabase = await createClient();
+
+  const [actions, stats, marketStats] = await Promise.all([
     fetchDealerActionStats(viewer.id),
     fetchDealerDashboardStats(viewer.id).catch(() => null),
+    fetchMarketStats(supabase).catch(() => ({ listings: 0, parts: 0 })),
   ]);
-
-  const supabase = await createClient();
   const { data: profileRow } = await supabase
     .from("profiles")
     .select("store_name, email, account_status, profile_completed")
@@ -80,7 +82,7 @@ export default async function DealerHomePage() {
           </div>
         </section>
 
-        <MarketStatsBar />
+        <MarketStatsBar stats={marketStats} />
 
         {tradingEnabled ? (
           <section>

@@ -73,5 +73,5 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ id: data.id });
+  return NextResponse.json({ id: data.id, seller_id: user.id });
 }

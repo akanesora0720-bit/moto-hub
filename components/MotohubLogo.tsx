@@ -6,26 +6,39 @@ type MotohubLogoProps = {
   height?: number;
   className?: string;
   priority?: boolean;
+  /** ロゴ横にワードマークを出す（既定: true） */
+  showLabel?: boolean;
+  labelClassName?: string;
 };
 
-/** Moto-Hub 公式ロゴ（public/logo.png）。白背景の横組みワードマーク。 */
+/** サイドバー・ヘッダー用マーク＋ゴールドの MotoHub 表記 */
 export function MotohubLogo({
-  width = 200,
-  height = 48,
-  className = "h-8 w-auto",
+  width = 36,
+  height = 36,
+  className = "h-9 w-9",
   priority = false,
+  showLabel = true,
+  labelClassName = "",
 }: MotohubLogoProps) {
   return (
-    <span className="inline-flex shrink-0 items-center overflow-hidden rounded-lg bg-white px-2 py-1 shadow-sm">
+    <span className="inline-flex min-w-0 items-center gap-2">
       <Image
-        src={BRAND.logoSrc}
-        alt={BRAND.productName}
+        src={BRAND.logoMarkSrc}
+        alt=""
         width={width}
         height={height}
-        className={`object-contain object-left ${className}`}
+        className={`shrink-0 object-contain object-center ${className}`}
         priority={priority}
         unoptimized
+        aria-hidden
       />
+      {showLabel ? (
+        <span
+          className={`whitespace-nowrap text-lg font-semibold tracking-tight text-accent ${labelClassName}`}
+        >
+          {BRAND.logoLockupLabel}
+        </span>
+      ) : null}
     </span>
   );
 }

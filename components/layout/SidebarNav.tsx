@@ -25,9 +25,9 @@ export function SidebarNav({
 
   return (
   <aside className="flex w-full shrink-0 flex-col border-b border-border bg-zinc-950/50 md:w-52 md:border-b-0 md:border-r md:min-h-[calc(100vh-3.5rem)]">
-      <div className="hidden p-4 md:block">
-        <Link href={homeHref} className="flex items-center gap-2">
-          <MotohubLogo width={168} height={40} className="h-8 w-auto max-w-[180px]" priority />
+      <div className="hidden border-b border-border/60 px-4 py-4 md:block">
+        <Link href={homeHref} prefetch={false} className="inline-flex min-w-0">
+          <MotohubLogo priority />
         </Link>
       </div>
       <nav className="flex gap-1 overflow-x-auto p-2 md:flex-col md:overflow-visible md:p-3">

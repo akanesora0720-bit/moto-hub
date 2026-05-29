@@ -1,12 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { PartFeeNotice } from "@/components/PartFeeNotice";
 import { PartModelSuggest } from "@/components/PartModelSuggest";
 import { ActionButton, AsyncMessage, AsyncStatusBanner } from "@/components/ui/async-ui";
 import type { PartCategory, PartManufacturer } from "@/lib/part-catalog";
+import {
+  PART_LISTING_MAX_FILES,
+  partListingImagePath,
+  uploadPartFiles,
+} from "@/lib/part-images";
 import { useAsyncAction } from "@/lib/use-async-action";
+import { createClient } from "@/lib/supabase/client";
 
 export function PartListingForm({
   manufacturers,
@@ -16,6 +22,8 @@ export function PartListingForm({
   categories: PartCategory[];
 }) {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const { loading, success, message, run } = useAsyncAction();
   const [manufacturerId, setManufacturerId] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -55,9 +63,38 @@ export function PartListingForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = (await res.json()) as { error?: string; id?: string };
+      const data = (await res.json()) as { error?: string; id?: string; seller_id?: string };
       if (!res.ok) {
         return { error: data.error ?? "パーツ出品に失敗しました。" };
+      }
+      if (data.id && imageFiles.length > 0) {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        const sellerId = data.seller_id ?? user?.id;
+        if (!sellerId) {
+          return { error: "画像アップロードのため再ログインしてください。" };
+        }
+        const paths = imageFiles.map((f, i) => {
+          const ext = f.name.split(".").pop()?.toLowerCase() || "jpg";
+          const safeExt = ["jpg", "jpeg", "png", "webp", "gif"].includes(ext) ? ext : "jpg";
+          return partListingImagePath(sellerId, data.id!, `${i}.${safeExt}`);
+        });
+        const uploaded = await uploadPartFiles(supabase, paths, imageFiles);
+        if (uploaded.error) {
+          return { error: `出品は作成済みですが画像アップロードに失敗: ${uploaded.error}` };
+        }
+        for (let i = 0; i < uploaded.paths.length; i++) {
+          const { error: imgErr } = await supabase.from("part_listing_images").insert({
+            part_listing_id: data.id,
+            storage_path: uploaded.paths[i],
+            sort_order: i,
+          });
+          if (imgErr) {
+            return { error: imgErr.message };
+          }
+        }
       }
       if (data.id) {
         router.push(`/parts/${data.id}`);
@@ -165,6 +202,32 @@ export function PartListingForm({
         value={form.description}
         onChange={(e) => setForm((v) => ({ ...v, description: e.target.value }))}
       />
+      <div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            const picked = e.target.files;
+            if (!picked?.length) return;
+            setImageFiles((prev) =>
+              [...prev, ...Array.from(picked)].slice(0, PART_LISTING_MAX_FILES),
+            );
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="rounded-lg border border-border px-3 py-2 text-sm hover:border-accent"
+        >
+          写真を追加（最大{PART_LISTING_MAX_FILES}枚）
+        </button>
+        {imageFiles.length > 0 ? (
+          <p className="mt-2 text-xs text-muted">{imageFiles.length}枚選択中</p>
+        ) : null}
+      </div>
       <div className="grid gap-3 md:grid-cols-2">
         <select
           className="rounded border border-border bg-zinc-950 px-3 py-2"

@@ -43,6 +43,11 @@ export function DealPickupSchedulePanel({
         status,
       ));
 
+  const scheduledLabel = useMemo(
+    () => formatPickupSchedule(pickupScheduledAt),
+    [pickupScheduledAt],
+  );
+
   if (!show) return null;
 
   const canEdit = !readOnly && role === "buyer" && status === "funded";
@@ -72,11 +77,6 @@ export function DealPickupSchedulePanel({
       router.refresh();
       return { okMessage: "引取予定日時を登録しました。" };
     });
-
-  const scheduledLabel = useMemo(
-    () => formatPickupSchedule(pickupScheduledAt),
-    [pickupScheduledAt],
-  );
 
   return (
     <section className="space-y-3 rounded-xl border border-accent/30 bg-accent/5 p-4">
