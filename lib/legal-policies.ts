@@ -61,6 +61,11 @@ export function registrationPolicyPayload(origin: string) {
   };
 }
 
+/** マーケティング LP（認証不要） */
+export function isMarketingPublicPath(pathname: string): boolean {
+  return pathname === "/lp";
+}
+
 /** 認証なしでも閲覧可能な法務ページ */
 export function isLegalPublicPath(pathname: string): boolean {
   return (
@@ -68,4 +73,9 @@ export function isLegalPublicPath(pathname: string): boolean {
     pathname === PRIVACY_DOCUMENT_PATH ||
     pathname === PRICING_DOCUMENT_PATH
   );
+}
+
+/** 認証なしで閲覧可能な公開ページ */
+export function isPublicAppPath(pathname: string): boolean {
+  return isLegalPublicPath(pathname) || isMarketingPublicPath(pathname);
 }

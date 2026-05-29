@@ -144,7 +144,7 @@ export function buildAdminDealOpsSteps(input: AdminDealOpsInput): AdminOpsStep[]
       id: "platform_fee",
       title: "Moto-Hub手数料の入金確認",
       summary: feeWaived
-        ? "30,000円以下のため手数料対象外。"
+        ? "30,000円未満のため手数料対象外。"
         : step4Done
           ? "売り手からの手数料入金を記録済み。"
           : "売り手入金確認後に発行された手数料請求書の入金を確認します。",

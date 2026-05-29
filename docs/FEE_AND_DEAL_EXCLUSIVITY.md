@@ -9,15 +9,27 @@
 | `status = 'negotiating'` | 同一 |
 | `audit_logs.user_id` | `actor_id`（016 既存） |
 
-## 手数料（税抜車両価格）
+## 手数料（税抜成約価格）
+
+### 車両
 
 | 価格 | 買い手 | 売り手（Moto-Hub） |
 |------|--------|-------------------|
-| ≤ ¥30,000 | 0% | 0%（請求書発行なし） |
-| ≥ ¥30,001 | 0% | 5%（税抜＋消費税） |
+| 30,000円未満 | 0% | 0%（請求書発行なし） |
+| 30,000円以上 | 0% | 5%（税抜＋消費税） |
 
-- DB: `public.resolve_deal_fee_rates(price_ex_tax)`
+- DB: `public.resolve_deal_fee_rates(price_ex_tax)` — 境界は `< 30000` / `>= 30000`
 - TS: `lib/billing.ts` → `resolveDealFeeRates()`
+
+### パーツ
+
+| 価格 | 買い手 | 売主 |
+|------|--------|------|
+| 10,000円未満 | 0% | 0% |
+| 10,000円以上 | 0% | 10%（税抜＋消費税） |
+
+- DB: `public.resolve_part_fee_rates(price_ex_tax)` — 境界は `< 10000` / `>= 10000`
+- TS: `lib/part-fees.ts`
 
 ## 1台1商談（排他）
 
@@ -28,7 +40,7 @@
 
 ## マイグレーション適用順
 
-`023` → `024` → `025` → `026` → `027` → `028` → **`029_fee_tier_30k.sql`**
+`023` → … → **`029_fee_tier_30k.sql`** → **`076_fee_threshold_under_not_lte.sql`**
 
 ## 主要ファイル
 

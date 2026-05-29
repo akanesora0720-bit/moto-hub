@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isDealerLimitedPathAllowed } from "@/lib/account-status";
-import { isLegalPublicPath } from "@/lib/legal-policies";
+import { isPublicAppPath } from "@/lib/legal-policies";
 import { encodeProfile, type ViewerProfile } from "@/lib/viewer";
 import type { AccountStatus } from "@/lib/types";
 
@@ -9,7 +9,7 @@ export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const publicPaths = ["/login", "/signup"];
   const isPublic =
-    publicPaths.some((p) => path.startsWith(p)) || isLegalPublicPath(path);
+    publicPaths.some((p) => path.startsWith(p)) || isPublicAppPath(path);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();

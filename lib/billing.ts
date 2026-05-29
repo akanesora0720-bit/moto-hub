@@ -2,6 +2,7 @@ import type { TrustRank } from "@/lib/types";
 
 export const BUYER_FEE_RATE = 0;
 export const SELLER_FEE_RATE = 0.05;
+/** 税抜成約価格がこの金額未満なら手数料無料、以上なら売主5%（DB resolve_deal_fee_rates と同期） */
 export const FEE_FREE_MAX_PRICE_EX_TAX = 30_000;
 export const MIN_FEE_EX_TAX = 0;
 export const CONSUMPTION_TAX_RATE = 0.1;
@@ -41,7 +42,7 @@ export type ResolvedFeeRates = {
 
 /** 税抜車両価格に応じた手数料率（DB resolve_deal_fee_rates と同一） */
 export function resolveDealFeeRates(vehiclePriceExTax: number): ResolvedFeeRates {
-  if (vehiclePriceExTax <= FEE_FREE_MAX_PRICE_EX_TAX) {
+  if (vehiclePriceExTax < FEE_FREE_MAX_PRICE_EX_TAX) {
     return {
       buyerFeeRate: 0,
       sellerFeeRate: 0,

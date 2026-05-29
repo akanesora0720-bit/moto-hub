@@ -99,6 +99,11 @@ function LoginForm() {
             {BRAND.ctaApply}
           </Link>
         </p>
+        <p className="text-center text-xs text-muted">
+          <Link href="/lp" className="hover:text-accent">
+            Moto-Hub とは（サービス紹介）
+          </Link>
+        </p>
 
         <LegalDocumentLinks className="pt-2" openInNewTab />
       </div>

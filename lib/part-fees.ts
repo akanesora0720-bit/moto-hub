@@ -1,4 +1,4 @@
-/** パーツ成約時の手数料（DB resolve_part_fee_rates と同一） */
+/** 税抜成約価格がこの金額未満なら売主手数料無料、以上なら売主10%（DB resolve_part_fee_rates と同期） */
 export const PART_FEE_THRESHOLD_EX_TAX = 10_000;
 export const PART_SELLER_FEE_RATE = 0.1;
 export const PART_BUYER_FEE_RATE = 0;

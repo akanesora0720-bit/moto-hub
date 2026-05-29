@@ -16,18 +16,18 @@ export const FEE_SCHEDULE_ROWS = {
   vehicle: [
     { label: "買い手手数料", value: `${BUYER_FEE_RATE * 100}%（無料）` },
     {
-      label: `税抜成約価格が${FEE_FREE_MAX_PRICE_EX_TAX.toLocaleString("ja-JP")}円以下`,
+      label: `税抜成約価格が${FEE_FREE_MAX_PRICE_EX_TAX.toLocaleString("ja-JP")}円未満`,
       value: "売主・買主とも手数料無料",
     },
     {
-      label: `税抜成約価格が${FEE_FREE_MAX_PRICE_EX_TAX.toLocaleString("ja-JP")}円超`,
+      label: `税抜成約価格が${FEE_FREE_MAX_PRICE_EX_TAX.toLocaleString("ja-JP")}円以上`,
       value: `売主 ${SELLER_FEE_RATE * 100}%（税抜＋消費税）`,
     },
   ],
   parts: [
     { label: "買い手手数料", value: `${PART_BUYER_FEE_RATE * 100}%（無料）` },
     {
-      label: `税抜成約価格が0円〜${(PART_FEE_THRESHOLD_EX_TAX - 1).toLocaleString("ja-JP")}円`,
+      label: `税抜成約価格が${PART_FEE_THRESHOLD_EX_TAX.toLocaleString("ja-JP")}円未満`,
       value: "売主手数料無料",
     },
     {

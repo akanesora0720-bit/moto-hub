@@ -7,8 +7,10 @@
 | **ログイン（おすすめ）** | **`https://moto-hub-blond.vercel.app/login`** |
 | 新規加盟申請 | `https://moto-hub-blond.vercel.app/signup` |
 
-> **`https://moto-hub.jp` はエックスサーバー（LP用）** で、現時点ではログイン画面は開きません。  
-> QR・資料のURLは上記 **Vercel** を使ってください。
+> **`https://moto-hub.jp` はエックスサーバー（LP用）** — 公開時は `/lp` へリダイレクトするか、Vercel の `https://moto-hub-blond.vercel.app/lp` を案内してください。  
+> QR・資料のログインURLは上記 **Vercel** を使ってください。
+
+| LP（サービス紹介） | `https://moto-hub-blond.vercel.app/lp` |
 
 `app.moto-hub.jp` などサブドメインを Vercel に繋いだら、`lib/brand.ts` の `NEXT_PUBLIC_APP_URL` を更新し、QRを差し替えます。
 

@@ -563,7 +563,7 @@ export function AdminWorkspaceClient() {
 
   const sellerFeeLabel = (price: number) => {
     const { sellerFeeRate, feeWaived } = resolveDealFeeRates(price);
-    if (feeWaived) return "手数料0円（3万円以下）";
+    if (feeWaived) return "手数料0円（3万円未満）";
     return `売手5% ${formatYen(Math.round(price * sellerFeeRate))}`;
   };
 

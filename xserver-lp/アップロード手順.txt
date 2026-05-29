@@ -1,0 +1,54 @@
+■ Moto-Hub トップページ（moto-hub.jp）の置き方 — Xserver ファイルマネージャー
+
+【用意するファイル】このフォルダの中身をそのまま使います。
+
+  ① index.html      … トップページ本体（必須）
+  ② logo-mark.png   … ロゴのマーク画像（必須・index.html と同じ場所に置く）
+
+※ 2つそろえてアップロードしてください。片方だけだとロゴが表示されません。
+
+
+【手順】
+
+1. Xserver にログイン → サーバーパネル
+
+2. 「ファイル管理」または「ファイルマネージャー」を開く
+
+3. ドメイン moto-hub.jp の公開フォルダを開く
+   （多くの場合、次のどちらかです）
+   · public_html
+   · moto-hub.jp/public_html
+   すでに古い index.html がある場合は、バックアップしてから上書きしてください。
+
+4. 「アップロード」で次の2ファイルを選ぶ
+   · index.html
+   · logo-mark.png
+
+5. アップロード後、フォルダに
+   · index.html
+   · logo-mark.png
+   が並んでいることを確認
+
+6. ブラウザで https://moto-hub.jp を開いて表示を確認
+   · 「加盟申請」「ログイン」ボタンはアプリ（Vercel）へ飛びます
+   · 問題なければ完了です
+
+
+【よくあるトラブル】
+
+· ロゴだけ出ない
+  → logo-mark.png が index.html と同じフォルダにあるか確認
+
+· 真っ白・文字だけ崩れる
+  → index.html の名前が index.html になっているか（index.html.txt などになっていないか）確認
+
+· 古いページが出る
+  → ブラウザの再読み込み（スマホならキャッシュ削除）を試す
+
+
+【お問い合わせ】
+info@moto-hub.jp
+
+【アプリのURL（資料のQRなど）】
+ログイン: https://moto-hub-blond.vercel.app/login
+新規登録: https://moto-hub-blond.vercel.app/signup

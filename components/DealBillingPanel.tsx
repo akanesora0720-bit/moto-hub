@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   DOCUMENT_KIND_LABELS,
+  FEE_FREE_MAX_PRICE_EX_TAX,
   INVOICE_STATUS_LABELS,
   formatYen,
   summarizeDealBilling,
@@ -159,7 +160,7 @@ function SellerBilling({
       <Row label="買い手支払（税込・直接入金）" value={formatYen(summary.sellerReceivesIncTax)} />
       {summary.feeWaived ? (
         <p className="text-xs text-emerald-300/90">
-          税抜30,000円以下のため、Moto-Hub手数料は双方0円です。
+          税抜{FEE_FREE_MAX_PRICE_EX_TAX.toLocaleString("ja-JP")}円未満のため、Moto-Hub手数料は双方0円です。
         </p>
       ) : null}
       <Row
