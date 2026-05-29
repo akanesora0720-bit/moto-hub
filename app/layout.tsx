@@ -8,7 +8,7 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "MotoHub — B2B中古バイク流通",
+  title: "Moto-Hub — B2B中古バイク流通",
   description: "業販価格で中古バイクをやり取りするB2Bマーケットプレイス",
 };
 

@@ -1,4 +1,4 @@
-# MotoHub 運営自動化（Phase: Operations）
+# Moto-Hub 運営自動化（Phase: Operations）
 
 BtoB中古バイク流通の **安全運営・事故早期検知・通知基盤** です。
 

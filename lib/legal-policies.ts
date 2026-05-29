@@ -4,7 +4,7 @@ export type PolicyType = "terms" | "privacy";
 export const CURRENT_TERMS_VERSION = "v1";
 export const CURRENT_PRIVACY_VERSION = "v1";
 
-/** 法務文書の正本パス（MotoHub 自社ホスト） */
+/** 法務文書の正本パス（Moto-Hub 自社ホスト） */
 export const TERMS_DOCUMENT_PATH = "/terms";
 export const PRIVACY_DOCUMENT_PATH = "/privacy";
 export const PRICING_DOCUMENT_PATH = "/pricing";

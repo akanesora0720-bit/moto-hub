@@ -130,8 +130,8 @@ export const DOCUMENT_KIND_LABELS: Record<
 > = {
   legacy: "請求書",
   payment_instruction: "入金指示書",
-  platform_fee: "MotoHub手数料請求書",
-  motohub_inspection: "MotoHub査定",
+  platform_fee: "Moto-Hub手数料請求書",
+  motohub_inspection: "Moto-Hub査定",
   monthly_membership: "月額会費請求書",
 };
 

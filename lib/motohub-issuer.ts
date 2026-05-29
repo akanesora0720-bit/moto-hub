@@ -30,7 +30,7 @@ function issuerFromEnv(): MotohubIssuer {
   };
 }
 
-/** 手数料請求書の発行元（MotoHub運営）。環境変数優先、未設定時は運営メールの profiles 口座 */
+/** 手数料請求書の発行元（Moto-Hub運営）。環境変数優先、未設定時は運営メールの profiles 口座 */
 export async function getMotohubIssuer(
   supabase?: SupabaseClient,
 ): Promise<MotohubIssuer> {

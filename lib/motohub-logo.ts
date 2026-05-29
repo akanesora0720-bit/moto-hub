@@ -10,10 +10,10 @@ export async function loadMotohubLogoBytes(): Promise<MotohubLogoBytes | null> {
   if (cached !== undefined) return cached;
 
   const candidates: { abs: string; format: "jpg" | "png" }[] = [
+    { abs: path.join(process.cwd(), "lib", "assets", "motohub-logo.png"), format: "png" },
+    { abs: path.join(process.cwd(), "public", "logo.png"), format: "png" },
     { abs: path.join(process.cwd(), "lib", "assets", "motohub-logo.jpg"), format: "jpg" },
     { abs: path.join(process.cwd(), "public", "logo.jpg"), format: "jpg" },
-    { abs: path.join(process.cwd(), "public", "motohub-logo.png"), format: "png" },
-    { abs: path.join(process.cwd(), "LOGO.jpg"), format: "jpg" },
   ];
 
   for (const c of candidates) {

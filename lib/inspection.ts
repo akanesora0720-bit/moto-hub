@@ -17,10 +17,10 @@ export const INSPECTION_REQUEST_STATUS_LABELS: Record<InspectionRequestStatus, s
   cancelled: "取消",
 };
 
-export const MOTOHUB_INSPECTION_BADGE_TITLE = "MotoHub査定済";
+export const MOTOHUB_INSPECTION_BADGE_TITLE = "Moto-Hub査定済";
 
 export const MOTOHUB_INSPECTION_BADGE_DESCRIPTION =
-  "MotoHubスタッフが実車確認・出品登録を行った車両です";
+  "Moto-Hubスタッフが実車確認・出品登録を行った車両です";
 
 export type InspectionRequest = {
   id: string;

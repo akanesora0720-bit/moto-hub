@@ -7,14 +7,14 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "MotoHub は B2B 中古バイクの業販マーケットです。加盟店（古物商）同士が在庫を検索・出品し、成約後は車両代金を買い手→売り手へ直接振込します。MotoHub は車両代の決済代行をしません。パーツ売買（/parts）は車両とは別モジュールで、問い合わせ〜成約・請求まで軽量フローです。",
+        text: "Moto-Hub は B2B 中古バイクの業販マーケットです。加盟店（古物商）同士が在庫を検索・出品し、成約後は車両代金を買い手→売り手へ直接振込します。Moto-Hub は車両代の決済代行をしません。パーツ売買（/parts）は車両とは別モジュールで、問い合わせ〜成約・請求まで軽量フローです。",
       },
       {
         kind: "table",
         headers: ["用語", "意味"],
         rows: [
           ["車両代金", "買い手が売り手の口座へ振り込む金額（税込）"],
-          ["MotoHub手数料", "成約時のプラットフォーム手数料（売り手宛・請求書）"],
+          ["Moto-Hub手数料", "成約時のプラットフォーム手数料（売り手宛・請求書）"],
           ["車両を探す", "全国の加盟店在庫を探す（/search）。広域エリア・都道府県で引取目安を絞り込み可"],
           ["パーツ売買", "パーツの検索・出品・問い合わせ・成約（/parts）"],
           ["商談", "車両の問い合わせ〜取引まで（/deals）"],
@@ -40,7 +40,7 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
         kind: "ul",
         items: [
           "審査前でも使える：車両を探す（/search）・ホーム・設定・この操作説明",
-          "審査前は不可：車両・パーツの出品・問い合わせ・成約、商談、MotoHub査定依頼など（/parts も加盟完了後）",
+          "審査前は不可：車両・パーツの出品・問い合わせ・成約、商談、Moto-Hub査定依頼など（/parts も加盟完了後）",
         ],
       },
     ],
@@ -54,7 +54,7 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
         headers: ["メニュー", "用途"],
         rows: [
           ["ホーム /home", "要対応・KPI・業務メニュー"],
-          ["MotoHub査定 /inspections", "現車査定・出品代行の依頼"],
+          ["Moto-Hub査定 /inspections", "現車査定・出品代行の依頼"],
           ["出品 /listings/new", "新規出品"],
           ["商談 /deals", "進行中取引・連絡板"],
           ["車両を探す /search", "全国の加盟店在庫（広域エリア・都道府県＝引取目安）"],
@@ -75,7 +75,7 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
         items: [
           "出品：車両情報・価格（税抜）・写真などを /listings/new から登録",
           "1台につき同時に進行できる商談は1件（他店の問い合わせ中は商談中表示）",
-          "MotoHub査定済バッジはスタッフが現車確認して代行出品した車両のみ",
+          "Moto-Hub査定済バッジはスタッフが現車確認して代行出品した車両のみ",
           "仕入れ：車両を探す（/search）で在庫を探し、詳細から問い合わせ → 商談画面へ",
           "検索のエリア：出品店舗の都道府県が「引取エリア」として表示・絞り込みされます（直引き・引取の目安）",
         ],
@@ -159,7 +159,7 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
   },
   {
     id: "inspection",
-    title: "8. MotoHub査定",
+    title: "8. Moto-Hub査定",
     blocks: [
       {
         kind: "ul",
@@ -173,7 +173,7 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
   },
   {
     id: "records",
-    title: "9. 取引記録書（MotoHub取引記録書）",
+    title: "9. 取引記録書（Moto-Hub取引記録書）",
     blocks: [
       {
         kind: "p",
@@ -183,7 +183,7 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
         kind: "table",
         headers: ["項目", "内容"],
         rows: [
-          ["記載内容", "成約日・取引ID・車両（メーカー・年式・走行・車台番号等）・売買金額・売主・買主・引渡予定/完了・支払状況・書類状況・MotoHub手数料"],
+          ["記載内容", "成約日・取引ID・車両（メーカー・年式・走行・車台番号等）・売買金額・売主・買主・引渡予定/完了・支払状況・書類状況・Moto-Hub手数料"],
           ["固定される情報", "成約時点の売主・買主・車両情報（後から店舗情報や出品を変更しても記録は変わりません）"],
           ["更新される情報", "入金・引渡の進捗（支払状況・書類引渡状況など）"],
         ],
@@ -192,7 +192,7 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
         kind: "ul",
         items: [
           "閲覧・PDF：取引詳細（/deals/[id]）下部の「取引記録書」パネル、または成約履歴（/deals/history）のリンク",
-          "詳細画面：/transaction-records/[id] — 「PDFをダウンロード」で MotoHub取引記録書 を保存",
+          "詳細画面：/transaction-records/[id] — 「PDFをダウンロード」で Moto-Hub取引記録書 を保存",
           "PDF末尾に「契約書ではない」旨の注意書きが入ります",
         ],
       },

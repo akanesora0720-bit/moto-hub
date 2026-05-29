@@ -65,7 +65,7 @@ export function TermsDocumentView({ showFeesLink = true, className }: Props) {
 
       <footer className="not-prose border-t border-border pt-4 text-xs text-muted">
         <p>お問い合わせ：本サービス内サポートまたは運営窓口</p>
-        <p className="mt-1">運営：株式会社RideWorks（MotoHub）</p>
+        <p className="mt-1">運営：株式会社RideWorks（Moto-Hub）</p>
       </footer>
     </article>
   );

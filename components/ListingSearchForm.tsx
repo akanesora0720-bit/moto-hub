@@ -160,7 +160,7 @@ export function ListingSearchForm({ action = "/search" }: { action?: string }) {
           onChange={(e) => setMotohubOnly(e.target.checked)}
           className="rounded border-border"
         />
-        <span>MotoHub査定済のみ</span>
+        <span>Moto-Hub査定済のみ</span>
       </label>
       <div className="mt-3 flex flex-wrap gap-2">
         <button

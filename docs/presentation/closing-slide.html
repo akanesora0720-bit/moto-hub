@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Moto-Hub — クロージングスライド</title>
+    <style>
+      @page {
+        size: 1920px 1080px;
+        margin: 0;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        background: #050506;
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+        font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP",
+          "Yu Gothic UI", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .slide {
+        position: relative;
+        width: min(100vw, calc(100vh * 16 / 9));
+        aspect-ratio: 16 / 9;
+        max-width: 1920px;
+        max-height: 1080px;
+        overflow: hidden;
+        color: #f4f4f5;
+        background: radial-gradient(ellipse 80% 60% at 50% 0%, #1a1810 0%, #0a0a0b 55%, #050506 100%);
+        border: 1px solid #27272a;
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+      }
+
+      .slide::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          135deg,
+          transparent 40%,
+          rgba(212, 168, 83, 0.06) 50%,
+          transparent 60%
+        );
+        pointer-events: none;
+      }
+
+      .inner {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 4rem;
+        height: 100%;
+        padding: 5rem 6rem 4.5rem;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        margin-bottom: 2.5rem;
+      }
+
+      .brand img {
+        width: 72px;
+        height: 72px;
+        border-radius: 14px;
+        object-fit: cover;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      }
+
+      .brand h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      .brand p {
+        margin-top: 0.35rem;
+        font-size: 1.05rem;
+        color: #a1a1aa;
+      }
+
+      .eyebrow {
+        display: inline-block;
+        margin-bottom: 1.25rem;
+        padding: 0.35rem 0.9rem;
+        border-radius: 999px;
+        border: 1px solid rgba(212, 168, 83, 0.45);
+        background: rgba(212, 168, 83, 0.1);
+        color: #d4a853;
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+      }
+
+      .headline {
+        font-size: 2.75rem;
+        font-weight: 700;
+        line-height: 1.35;
+        margin-bottom: 1.5rem;
+      }
+
+      .url {
+        display: inline-block;
+        font-size: 3.25rem;
+        font-weight: 700;
+        color: #d4a853;
+        letter-spacing: 0.01em;
+        text-decoration: none;
+        border-bottom: 3px solid rgba(212, 168, 83, 0.35);
+        padding-bottom: 0.15rem;
+      }
+
+      .sub {
+        margin-top: 1.25rem;
+        font-size: 1.35rem;
+        color: #a1a1aa;
+        line-height: 1.6;
+      }
+
+      .qr-panel {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.25rem;
+      }
+
+      .qr-frame {
+        padding: 1.25rem;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      }
+
+      .qr-frame img {
+        display: block;
+        width: 280px;
+        height: 280px;
+      }
+
+      .qr-caption {
+        font-size: 1.1rem;
+        color: #a1a1aa;
+        text-align: center;
+      }
+
+      .footer {
+        position: absolute;
+        left: 6rem;
+        right: 6rem;
+        bottom: 2.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.95rem;
+        color: #71717a;
+        border-top: 1px solid #27272a;
+        padding-top: 1.25rem;
+      }
+
+      @media print {
+        html,
+        body {
+          width: 1920px;
+          height: 1080px;
+        }
+
+        .slide {
+          width: 1920px;
+          height: 1080px;
+          max-width: none;
+          max-height: none;
+          border: none;
+          box-shadow: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <article class="slide" role="img" aria-label="Moto-Hub 本番URLとQRコード">
+      <div class="inner">
+        <section>
+          <div class="brand">
+            <img
+              src="../../public/logo.png"
+              alt="Moto-Hub"
+              width="280"
+              height="72"
+              style="height: 72px; width: auto; max-width: 280px; object-fit: contain; background: #fff; border-radius: 12px; padding: 8px 12px"
+            />
+            <div>
+              <p>中古車・パーツ B2B プラットフォーム</p>
+            </div>
+          </div>
+
+          <span class="eyebrow">B2Bアプリ（ログイン）</span>
+          <h2 class="headline">スマホでログイン</h2>
+          <a class="url" href="https://moto-hub-blond.vercel.app/login">moto-hub-blond.vercel.app/login</a>
+          <p class="sub">
+            先行加盟の新規登録は <strong>/signup</strong> から。<br />
+            ※ moto-hub.jp はLP用（未公開）· ご質問は info@moto-hub.jp
+          </p>
+        </section>
+
+        <aside class="qr-panel">
+          <div class="qr-frame">
+            <img src="qr-login.png" alt="ログイン画面のQRコード" width="280" height="280" />
+          </div>
+          <p class="qr-caption">カメラで読み取り</p>
+        </aside>
+      </div>
+
+      <footer class="footer">
+        <span>（株）RideWorks</span>
+        <span>Moto-Hub β</span>
+      </footer>
+    </article>
+  </body>
+</html>

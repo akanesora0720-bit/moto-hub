@@ -28,7 +28,7 @@ export async function buildTransactionRecordPdf(
   const seller = record.seller_snapshot_json as TransactionPartySnapshot;
   const buyer = record.buyer_snapshot_json as TransactionPartySnapshot;
   const t = createPdfTemplate(writer, {
-    brandName: "MotoHub",
+    brandName: "Moto-Hub",
     companyName: "株式会社RideWorks",
     contact: "info@moto-hub.jp",
   });
@@ -78,7 +78,7 @@ export async function buildTransactionRecordPdf(
     rows: [
       ["売買金額（税抜）", yen(record.sale_price_ex_tax)],
       ["売買金額（税込）", yen(record.sale_price_inc_tax)],
-      ["MotoHub手数料（税込）", record.platform_fee_inc_tax > 0 ? yen(record.platform_fee_inc_tax) : "対象外"],
+      ["Moto-Hub手数料（税込）", record.platform_fee_inc_tax > 0 ? yen(record.platform_fee_inc_tax) : "対象外"],
       ["支払状況", record.payment_status],
       ["引渡予定", formatRecordDate(record.handover_due_at)],
       ["引渡完了", formatRecordDate(record.handover_completed_at)],

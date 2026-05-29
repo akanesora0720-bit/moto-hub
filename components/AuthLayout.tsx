@@ -15,7 +15,7 @@ export function AuthLayout({
       <section className="w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
         <div className="border-b border-border px-6 py-5">
           <div className="flex items-center gap-3">
-            <MotohubLogo width={120} height={40} className="h-9 w-auto" priority />
+            <MotohubLogo width={200} height={48} className="h-10 w-auto max-w-[220px]" priority />
           </div>
           <h1 className="mt-2 text-xl font-semibold">{title}</h1>
           <p className="mt-1 text-sm text-muted">{subtitle}</p>

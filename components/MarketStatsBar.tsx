@@ -6,7 +6,7 @@ export function MarketStatsBar() {
   return (
     <section
       className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-card/80 p-4"
-      aria-label="MotoHub 掲載規模（参考値）"
+      aria-label="Moto-Hub 掲載規模（参考値）"
     >
       {items.map((item) => (
         <div key={item.label} className="text-center sm:text-left">

@@ -1,8 +1,8 @@
-# MotoHub査定サービス
+# Moto-Hub査定サービス
 
 ## 概要
 
-**MotoHub査定済**は、MotoHubスタッフ（`member_type = staff`）が実車確認し、写真・状態・評価を確認したうえで出品登録を代行した車両にのみ付与するバッジです。
+**Moto-Hub査定済**は、Moto-Hubスタッフ（`member_type = staff`）が実車確認し、写真・状態・評価を確認したうえで出品登録を代行した車両にのみ付与するバッジです。
 
 旧仕様の「運営が画面内容を確認して `inspection_status` を ON にする」方式は廃止しました。加盟店が自分で入力した出品にはバッジは付きません。
 
@@ -17,7 +17,7 @@
 
 ## フロー
 
-1. **加盟店** — `/inspections` から「MotoHub査定依頼」（車両名・保管場所・担当者・希望日時・備考）
+1. **加盟店** — `/inspections` から「Moto-Hub査定依頼」（車両名・保管場所・担当者・希望日時・備考）
 2. **DB** — `inspection_requests` 作成（`requested`）
 3. **スタッフ** — `/admin/inspections` で日程確定 → 査定開始 → 出品代行登録
 4. **完了** — RPC `complete_motohub_inspection` で `listings.inspection_badge_type = motohub_inspected`
@@ -47,7 +47,7 @@
 
 ## 検索
 
-車両を探す（`/search`）で **MotoHub査定済のみ**（`motohub_only=1`）を指定可能。
+車両を探す（`/search`）で **Moto-Hub査定済のみ**（`motohub_only=1`）を指定可能。
 
 ## 権限
 
@@ -60,7 +60,7 @@
 | アカウント | 設定 | できること |
 |----------|------|------------|
 | RideWorks | `is_admin` + `member_type = dealer` | 管理・業者出品・査定代行 |
-| MotoHub運営 | `is_admin` + `member_type = staff` | 管理・査定（業者出品は不可） |
+| Moto-Hub運営 | `is_admin` + `member_type = staff` | 管理・査定（業者出品は不可） |
 | 加盟店 | `member_type = dealer` | 出品・査定依頼 |
 
 ## 適用手順

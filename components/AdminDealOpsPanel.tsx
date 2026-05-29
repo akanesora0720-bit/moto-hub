@@ -102,7 +102,7 @@ export function AdminDealOpsPanel({
     run(async () => {
       if (
         !window.confirm(
-          "車両・書類の引渡しと双方の確認が済んでいる前提で、MotoHub上の取引を「完了」にします。車両代金の振込は当事者間で完結しており、ここでは送金しません。よろしいですか？",
+          "車両・書類の引渡しと双方の確認が済んでいる前提で、Moto-Hub上の取引を「完了」にします。車両代金の振込は当事者間で完結しており、ここでは送金しません。よろしいですか？",
         )
       ) {
         return { error: null };
@@ -177,7 +177,7 @@ export function AdminDealOpsPanel({
       <AsyncStatusBanner loading={loading} />
 
       <div className="rounded-lg border border-sky-500/30 bg-sky-950/20 px-3 py-2 text-xs text-sky-100">
-        <strong>お金の流れ:</strong> 車両代金は買い手→売り手へ直接振込。MotoHub手数料は売り手→MotoHub（④）。
+        <strong>お金の流れ:</strong> 車両代金は買い手→売り手へ直接振込。Moto-Hub手数料は売り手→Moto-Hub（④）。
         ③の「取引完了」はシステム上の締めで、売り手への車両代金送金ではありません。
       </div>
 

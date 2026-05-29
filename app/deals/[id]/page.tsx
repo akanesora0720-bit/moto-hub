@@ -382,7 +382,7 @@ export async function DealDetailPageView(
 
             <DealCard title="完了" step={7}>
               <p className="text-sm text-muted">
-                双方の完了確認後、MotoHub手数料（税抜3万円超のみ）の精算が行われます。
+                双方の完了確認後、Moto-Hub手数料（税抜3万円超のみ）の精算が行われます。
               </p>
               {deal.status === "completed" && deal.completed_at ? (
                 <p className="mt-2 text-sm text-emerald-300">

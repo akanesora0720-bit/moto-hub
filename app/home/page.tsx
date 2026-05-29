@@ -49,7 +49,7 @@ export default async function DealerHomePage() {
             {storeName} さん、今日の業務状況です。
           </p>
           <p className="mt-2 inline-block rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-200">
-            全国の加盟店在庫を検索できます · MotoHub β版運用中
+            全国の加盟店在庫を検索できます · Moto-Hub β版運用中
           </p>
         </div>
 
@@ -169,7 +169,7 @@ export default async function DealerHomePage() {
                 sublinks={[{ label: "月額入金報告", href: "/my/payments" }]}
               />
               <ActionCard
-                title="MotoHub査定依頼"
+                title="Moto-Hub査定依頼"
                 description="現車確認・出品代行（税抜¥3,000/台）"
                 href="/inspections"
               />

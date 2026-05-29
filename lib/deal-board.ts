@@ -12,7 +12,7 @@ export const DEAL_BOARD_POST_PAYMENT_STATUSES: DealStatus[] = [
 ];
 
 export const DEAL_BOARD_DESCRIPTION =
-  "この連絡板は、入金確認後の引取・引渡し（車両と書類は同時）に関する連絡専用です。価格交渉、外部連絡先の交換、MotoHub外での直接取引は禁止されています。";
+  "この連絡板は、入金確認後の引取・引渡し（車両と書類は同時）に関する連絡専用です。価格交渉、外部連絡先の交換、Moto-Hub外での直接取引は禁止されています。";
 
 export const EMERGENCY_CONTACT_CONFIRM_MESSAGE =
   "緊急時のみ売り手の連絡先を表示します。表示履歴は運営に記録されます。通常の連絡は取引連絡板をご利用ください。";

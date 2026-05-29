@@ -104,7 +104,7 @@ export function buildDealerProfilePayload(
 
 export function buildStaffProfilePayload(input: StaffProfileInput) {
   return {
-    store_name: "MotoHub運営",
+    store_name: "Moto-Hub運営",
     contact_name: input.contact_name.trim(),
     phone: input.phone.trim(),
     profile_completed: true,

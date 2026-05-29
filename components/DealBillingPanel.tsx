@@ -103,7 +103,7 @@ function BuyerBilling({
       <Row label="消費税（10%）" value={formatYen(summary.vehicleTax)} />
       <Row label="支払総額（税込）" value={formatYen(summary.buyerTotalIncTax)} bold />
       <p className="text-xs text-emerald-300/90">
-        買い手手数料0円 — 売り手へ直接お振込みください（MotoHubは資金を預かりません）
+        買い手手数料0円 — 売り手へ直接お振込みください（Moto-Hubは資金を預かりません）
       </p>
       <p className="text-xs text-muted">
         車両代金は双方合意後3営業日以内が原則です。
@@ -159,20 +159,20 @@ function SellerBilling({
       <Row label="買い手支払（税込・直接入金）" value={formatYen(summary.sellerReceivesIncTax)} />
       {summary.feeWaived ? (
         <p className="text-xs text-emerald-300/90">
-          税抜30,000円以下のため、MotoHub手数料は双方0円です。
+          税抜30,000円以下のため、Moto-Hub手数料は双方0円です。
         </p>
       ) : null}
       <Row
-        label={summary.feeWaived ? "MotoHub手数料" : "MotoHub手数料（5%・税抜）"}
+        label={summary.feeWaived ? "Moto-Hub手数料" : "Moto-Hub手数料（5%・税抜）"}
         value={summary.feeWaived ? "¥0（対象外）" : formatYen(summary.platformFeeExTax)}
         valueClass={summary.feeWaived ? "text-emerald-300" : "text-rose-300"}
       />
       {!summary.feeWaived ? (
         <>
           <Row label="手数料消費税" value={formatYen(summary.platformFeeTax)} />
-          <Row label="MotoHub請求総額（税込）" value={formatYen(summary.platformFeeIncTax)} bold />
+          <Row label="Moto-Hub請求総額（税込）" value={formatYen(summary.platformFeeIncTax)} bold />
           <p className="text-xs text-muted">
-            MotoHub手数料は引渡完了後の請求書発行日から3営業日以内です。
+            Moto-Hub手数料は引渡完了後の請求書発行日から3営業日以内です。
           </p>
           {platformFeeDueAt ? (
             <p className="text-xs text-amber-200/90">
@@ -206,7 +206,7 @@ function SellerBilling({
         <p className="text-xs text-zinc-500">
           {summary.feeWaived
             ? "手数料対象外のため、請求書の発行はありません"
-            : "引渡完了後にMotoHub手数料請求書を発行します"}
+            : "引渡完了後にMoto-Hub手数料請求書を発行します"}
         </p>
       )}
       <PaymentHint status={status} role="seller" />

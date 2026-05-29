@@ -839,7 +839,7 @@ export function AdminWorkspaceClient() {
                   </div>
                   <div className="flex flex-wrap items-center gap-3 text-xs">
                     {row.inspection_badge_type === "motohub_inspected" ? (
-                      <span className="text-sky-300">MotoHub査定済</span>
+                      <span className="text-sky-300">Moto-Hub査定済</span>
                     ) : null}
                     {row.engine_video_url ? (
                       <span className="text-sky-300">動画あり</span>

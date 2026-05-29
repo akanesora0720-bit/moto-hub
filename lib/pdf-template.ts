@@ -12,7 +12,7 @@ export type PdfDocumentHeader = {
 };
 
 export type PdfIssuerBlock = {
-  brandName?: string; // MotoHub
+  brandName?: string; // Moto-Hub
   companyName?: string; // 株式会社RideWorks
   qualifiedInvoiceNumber?: string | null;
   contact?: string | null; // info@moto-hub.jp など
@@ -274,7 +274,7 @@ export function createPdfTemplate(writer: PdfWriter, issuer?: PdfIssuerBlock) {
     },
 
     async header(meta: PdfDocumentHeader) {
-      const brand = issuer?.brandName ?? "MotoHub";
+      const brand = issuer?.brandName ?? "Moto-Hub";
       const company = issuer?.companyName ?? "株式会社RideWorks";
       const leftW = CONTENT_W * 0.55;
       const rightW = CONTENT_W - leftW;
@@ -391,7 +391,7 @@ export function createPdfTemplate(writer: PdfWriter, issuer?: PdfIssuerBlock) {
         const tw = widthOf(font, right, 8.5);
         t.drawText(right, { x: MARGIN_X + CONTENT_W - tw, y: y0 + 10, size: 8.5, color: { r: COLORS.muted.red, g: COLORS.muted.green, b: COLORS.muted.blue } });
       }
-      const auto = "本書はMotoHubにより自動生成されています。";
+      const auto = "本書はMoto-Hubにより自動生成されています。";
       t.drawText(auto, { x: MARGIN_X, y: y0 - 2, size: 8.5, color: { r: COLORS.muted.red, g: COLORS.muted.green, b: COLORS.muted.blue } });
       if (block?.notes?.length) {
         const noteText = block.notes.map((n) => `・${n}`).join("\n");

@@ -147,7 +147,7 @@ export async function GET(
         invoiceId: invoice.id,
         referenceLabel: "パーツ成約ID",
         referenceId: partSaleId,
-        partyLabel: "MotoHubパーツ手数料請求書",
+        partyLabel: "Moto-Hubパーツ手数料請求書",
         billToName: profile?.store_name ?? profile?.email ?? "—",
         vehicleLabel: partLabel,
         items: (items ?? []).map((i) => ({
@@ -185,7 +185,7 @@ export async function GET(
         invoiceId: invoice.id,
         referenceLabel: "対象月",
         referenceId: billingMonth ?? invoice.id,
-        partyLabel: "MotoHub加盟店 月額会費請求書",
+        partyLabel: "Moto-Hub加盟店 月額会費請求書",
         billToName: profile?.store_name ?? profile?.email ?? "—",
         vehicleLabel: monthLabel,
         items: (items ?? []).map((i) => ({
@@ -228,7 +228,7 @@ export async function GET(
         invoiceId: invoice.id,
         referenceLabel: "査定依頼ID",
         referenceId,
-        partyLabel: "MotoHub査定サービス請求書",
+        partyLabel: "Moto-Hub査定サービス請求書",
         billToName: profile?.store_name ?? profile?.email ?? "—",
         vehicleLabel,
         items: (items ?? []).map((i) => ({
@@ -299,7 +299,7 @@ export async function GET(
 
     const partyLabel =
       documentKind === "platform_fee"
-        ? "MotoHub手数料請求書"
+        ? "Moto-Hub手数料請求書"
         : invoice.party === "buyer"
           ? "買い手請求書"
           : "売り手精算書";

@@ -42,12 +42,12 @@ export default async function AdminInspectionRegisterPage({
           ← 査定依頼一覧
         </Link>
         <div className="rounded-xl border border-sky-500/30 bg-sky-950/20 p-4 text-sm">
-          <p className="font-medium text-sky-100">出品代行（MotoHub査定済）</p>
+          <p className="font-medium text-sky-100">出品代行（Moto-Hub査定済）</p>
           <p className="mt-1 text-muted">
             {req.vehicle_name} · {dealer?.store_name ?? "加盟店"} · {req.storage_location}
           </p>
           <p className="mt-2 text-xs">
-            登録完了後、自動で「MotoHub査定済」バッジを付与し依頼を完了にします。
+            登録完了後、自動で「Moto-Hub査定済」バッジを付与し依頼を完了にします。
           </p>
         </div>
         <ListingEditorForm

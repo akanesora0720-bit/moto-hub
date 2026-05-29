@@ -56,7 +56,7 @@ export default async function TransactionRecordPage({
           <Link href={backHref} className="text-sm text-muted hover:text-accent">
             ← 取引に戻る
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold">MotoHub取引記録書</h1>
+          <h1 className="mt-2 text-2xl font-semibold">Moto-Hub取引記録書</h1>
           <p className="mt-1 text-sm text-muted">
             成約 {formatContractedAt(row.contracted_at)} · 取引ID {row.deal_id}
           </p>
@@ -100,7 +100,7 @@ export default async function TransactionRecordPage({
             <Item label="売買金額（税抜）" value={formatYen(row.sale_price_ex_tax)} />
             <Item label="売買金額（税込）" value={formatYen(row.sale_price_inc_tax)} />
             <Item
-              label="MotoHub手数料（税込）"
+              label="Moto-Hub手数料（税込）"
               value={
                 row.platform_fee_inc_tax > 0 ? formatYen(row.platform_fee_inc_tax) : "対象外"
               }

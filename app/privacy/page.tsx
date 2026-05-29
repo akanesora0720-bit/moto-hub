@@ -4,7 +4,7 @@ import { CURRENT_PRIVACY_VERSION, privacyDocumentHref } from "@/lib/legal-polici
 
 export const metadata = {
   title: "プライバシーポリシー",
-  description: `MotoHub プライバシーポリシー ${CURRENT_PRIVACY_VERSION}`,
+  description: `Moto-Hub プライバシーポリシー ${CURRENT_PRIVACY_VERSION}`,
 };
 
 export default function PrivacyPage() {

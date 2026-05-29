@@ -1,4 +1,4 @@
-/** MotoHub プライバシーポリシー v1（2026年5月26日制定）— 表示用テキスト */
+/** Moto-Hub プライバシーポリシー v1（2026年5月26日制定）— 表示用テキスト */
 
 export const PRIVACY_EFFECTIVE_DATE = "2026年5月26日";
 export const PRIVACY_VERSION_LABEL = "v1";
@@ -119,4 +119,4 @@ export const PRIVACY_ARTICLES_V1: PrivacyArticle[] = [
 ];
 
 export const PRIVACY_FOOTER_V1 =
-  `制定日：${PRIVACY_EFFECTIVE_DATE} · MotoHub運営事務局`;
+  `制定日：${PRIVACY_EFFECTIVE_DATE} · Moto-Hub運営事務局`;

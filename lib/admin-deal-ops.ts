@@ -134,7 +134,7 @@ export function buildAdminDealOpsSteps(input: AdminDealOpsInput): AdminOpsStep[]
       id: "complete_deal",
       title: "取引を完了にする（運営）",
       summary: step3Done
-        ? "MotoHub上の取引は完了です。"
+        ? "Moto-Hub上の取引は完了です。"
         : "車両・書類の引渡しと双方確認が済んだら、ここで取引を閉じます（車両代金の送金操作ではありません）。",
       state: step3Done ? "done" : step3Current ? "current" : "upcoming",
       primaryAction: step3Current ? "complete_deal" : null,
@@ -142,7 +142,7 @@ export function buildAdminDealOpsSteps(input: AdminDealOpsInput): AdminOpsStep[]
     },
     {
       id: "platform_fee",
-      title: "MotoHub手数料の入金確認",
+      title: "Moto-Hub手数料の入金確認",
       summary: feeWaived
         ? "30,000円以下のため手数料対象外。"
         : step4Done

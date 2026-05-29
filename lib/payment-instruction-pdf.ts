@@ -25,7 +25,7 @@ export async function buildPaymentInstructionPdf(
 ): Promise<Uint8Array> {
   const { doc, writer } = await createPdfWriter();
   const t = createPdfTemplate(writer, {
-    brandName: "MotoHub",
+    brandName: "Moto-Hub",
     companyName: "株式会社RideWorks",
     contact: "info@moto-hub.jp",
   });
@@ -76,7 +76,7 @@ export async function buildPaymentInstructionPdf(
 
   t.footer({
     notes: [
-      "MotoHubは資金を預かりません。上記口座へ直接お振込みください。",
+      "Moto-Hubは資金を預かりません。上記口座へ直接お振込みください。",
       "振込名義は貴社名（または登録店舗名）でお願いします。",
       "入金後、売り手が入金確認を行います。",
       "名義変更・書類のやり取りは売買当事者間で行ってください。",

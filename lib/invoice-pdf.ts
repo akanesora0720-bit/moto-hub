@@ -33,7 +33,7 @@ function yen(n: number): string {
 export async function buildInvoicePdf(input: InvoicePdfInput): Promise<Uint8Array> {
   const { doc, writer } = await createPdfWriter();
   const t = createPdfTemplate(writer, {
-    brandName: "MotoHub",
+    brandName: "Moto-Hub",
     companyName: input.issuer?.companyName ?? "株式会社RideWorks",
     qualifiedInvoiceNumber: input.issuer?.qualifiedInvoiceNumber ?? null,
     contact: "info@moto-hub.jp",
@@ -78,7 +78,7 @@ export async function buildInvoicePdf(input: InvoicePdfInput): Promise<Uint8Arra
   );
 
   if (input.issuer?.bankLine) {
-    t.sectionTitle("お振込先（MotoHub運営）");
+    t.sectionTitle("お振込先（Moto-Hub運営）");
     t.keyValueGrid(
       [
         { label: "振込先", value: input.issuer.bankLine },
@@ -90,7 +90,7 @@ export async function buildInvoicePdf(input: InvoicePdfInput): Promise<Uint8Arra
 
   t.footer({
     notes: [
-      "本書はMotoHubにより自動生成されています。",
+      "本書はMoto-Hubにより自動生成されています。",
       "振込先口座は請求書の記載内容をご確認ください。",
     ],
   });

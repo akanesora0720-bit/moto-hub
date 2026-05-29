@@ -24,7 +24,7 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
           ["取引記録", "/admin/transaction-records"],
           ["パーツ出品 / 成約", "/admin/parts · /admin/parts/sales"],
           ["加盟店・信用", "/admin/credit"],
-          ["MotoHub査定", "/admin/inspections"],
+          ["Moto-Hub査定", "/admin/inspections"],
           ["サポート / トラブル", "/admin/support · /admin/disputes"],
         ],
       },
@@ -86,7 +86,7 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
           "① 入金指示書を承認して送る — 合意（agreed）確定後、取引記録書が自動作成され、買い手が売り手へ振込できるよう入金指示 PDF を送信",
           "② 当事者の入金・引渡・完了確認 — 売り手の入金確認、買い手の振込報告、引取日時、双方の完了ボタンを監視",
           "③ 取引を完了にする — ステータスが「双方確認済（運営が取引完了へ）」のとき実行。車両代の送金はしない",
-          "④ MotoHub手数料の入金確認 — 税抜3万円超の成約で売り手宛請求書の入金を記録",
+          "④ Moto-Hub手数料の入金確認 — 税抜3万円超の成約で売り手宛請求書の入金を記録",
           "⑤ 名義変更のフォロー — 対象取引は期限・超過・完了記録を確認",
         ],
       },
@@ -207,7 +207,7 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
   },
   {
     id: "inspection",
-    title: "9. MotoHub査定（/admin/inspections）",
+    title: "9. Moto-Hub査定（/admin/inspections）",
     blocks: [
       {
         kind: "ul",

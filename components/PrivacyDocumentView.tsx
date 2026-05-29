@@ -15,10 +15,10 @@ export function PrivacyDocumentView({ showTermsLink = true, className }: Props) 
   return (
     <article className={`prose prose-invert max-w-none text-sm ${className ?? ""}`}>
       <header className="not-prose mb-8 border-b border-border pb-6">
-        <p className="text-xs text-muted">MotoHub プライバシーポリシー · {PRIVACY_VERSION_LABEL}</p>
+        <p className="text-xs text-muted">Moto-Hub プライバシーポリシー · {PRIVACY_VERSION_LABEL}</p>
         <h1 className="mt-1 text-2xl font-semibold text-zinc-100">プライバシーポリシー</h1>
         <p className="mt-3 leading-relaxed text-zinc-300">
-          MotoHub（以下「当サービス」）は、当サービスにおけるユーザー情報の取扱いについて、以下のとおりプライバシーポリシー（以下「本ポリシー」）を定めます。
+          Moto-Hub（以下「当サービス」）は、当サービスにおけるユーザー情報の取扱いについて、以下のとおりプライバシーポリシー（以下「本ポリシー」）を定めます。
         </p>
         {showTermsLink ? (
           <p className="mt-3 text-sm">

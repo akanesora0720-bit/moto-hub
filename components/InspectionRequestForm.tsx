@@ -42,20 +42,20 @@ export function InspectionRequestForm() {
     setContactName("");
     setPreferredAt("");
     setNotes("");
-    setMessage("査定依頼を受け付けました。MotoHubスタッフからご連絡します。");
+    setMessage("査定依頼を受け付けました。Moto-Hubスタッフからご連絡します。");
   };
 
   return (
     <div className="space-y-4 rounded-xl border border-sky-500/30 bg-sky-950/20 p-5">
       <div>
-        <h2 className="text-lg font-semibold text-sky-100">MotoHub査定依頼</h2>
+        <h2 className="text-lg font-semibold text-sky-100">Moto-Hub査定依頼</h2>
         <p className="mt-1 text-sm text-muted">
-          MotoHubスタッフが現車確認・写真撮影・出品登録を代行します（1台 税抜 ¥
+          Moto-Hubスタッフが現車確認・写真撮影・出品登録を代行します（1台 税抜 ¥
           {MOTOHUB_INSPECTION_FEE_EX_TAX.toLocaleString("ja-JP")}・別途消費税）。
           請求書は査定・出品代行の完了後に発行されます。
         </p>
         <p className="mt-2 text-xs text-muted">
-          自己評価のみの出品とは異なり、完了後に「MotoHub査定済」バッジが付きます。
+          自己評価のみの出品とは異なり、完了後に「Moto-Hub査定済」バッジが付きます。
         </p>
       </div>
 
@@ -111,7 +111,7 @@ export function InspectionRequestForm() {
         onClick={() => void submit()}
         className="w-full rounded-lg bg-sky-500 px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-50"
       >
-        {loading ? "送信中…" : "MotoHub査定を依頼する"}
+        {loading ? "送信中…" : "Moto-Hub査定を依頼する"}
       </button>
 
       {message ? (

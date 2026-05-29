@@ -4,7 +4,7 @@ import { TERMS_DOCUMENT_PATH, pricingDocumentHref } from "@/lib/legal-policies";
 
 export const metadata = {
   title: "料金表",
-  description: "MotoHub 手数料・月額会費",
+  description: "Moto-Hub 手数料・月額会費",
 };
 
 function FeeTable({ title, rows }: { title: string; rows: { label: string; value: string }[] }) {
@@ -51,7 +51,7 @@ export default function PricingPage() {
         <FeeTable title="その他" rows={[...FEE_SCHEDULE_ROWS.inspection]} />
 
         <p className="text-xs text-muted">
-          車両代金・パーツ代金は買主から売主口座への直接振込です。MotoHub は決済代行を行いません。
+          車両代金・パーツ代金は買主から売主口座への直接振込です。Moto-Hub は決済代行を行いません。
         </p>
         <p className="text-center text-xs text-muted">文書URL: {pricingDocumentHref()}</p>
       </div>

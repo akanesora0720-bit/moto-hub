@@ -37,7 +37,7 @@ export function TransactionRecordPanel({
       </div>
 
       <p className="rounded-lg border border-amber-500/25 bg-amber-950/20 px-3 py-2 text-xs text-amber-100">
-        売買契約書ではなく、MotoHub上の取引記録です。{role === "admin" ? "運営" : role === "seller" ? "売主" : "買主"}
+        売買契約書ではなく、Moto-Hub上の取引記録です。{role === "admin" ? "運営" : role === "seller" ? "売主" : "買主"}
         向けの補助資料としてご利用ください。
       </p>
 
@@ -67,7 +67,7 @@ export function TransactionRecordPanel({
           <dd>{formatRecordDate(record.handover_completed_at)}</dd>
         </div>
         <div>
-          <dt className="text-xs text-muted">MotoHub手数料（税込）</dt>
+          <dt className="text-xs text-muted">Moto-Hub手数料（税込）</dt>
           <dd>
             {record.platform_fee_inc_tax > 0
               ? formatYen(record.platform_fee_inc_tax)

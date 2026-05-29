@@ -39,5 +39,5 @@ export const FEE_SCHEDULE_ROWS = {
     label: TRUST_RANK_LABELS[rank],
     value: `税抜 ${MONTHLY_MEMBERSHIP_FEE_BY_RANK[rank].toLocaleString("ja-JP")}円／月`,
   })),
-  inspection: [{ label: "MotoHub査定（完了時）", value: "税抜 3,000円／台" }],
+  inspection: [{ label: "Moto-Hub査定（完了時）", value: "税抜 3,000円／台" }],
 } as const;

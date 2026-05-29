@@ -3,7 +3,7 @@ import { canAccessAdmin } from "@/lib/auth";
 import type { Profile, TransactionRecord, TransactionPartySnapshot } from "@/lib/types";
 
 export const TRANSACTION_RECORD_DISCLAIMER =
-  "本書はMotoHub上で成立した業者間取引の記録を出力したものであり、売買契約書ではありません。古物台帳、経理処理、社内管理等の補助資料としてご利用ください。";
+  "本書はMoto-Hub上で成立した業者間取引の記録を出力したものであり、売買契約書ではありません。古物台帳、経理処理、社内管理等の補助資料としてご利用ください。";
 
 const DEAL_STATUSES_WITH_RECORD = new Set([
   "agreed",

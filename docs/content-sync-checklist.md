@@ -17,7 +17,7 @@
 | 優先 | 箇所 | 内容 |
 |------|------|------|
 | **済** | 利用規約 | `/terms`（HTML正本・`lib/terms-document.ts`）・`CURRENT_TERMS_VERSION=v1` |
-| **済** | プライバシーポリシー v1 | `/privacy`（HTML正本）・MotoHub 自社ホストのみ |
+| **済** | プライバシーポリシー v1 | `/privacy`（HTML正本）・Moto-Hub 自社ホストのみ |
 | **済** | 料金表 | `/pricing`（`lib/fee-schedule.ts` と同期） |
 | **高** | プライバシーポリシー | パーツ品番・車種マスタ（学習型）の取扱いが必要なら追記 |
 | **済** | 登録・ログインの同意文 | `LegalPoliciesConsent` / `LegalDocumentLinks` — `/terms`・`/privacy`・`/pricing` |

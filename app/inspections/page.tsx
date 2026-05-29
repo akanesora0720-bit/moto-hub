@@ -35,7 +35,7 @@ export default async function InspectionsPage() {
           <Link href="/home" className="text-sm text-muted hover:text-accent">
             ← ホーム
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold">MotoHub査定</h1>
+          <h1 className="mt-2 text-2xl font-semibold">Moto-Hub査定</h1>
           <p className="mt-1 text-sm text-muted">
             現車確認と出品代行の依頼・進捗確認。自己出品の評価入力とは別サービスです。
           </p>

@@ -4,7 +4,7 @@ import { termsDocumentHref } from "@/lib/legal-policies";
 
 export const metadata = {
   title: "利用規約",
-  description: "MotoHub 利用規約",
+  description: "Moto-Hub 利用規約",
 };
 
 export default function TermsPage() {

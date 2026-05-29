@@ -1,3 +1,4 @@
+import { toBrandDisplay } from "@/lib/brand";
 import { renderTemplate } from "@/lib/notifications/render";
 import { sendMailMessage } from "@/lib/smtp";
 import { createServiceClient } from "@/lib/server-supabase";
@@ -59,8 +60,8 @@ export async function processNotificationQueue(limit = 30) {
       if (typeof userId === "string") {
         await supabase.from("user_notifications").insert({
           user_id: userId,
-          title: String(item.payload?.title ?? item.event_type),
-          body: String(item.payload?.body ?? ""),
+          title: toBrandDisplay(String(item.payload?.title ?? item.event_type)),
+          body: toBrandDisplay(String(item.payload?.body ?? "")),
           importance: "normal",
           link_url:
             typeof item.payload?.link_url === "string"
@@ -94,9 +95,10 @@ export async function processNotificationQueue(limit = 30) {
       body: String(item.payload?.body ?? ""),
       subject: String(item.payload?.subject ?? ""),
     };
-    const subject =
-      bodyVars.subject || renderTemplate(tpl.subject_template, bodyVars);
-    const body = renderTemplate(tpl.body_template, bodyVars);
+    const subject = toBrandDisplay(
+      bodyVars.subject || renderTemplate(tpl.subject_template, bodyVars),
+    );
+    const body = toBrandDisplay(renderTemplate(tpl.body_template, bodyVars));
     const recipients = resolveRecipients(item);
 
     try {

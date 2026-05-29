@@ -115,7 +115,7 @@ export function AppShell({
       <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur md:hidden">
         <div className="flex items-center justify-between px-4 py-3">
           <Link href={homeHref} prefetch={false} className="flex items-center gap-2">
-            <MotohubLogo width={92} height={30} className="h-7 w-auto" priority />
+            <MotohubLogo width={160} height={38} className="h-8 w-auto max-w-[172px]" priority />
           </Link>
           <button
             type="button"
@@ -133,7 +133,7 @@ export function AppShell({
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="hidden border-b border-border bg-background/90 px-6 py-3 md:flex md:items-center md:justify-between">
             <div className="flex items-center gap-3">
-              <MotohubLogo width={104} height={34} className="h-8 w-auto" priority />
+              <MotohubLogo width={176} height={42} className="h-9 w-auto max-w-[188px]" priority />
               <p className="text-sm text-muted">
                 {useAdminShell ? "運営管理センター" : "加盟店ダッシュボード"}
               </p>

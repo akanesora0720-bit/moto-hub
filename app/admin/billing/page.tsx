@@ -30,8 +30,8 @@ type InvoiceRow = Invoice & {
 function docLabel(inv: InvoiceRow) {
   const kind = (inv as Invoice & { document_kind?: string }).document_kind;
   if (kind === "payment_instruction") return "入金指示書";
-  if (kind === "platform_fee") return "MotoHub手数料請求";
-  if (kind === "motohub_inspection") return "MotoHub査定";
+  if (kind === "platform_fee") return "Moto-Hub手数料請求";
+  if (kind === "motohub_inspection") return "Moto-Hub査定";
   if (kind === "monthly_membership") return "月額会費";
   if (kind === "part_payment_instruction") return "パーツ入金指示書";
   if (kind === "part_platform_fee") return "パーツ手数料請求";

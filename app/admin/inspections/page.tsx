@@ -87,9 +87,9 @@ export default function AdminInspectionsPage() {
           <Link href="/admin/workspace" className="text-sm text-muted hover:text-accent">
             ← 管理画面
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold">MotoHub査定依頼</h1>
+          <h1 className="mt-2 text-2xl font-semibold">Moto-Hub査定依頼</h1>
           <p className="mt-1 text-sm text-muted">
-            スタッフのみ対応。現車確認後、出品代行登録で「MotoHub査定済」を付与します。
+            スタッフのみ対応。現車確認後、出品代行登録で「Moto-Hub査定済」を付与します。
           </p>
         </div>
 

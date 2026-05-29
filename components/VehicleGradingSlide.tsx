@@ -24,13 +24,13 @@ export function VehicleGradingSlide({ compact = false }: { compact?: boolean }) 
     >
       <header className="border-b border-border/80 bg-zinc-950/60 px-6 py-8 sm:px-10 sm:py-10">
         <p className="text-xs font-medium tracking-[0.35em] text-accent uppercase">
-          MotoHub Inspection Standard
+          Moto-Hub Inspection Standard
         </p>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl lg:text-4xl">
-          MotoHub 車両評価基準
+          Moto-Hub 車両評価基準
         </h1>
         <p className="mt-4 max-w-2xl text-sm leading-relaxed text-zinc-400 sm:text-base">
-          MotoHubでは、業販市場における分かりやすさを重視し、
+          Moto-Hubでは、業販市場における分かりやすさを重視し、
           オークション業界に近い評価基準を採用しています。
         </p>
       </header>

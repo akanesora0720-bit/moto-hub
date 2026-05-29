@@ -256,7 +256,7 @@ export function ListingEditorForm({
       ? "在庫を出品"
       : "出品を編集";
   const submitLabel = inspectionRequestId
-    ? "登録してMotoHub査定済にする"
+    ? "登録してMoto-Hub査定済にする"
     : isCreate
       ? "出品する"
       : "保存する";
