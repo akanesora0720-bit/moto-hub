@@ -7,7 +7,7 @@ export type NavItem = {
 
 export const dealerNavItems: NavItem[] = [
   { href: "/home", label: "ホーム" },
-  { href: "/search", label: "業販検索" },
+  { href: "/search", label: "車両を探す" },
   { href: "/parts", label: "パーツ検索", matchPrefix: true },
   {
     href: "/deals",

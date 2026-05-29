@@ -35,7 +35,7 @@ export function DealerMembershipBanner({
         <p className="mt-1 text-xs text-sky-200/90">
           {profileCompleted
             ? "加盟店情報の送信後、審査が始まります。"
-            : "業販検索など一部機能のみ利用可能です。出品・商談を行うには加盟店情報の登録が必要です。"}
+            : "車両を探すなど一部機能のみ利用可能です。出品・商談を行うには加盟店情報の登録が必要です。"}
         </p>
         {!profileCompleted ? (
           <Link

@@ -16,7 +16,7 @@ export default function FavoritesPage() {
           href="/search"
           className="inline-block rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black"
         >
-          業販検索へ →
+          車両を探す →
         </Link>
       </div>
     </AuthenticatedShell>

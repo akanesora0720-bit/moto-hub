@@ -115,7 +115,7 @@ export function isValidPrefecture(value: string): value is Prefecture {
   return (PREFECTURES as readonly string[]).includes(value);
 }
 
-/** 業販検索: 広域エリア（直引き・引取の目安） */
+/** 車両検索: 広域エリア（直引き・引取の目安） */
 export const LISTING_SEARCH_REGIONS = [
   { slug: "hokkaido", label: "北海道", prefectures: ["北海道"] as const },
   {

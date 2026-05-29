@@ -47,7 +47,7 @@
 
 ## 検索
 
-業販検索（`/search`）で **MotoHub査定済のみ**（`motohub_only=1`）を指定可能。
+車両を探す（`/search`）で **MotoHub査定済のみ**（`motohub_only=1`）を指定可能。
 
 ## 権限
 

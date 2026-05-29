@@ -19,6 +19,11 @@ function SearchFormFallback() {
   );
 }
 
+export const metadata = {
+  title: "車両を探す",
+  description: "全国の加盟店在庫から中古バイクを検索",
+};
+
 export default async function SearchPage({
   searchParams,
 }: {
@@ -46,9 +51,9 @@ export default async function SearchPage({
     <AuthenticatedShell>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold">業販検索</h1>
+          <h1 className="text-2xl font-semibold">車両を探す</h1>
           <p className="mt-1 text-sm text-muted">
-            広域エリア・都道府県（引取目安）・メーカー・車名などで絞り込み。税抜3万円超は売り手5%（3万円以下は双方0円・買い手は常に0%）。
+            全国の加盟店在庫から、広域エリア・都道府県（引取目安）・メーカー・車名などで絞り込めます。
           </p>
         </div>
 

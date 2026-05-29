@@ -60,7 +60,7 @@ export default async function DealerHomePage() {
               hero
               ctaLabel="在庫を見る"
               title="車両を探す"
-              description="業販在庫を検索・仕入れ（エリア・都道府県で引取目安）"
+              description="全国の加盟店在庫を検索・仕入れ（エリア・都道府県で引取目安）"
               href="/search"
             />
             {tradingEnabled ? (
