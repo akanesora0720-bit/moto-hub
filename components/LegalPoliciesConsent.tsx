@@ -1,9 +1,7 @@
 import {
-  CURRENT_PRIVACY_VERSION,
-  CURRENT_TERMS_VERSION,
   PRICING_DOCUMENT_PATH,
-  privacyDocumentHref,
-  termsDocumentHref,
+  PRIVACY_DOCUMENT_PATH,
+  TERMS_DOCUMENT_PATH,
 } from "@/lib/legal-policies";
 
 type Props = {
@@ -34,13 +32,13 @@ export function LegalPoliciesConsent({
       <span>
         <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
           <a
-            href={termsDocumentHref()}
+            href={TERMS_DOCUMENT_PATH}
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-accent underline underline-offset-2 hover:text-accent-dim"
             onClick={(e) => e.stopPropagation()}
           >
-            利用規約（{CURRENT_TERMS_VERSION}）
+            利用規約
           </a>
           <span className="text-muted">・</span>
           <a
@@ -54,13 +52,13 @@ export function LegalPoliciesConsent({
           </a>
           <span className="text-muted">・</span>
           <a
-            href={privacyDocumentHref()}
+            href={PRIVACY_DOCUMENT_PATH}
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-accent underline underline-offset-2 hover:text-accent-dim"
             onClick={(e) => e.stopPropagation()}
           >
-            プライバシーポリシー（{CURRENT_PRIVACY_VERSION}）
+            プライバシーポリシー
           </a>
         </span>
         を確認し、内容に同意します

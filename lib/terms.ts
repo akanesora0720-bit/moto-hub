@@ -6,7 +6,6 @@ export {
   PRIVACY_DOCUMENT_PATH,
   PRICING_DOCUMENT_PATH,
   FEES_DOCUMENT_PATH,
-  TERMS_UPDATED_PATH,
   termsDocumentHref,
   termsDocumentAbsoluteUrl,
   privacyDocumentHref,

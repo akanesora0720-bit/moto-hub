@@ -4,7 +4,7 @@ import {
   PRIVACY_FOOTER_V1,
   PRIVACY_VERSION_LABEL,
 } from "@/lib/privacy-document-v1";
-import { CURRENT_TERMS_VERSION, TERMS_DOCUMENT_PATH } from "@/lib/legal-policies";
+import { TERMS_DOCUMENT_PATH } from "@/lib/legal-policies";
 
 type Props = {
   showTermsLink?: boolean;
@@ -24,7 +24,7 @@ export function PrivacyDocumentView({ showTermsLink = true, className }: Props) 
           <p className="mt-3 text-sm">
             利用規約は{" "}
             <Link href={TERMS_DOCUMENT_PATH} className="font-medium text-accent underline underline-offset-2">
-              こちら（{CURRENT_TERMS_VERSION}）
+              こちら
             </Link>
           </p>
         ) : null}

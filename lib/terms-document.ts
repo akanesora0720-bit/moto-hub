@@ -1,7 +1,6 @@
-/** MotoHub 利用規約 v3（2026年5月29日改定）— 表示用テキスト */
+/** MotoHub 利用規約（正本テキスト） */
 
 export const TERMS_EFFECTIVE_DATE = "2026年5月29日";
-export const TERMS_VERSION_LABEL = "v3";
 
 export type TermsArticle = {
   number: number;
@@ -10,7 +9,7 @@ export type TermsArticle = {
   listItems?: string[];
 };
 
-export const TERMS_ARTICLES_V3: TermsArticle[] = [
+export const TERMS_ARTICLES: TermsArticle[] = [
   {
     number: 1,
     title: "適用",
@@ -23,9 +22,7 @@ export const TERMS_ARTICLES_V3: TermsArticle[] = [
   {
     number: 2,
     title: "定義",
-    paragraphs: [
-      "本規約において、次の各号の意味は以下のとおりとします。",
-    ],
+    paragraphs: ["本規約において、次の各号の意味は以下のとおりとします。"],
     listItems: [
       "「加盟店」：本サービスに古物商として登録し、業販取引を行う事業者",
       "「出品」：車両またはパーツを本サービス上に掲載すること",
@@ -80,9 +77,7 @@ export const TERMS_ARTICLES_V3: TermsArticle[] = [
   {
     number: 7,
     title: "禁止事項",
-    paragraphs: [
-      "加盟店は、次の各号の行為を行ってはなりません。",
-    ],
+    paragraphs: ["加盟店は、次の各号の行為を行ってはなりません。"],
     listItems: [
       "法令（古物営業法、消費者契約法その他）違反、または公序良俗に反する行為",
       "虚偽・誇大な出品、盗品・権利侵害品の出品、本サービス外での不正な直接取引の勧誘",
@@ -139,5 +134,4 @@ export const TERMS_ARTICLES_V3: TermsArticle[] = [
   },
 ];
 
-export const TERMS_SUPPLEMENT_V3 =
-  "附則：本規約（v3）は2026年5月29日から効力を生じます。パーツ売買機能の追加に伴い改定しました。効力発生日以前に同意した規約（v2以前）のみに基づく利用は、本規約への再同意後に継続できます。";
+export const TERMS_SUPPLEMENT = `附則：本規約は${TERMS_EFFECTIVE_DATE}から効力を生じます。`;

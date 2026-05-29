@@ -1,19 +1,16 @@
 export type PolicyType = "terms" | "privacy";
 
-/** 現行バージョン（改定時に更新） */
-export const CURRENT_TERMS_VERSION = "v3";
+/** 現行バージョン（ローンチ後の改定時のみ更新） */
+export const CURRENT_TERMS_VERSION = "v1";
 export const CURRENT_PRIVACY_VERSION = "v1";
 
-/** 法務文書の正本パス（MotoHub 自社ホスト・単一の参照元） */
+/** 法務文書の正本パス（MotoHub 自社ホスト） */
 export const TERMS_DOCUMENT_PATH = "/terms";
 export const PRIVACY_DOCUMENT_PATH = "/privacy";
 export const PRICING_DOCUMENT_PATH = "/pricing";
 
 /** @deprecated Use PRICING_DOCUMENT_PATH */
 export const FEES_DOCUMENT_PATH = PRICING_DOCUMENT_PATH;
-
-/** 利用規約改定時の再同意画面 */
-export const TERMS_UPDATED_PATH = "/terms/updated";
 
 function documentHref(path: string, origin?: string): string {
   if (!origin) return path;
@@ -52,7 +49,7 @@ export const privacyPdfHref = privacyDocumentHref;
 /** @deprecated Use privacyDocumentAbsoluteUrl */
 export const privacyPdfAbsoluteUrl = privacyDocumentAbsoluteUrl;
 
-/** DB `policy_acceptances.pdf_url` に保存する同意時点の文書URL（HTML正本） */
+/** DB `policy_acceptances.pdf_url` に保存する同意時点の文書URL */
 export function registrationPolicyPayload(origin: string) {
   return {
     terms_accepted: true,
@@ -71,10 +68,4 @@ export function isLegalPublicPath(pathname: string): boolean {
     pathname === PRIVACY_DOCUMENT_PATH ||
     pathname === PRICING_DOCUMENT_PATH
   );
-}
-
-/** 利用規約 v3 未同意時でもアクセス可能なパス（ログイン済み） */
-export function isTermsReconsentExemptPath(pathname: string): boolean {
-  if (pathname === TERMS_UPDATED_PATH) return true;
-  return isLegalPublicPath(pathname);
 }

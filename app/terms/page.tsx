@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { TermsDocumentView } from "@/components/TermsDocumentView";
-import { CURRENT_TERMS_VERSION, termsDocumentHref } from "@/lib/legal-policies";
+import { termsDocumentHref } from "@/lib/legal-policies";
 
 export const metadata = {
   title: "利用規約",
-  description: `MotoHub 利用規約 ${CURRENT_TERMS_VERSION}`,
+  description: "MotoHub 利用規約",
 };
 
 export default function TermsPage() {

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { FEE_SCHEDULE_ROWS } from "@/lib/fee-schedule";
-import { CURRENT_TERMS_VERSION, TERMS_DOCUMENT_PATH, pricingDocumentHref } from "@/lib/legal-policies";
+import { TERMS_DOCUMENT_PATH, pricingDocumentHref } from "@/lib/legal-policies";
 
 export const metadata = {
   title: "料金表",
@@ -32,7 +32,7 @@ export default function PricingPage() {
         <div>
           <p className="text-sm">
             <Link href={TERMS_DOCUMENT_PATH} className="text-accent underline underline-offset-2">
-              利用規約（{CURRENT_TERMS_VERSION}）
+              利用規約
             </Link>
             {" · "}
             <Link href="/login" className="text-accent underline underline-offset-2">

@@ -1,14 +1,10 @@
 import Link from "next/link";
+import { PRIVACY_DOCUMENT_PATH, PRICING_DOCUMENT_PATH } from "@/lib/legal-policies";
 import {
-  CURRENT_PRIVACY_VERSION,
-  PRIVACY_DOCUMENT_PATH,
-} from "@/lib/legal-policies";
-import {
-  TERMS_ARTICLES_V3,
+  TERMS_ARTICLES,
   TERMS_EFFECTIVE_DATE,
-  TERMS_SUPPLEMENT_V3,
-  TERMS_VERSION_LABEL,
-} from "@/lib/terms-document-v3";
+  TERMS_SUPPLEMENT,
+} from "@/lib/terms-document";
 
 type Props = {
   showFeesLink?: boolean;
@@ -19,14 +15,13 @@ export function TermsDocumentView({ showFeesLink = true, className }: Props) {
   return (
     <article className={`prose prose-invert max-w-none text-sm ${className ?? ""}`}>
       <header className="not-prose mb-8 border-b border-border pb-6">
-        <p className="text-xs text-muted">MotoHub 利用規約 · {TERMS_VERSION_LABEL}</p>
-        <h1 className="mt-1 text-2xl font-semibold text-zinc-100">利用規約</h1>
+        <h1 className="text-2xl font-semibold text-zinc-100">利用規約</h1>
         <p className="mt-2 text-sm text-muted">施行日：{TERMS_EFFECTIVE_DATE}</p>
         <p className="mt-3 text-sm text-muted">
           {showFeesLink ? (
             <>
               料金の詳細は{" "}
-              <Link href="/pricing" className="font-medium text-accent underline underline-offset-2">
+              <Link href={PRICING_DOCUMENT_PATH} className="font-medium text-accent underline underline-offset-2">
                 料金表
               </Link>
               をご確認ください。
@@ -35,12 +30,12 @@ export function TermsDocumentView({ showFeesLink = true, className }: Props) {
           ) : null}
           プライバシーポリシーは{" "}
           <Link href={PRIVACY_DOCUMENT_PATH} className="font-medium text-accent underline underline-offset-2">
-            こちら（{CURRENT_PRIVACY_VERSION}）
+            こちら
           </Link>
         </p>
       </header>
 
-      {TERMS_ARTICLES_V3.map((article) => (
+      {TERMS_ARTICLES.map((article) => (
         <section key={article.number} className="mb-8">
           <h2 className="text-base font-semibold text-zinc-100">
             第{article.number}条（{article.title}）
@@ -65,7 +60,7 @@ export function TermsDocumentView({ showFeesLink = true, className }: Props) {
       ))}
 
       <section className="mb-8 rounded-lg border border-border bg-zinc-900/40 px-4 py-3">
-        <p className="text-sm leading-relaxed text-zinc-300">{TERMS_SUPPLEMENT_V3}</p>
+        <p className="text-sm leading-relaxed text-zinc-300">{TERMS_SUPPLEMENT}</p>
       </section>
 
       <footer className="not-prose border-t border-border pt-4 text-xs text-muted">
