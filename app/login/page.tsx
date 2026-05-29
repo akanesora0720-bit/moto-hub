@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { AuthLayout } from "@/components/AuthLayout";
 import { BRAND } from "@/lib/brand";
+import { LegalDocumentLinks } from "@/components/LegalDocumentLinks";
 import { createClient } from "@/lib/supabase/client";
 
 function LoginForm() {
@@ -98,6 +99,8 @@ function LoginForm() {
             {BRAND.ctaApply}
           </Link>
         </p>
+
+        <LegalDocumentLinks className="pt-2" openInNewTab />
       </div>
     </AuthLayout>
   );

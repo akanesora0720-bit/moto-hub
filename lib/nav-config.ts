@@ -7,20 +7,20 @@ export type NavItem = {
 
 export const dealerNavItems: NavItem[] = [
   { href: "/home", label: "ホーム" },
-  { href: "/inspections", label: "MotoHub査定", matchPrefix: true },
-  { href: "/listings/new", label: "出品", matchPrefix: true, badgeKey: "newInquiries" },
-  { href: "/parts", label: "パーツ", matchPrefix: true },
+  { href: "/search", label: "業販検索" },
+  { href: "/parts", label: "パーツ検索", matchPrefix: true },
   {
     href: "/deals",
     label: "商談",
     badgeKey: "negotiating",
     matchPrefix: true,
   },
+  { href: "/listings/new", label: "出品", matchPrefix: true, badgeKey: "newInquiries" },
+  { href: "/deals/history", label: "成約履歴" },
+  { href: "/profile", label: "信用ランク", matchPrefix: true },
+  { href: "/inspections", label: "MotoHub査定", matchPrefix: true },
   { href: "/support", label: "サポート", badgeKey: "openSupport", matchPrefix: true },
   { href: "/disputes/new", label: "トラブル", badgeKey: "openDisputes" },
-  { href: "/search", label: "業販検索" },
-  { href: "/deals/history", label: "成約履歴" },
-  { href: "/profile", label: "評価", matchPrefix: true },
   { href: "/help", label: "操作説明" },
   { href: "/settings", label: "設定" },
 ];

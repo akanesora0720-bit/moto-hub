@@ -1,0 +1,43 @@
+import {
+  BUYER_FEE_RATE,
+  FEE_FREE_MAX_PRICE_EX_TAX,
+  MONTHLY_MEMBERSHIP_FEE_BY_RANK,
+  SELLER_FEE_RATE,
+} from "@/lib/billing";
+import {
+  PART_BUYER_FEE_RATE,
+  PART_FEE_THRESHOLD_EX_TAX,
+  PART_SELLER_FEE_RATE,
+} from "@/lib/part-fees";
+import { TRUST_RANK_LABELS } from "@/lib/credit";
+import type { TrustRank } from "@/lib/types";
+
+export const FEE_SCHEDULE_ROWS = {
+  vehicle: [
+    { label: "買い手手数料", value: `${BUYER_FEE_RATE * 100}%（無料）` },
+    {
+      label: `税抜成約価格が${FEE_FREE_MAX_PRICE_EX_TAX.toLocaleString("ja-JP")}円以下`,
+      value: "売主・買主とも手数料無料",
+    },
+    {
+      label: `税抜成約価格が${FEE_FREE_MAX_PRICE_EX_TAX.toLocaleString("ja-JP")}円超`,
+      value: `売主 ${SELLER_FEE_RATE * 100}%（税抜＋消費税）`,
+    },
+  ],
+  parts: [
+    { label: "買い手手数料", value: `${PART_BUYER_FEE_RATE * 100}%（無料）` },
+    {
+      label: `税抜成約価格が0円〜${(PART_FEE_THRESHOLD_EX_TAX - 1).toLocaleString("ja-JP")}円`,
+      value: "売主手数料無料",
+    },
+    {
+      label: `税抜成約価格が${PART_FEE_THRESHOLD_EX_TAX.toLocaleString("ja-JP")}円以上`,
+      value: `売主 ${PART_SELLER_FEE_RATE * 100}%（税抜＋消費税）`,
+    },
+  ],
+  membership: (Object.keys(MONTHLY_MEMBERSHIP_FEE_BY_RANK) as TrustRank[]).map((rank) => ({
+    label: TRUST_RANK_LABELS[rank],
+    value: `税抜 ${MONTHLY_MEMBERSHIP_FEE_BY_RANK[rank].toLocaleString("ja-JP")}円／月`,
+  })),
+  inspection: [{ label: "MotoHub査定（完了時）", value: "税抜 3,000円／台" }],
+} as const;

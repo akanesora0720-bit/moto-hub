@@ -43,7 +43,10 @@ export function isDealerLimitedPathAllowed(pathname: string): boolean {
     pathname.startsWith("/settings") ||
     pathname.startsWith("/search") ||
     pathname.startsWith("/membership") ||
-    pathname.startsWith("/notifications")
+    pathname.startsWith("/notifications") ||
+    pathname.startsWith("/terms") ||
+    pathname === "/privacy" ||
+    pathname === "/pricing"
   ) {
     return true;
   }

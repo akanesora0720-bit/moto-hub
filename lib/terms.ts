@@ -1,8 +1,19 @@
 /** @deprecated Use `@/lib/legal-policies` */
 export {
   CURRENT_TERMS_VERSION,
-  TERMS_PDF_FILENAME,
-  TERMS_PDF_PATH,
+  CURRENT_PRIVACY_VERSION,
+  TERMS_DOCUMENT_PATH,
+  PRIVACY_DOCUMENT_PATH,
+  PRICING_DOCUMENT_PATH,
+  FEES_DOCUMENT_PATH,
+  TERMS_UPDATED_PATH,
+  termsDocumentHref,
+  termsDocumentAbsoluteUrl,
+  privacyDocumentHref,
+  privacyDocumentAbsoluteUrl,
+  pricingDocumentHref,
   termsPdfHref,
   termsPdfAbsoluteUrl,
+  privacyPdfHref,
+  privacyPdfAbsoluteUrl,
 } from "@/lib/legal-policies";

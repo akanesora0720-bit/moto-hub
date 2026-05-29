@@ -1,4 +1,10 @@
-import { privacyPdfHref, termsPdfHref } from "@/lib/legal-policies";
+import {
+  CURRENT_PRIVACY_VERSION,
+  CURRENT_TERMS_VERSION,
+  PRICING_DOCUMENT_PATH,
+  privacyDocumentHref,
+  termsDocumentHref,
+} from "@/lib/legal-policies";
 
 type Props = {
   checked: boolean;
@@ -28,23 +34,33 @@ export function LegalPoliciesConsent({
       <span>
         <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
           <a
-            href={termsPdfHref()}
+            href={termsDocumentHref()}
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-accent underline underline-offset-2 hover:text-accent-dim"
             onClick={(e) => e.stopPropagation()}
           >
-            利用規約PDF
+            利用規約（{CURRENT_TERMS_VERSION}）
           </a>
           <span className="text-muted">・</span>
           <a
-            href={privacyPdfHref()}
+            href={PRICING_DOCUMENT_PATH}
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-accent underline underline-offset-2 hover:text-accent-dim"
             onClick={(e) => e.stopPropagation()}
           >
-            プライバシーポリシーPDF
+            料金表
+          </a>
+          <span className="text-muted">・</span>
+          <a
+            href={privacyDocumentHref()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-accent underline underline-offset-2 hover:text-accent-dim"
+            onClick={(e) => e.stopPropagation()}
+          >
+            プライバシーポリシー（{CURRENT_PRIVACY_VERSION}）
           </a>
         </span>
         を確認し、内容に同意します

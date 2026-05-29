@@ -1,13 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isDealerLimitedPathAllowed } from "@/lib/account-status";
+import {
+  CURRENT_TERMS_VERSION,
+  isLegalPublicPath,
+} from "@/lib/legal-policies";
+import { needsTermsReconsentPath } from "@/lib/terms-policy-gate";
 import { encodeProfile, type ViewerProfile } from "@/lib/viewer";
 import type { AccountStatus } from "@/lib/types";
 
 export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const publicPaths = ["/login", "/signup"];
-  const isPublic = publicPaths.some((p) => path.startsWith(p));
+  const isPublic =
+    publicPaths.some((p) => path.startsWith(p)) || isLegalPublicPath(path);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
@@ -153,6 +159,24 @@ export async function updateSession(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.pathname = "/home";
       return NextResponse.redirect(url);
+    }
+
+    if (needsTermsReconsentPath(path)) {
+      const { data: hasTermsV3, error: termsCheckError } = await supabase.rpc(
+        "has_accepted_policy",
+        {
+          p_policy_type: "terms",
+          p_policy_version: CURRENT_TERMS_VERSION,
+        },
+      );
+      if (!termsCheckError && hasTermsV3 !== true) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/terms/updated";
+        if (path !== "/terms/updated") {
+          url.searchParams.set("next", path);
+        }
+        return NextResponse.redirect(url);
+      }
     }
 
     requestHeaders.set("x-mh-uid", user.id);

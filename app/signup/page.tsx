@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthLayout } from "@/components/AuthLayout";
 import { BRAND } from "@/lib/brand";
+import { LegalDocumentLinks } from "@/components/LegalDocumentLinks";
 import { LegalPoliciesConsent } from "@/components/LegalPoliciesConsent";
 import { createClient } from "@/lib/supabase/client";
 import {
   CURRENT_PRIVACY_VERSION,
   CURRENT_TERMS_VERSION,
-  privacyPdfAbsoluteUrl,
-  termsPdfAbsoluteUrl,
+  privacyDocumentAbsoluteUrl,
+  termsDocumentAbsoluteUrl,
 } from "@/lib/legal-policies";
 
 export default function SignupPage() {
@@ -65,9 +66,9 @@ export default function SignupPage() {
     const origin = window.location.origin;
     const { error: policiesErr } = await supabase.rpc("finalize_dealer_pre_registration", {
       p_terms_version: CURRENT_TERMS_VERSION,
-      p_terms_pdf_url: termsPdfAbsoluteUrl(origin),
+      p_terms_pdf_url: termsDocumentAbsoluteUrl(origin),
       p_privacy_version: CURRENT_PRIVACY_VERSION,
-      p_privacy_pdf_url: privacyPdfAbsoluteUrl(origin),
+      p_privacy_pdf_url: privacyDocumentAbsoluteUrl(origin),
     });
     if (policiesErr) {
       setMessage(policiesErr.message);
@@ -140,6 +141,8 @@ export default function SignupPage() {
             ログイン
           </Link>
         </p>
+
+        <LegalDocumentLinks className="pt-1" openInNewTab />
       </div>
     </AuthLayout>
   );

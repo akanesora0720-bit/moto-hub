@@ -37,35 +37,44 @@ export function StatBadge({
   );
 }
 
+const heroCardClass =
+  "block rounded-2xl border-2 border-accent/55 bg-gradient-to-br from-card to-zinc-900/80 p-6 shadow-md shadow-accent/10 transition hover:border-accent hover:shadow-lg hover:shadow-accent/15 md:p-7";
+
 export function ActionCard({
   title,
   description,
   href,
   sublinks,
   primary,
+  hero,
   ctaLabel,
 }: {
   title: string;
   description: string;
   href: string;
   sublinks?: { label: string; href: string }[];
-  /** 業務メニューのメイン導線（2カラム幅・強調表示） */
+  /** @deprecated Use hero — 旧レイアウト互換（2カラム全幅） */
   primary?: boolean;
+  /** 仕入れ導線など、車両・パーツ検索の2大カード用（横並び同等サイズ） */
+  hero?: boolean;
   ctaLabel?: string;
 }) {
+  const isHero = hero || primary;
   return (
     <Link
       href={href}
       className={
-        primary
-          ? "col-span-1 block rounded-2xl border-2 border-accent/55 bg-gradient-to-br from-card to-zinc-900/80 p-6 shadow-md shadow-accent/10 transition hover:border-accent hover:shadow-lg hover:shadow-accent/15 sm:col-span-2 md:p-8"
-          : "block rounded-xl border border-border bg-card p-5 transition hover:border-accent/40 hover:bg-zinc-900/40"
+        hero
+          ? heroCardClass
+          : primary
+            ? `${heroCardClass} sm:col-span-2`
+            : "block rounded-xl border border-border bg-card p-5 transition hover:border-accent/40 hover:bg-zinc-900/40"
       }
     >
-      <h3 className={primary ? "text-xl font-bold tracking-tight md:text-2xl" : "font-semibold"}>
+      <h3 className={isHero ? "text-xl font-bold tracking-tight md:text-2xl" : "font-semibold"}>
         {title}
       </h3>
-      <p className={`text-muted ${primary ? "mt-2 text-base md:text-lg" : "mt-1 text-sm"}`}>
+      <p className={`text-muted ${isHero ? "mt-2 text-base md:text-lg" : "mt-1 text-sm"}`}>
         {description}
       </p>
       {ctaLabel ? (

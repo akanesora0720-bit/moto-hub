@@ -60,7 +60,7 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
           ["業販検索 /search", "在庫検索（広域エリア・都道府県＝引取目安）"],
           ["パーツ /parts", "パーツ検索・出品"],
           ["成約履歴 /deals/history", "車両の完了した取引"],
-          ["評価 /profile", "信用スコア"],
+          ["信用ランク /profile", "取引に基づく信用スコア"],
           ["設定 /settings", "会社情報・口座・サポート"],
         ],
       },

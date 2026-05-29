@@ -16,9 +16,11 @@
 
 | 優先 | 箇所 | 内容 |
 |------|------|------|
-| **高** | 利用規約 PDF | パーツ売買・手数料（1万/10%）・直引き・MotoHub非決済代行の明記。改定時は `CURRENT_TERMS_VERSION` を v3 等に更新し再同意フロー検討 |
+| **済** | 利用規約 v3 | `/terms`（HTML正本）・`CURRENT_TERMS_VERSION=v3`・再同意 `/terms/updated` |
+| **済** | プライバシーポリシー v1 | `/privacy`（HTML正本）・MotoHub 自社ホストのみ |
+| **済** | 料金表 | `/pricing`（`lib/fee-schedule.ts` と同期） |
 | **高** | プライバシーポリシー | パーツ品番・車種マスタ（学習型）の取扱いが必要なら追記 |
-| 中 | 登録画面の同意文 | `LegalPoliciesConsent` — PDF 改定後のバージョン表記 |
+| **済** | 登録・ログインの同意文 | `LegalPoliciesConsent` / `LegalDocumentLinks` — `/terms`・`/privacy`・`/pricing` |
 | 中 | 加盟店向け案内メール / 通知テンプレ | パーツ機能リリース告知 |
 | 低 | 社内オペレーション手順書 | パーツ成約時の入金確認フロー（車両と別） |
 
@@ -35,4 +37,4 @@
 
 - コード: `lib/legal-policies.ts` → `CURRENT_TERMS_VERSION`
 - DB: `policy_acceptances` に同意記録
-- PDF: `public/terms/` または Vercel 上の静的ファイル（ファイル名は `TERMS_PDF_FILENAME` と一致させる）
+- 法務文書の正本: `/terms`・`/privacy`・`/pricing`（`lib/legal-policies.ts` のパス定数と同期。外部 URL 不可）
