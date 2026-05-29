@@ -53,6 +53,33 @@ export default async function DealerHomePage() {
           </p>
         </div>
 
+        <section>
+          <h2 className="mb-3 text-sm font-medium text-muted">仕入れ・検索</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <ActionCard
+              hero
+              ctaLabel="在庫を見る"
+              title="車両を探す"
+              description="業販在庫を検索・仕入れ（エリア・都道府県で引取目安）"
+              href="/search"
+            />
+            {tradingEnabled ? (
+              <ActionCard
+                hero
+                ctaLabel="パーツを探す"
+                title="パーツを探す"
+                description="メーカー・車種・品番で検索。出品・問い合わせ・成約"
+                href="/parts"
+              />
+            ) : (
+              <div className="flex flex-col justify-center rounded-2xl border border-dashed border-border bg-zinc-900/30 p-6 text-sm text-muted">
+                <p className="font-medium text-zinc-300">パーツを探す</p>
+                <p className="mt-2">加盟審査完了後にご利用いただけます。</p>
+              </div>
+            )}
+          </div>
+        </section>
+
         <MarketStatsBar />
 
         {tradingEnabled ? (
@@ -66,9 +93,6 @@ export default async function DealerHomePage() {
                   href="/listings/mine"
                   urgent
                 />
-              ) : null}
-              {actions.negotiating > 0 ? (
-                <StatBadge count={actions.negotiating} label="商談中" href="/deals" />
               ) : null}
               {actions.awaitingPayment > 0 ? (
                 <StatBadge
@@ -95,7 +119,6 @@ export default async function DealerHomePage() {
                 />
               ) : null}
               {actions.newInquiries === 0 &&
-              actions.negotiating === 0 &&
               actions.awaitingPayment === 0 &&
               actions.handoverPending === 0 &&
               actions.unreadNotifications === 0 ? (
@@ -123,33 +146,6 @@ export default async function DealerHomePage() {
             </div>
           </section>
         ) : null}
-
-        <section>
-          <h2 className="mb-3 text-sm font-medium text-muted">仕入れ・検索</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <ActionCard
-              hero
-              ctaLabel="在庫を見る"
-              title="車両を探す"
-              description="業販在庫を検索・仕入れ（エリア・都道府県で引取目安）"
-              href="/search"
-            />
-            {tradingEnabled ? (
-              <ActionCard
-                hero
-                ctaLabel="パーツを探す"
-                title="パーツを探す"
-                description="メーカー・車種・品番で検索。出品・問い合わせ・成約"
-                href="/parts"
-              />
-            ) : (
-              <div className="flex flex-col justify-center rounded-2xl border border-dashed border-border bg-zinc-900/30 p-6 text-sm text-muted">
-                <p className="font-medium text-zinc-300">パーツを探す</p>
-                <p className="mt-2">加盟審査完了後にご利用いただけます。</p>
-              </div>
-            )}
-          </div>
-        </section>
 
         {tradingEnabled ? (
           <section>

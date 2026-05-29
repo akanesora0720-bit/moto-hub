@@ -76,6 +76,12 @@ export default async function AdminHubPage() {
             <section>
               <h2 className="mb-3 text-sm font-medium text-muted">KPI スナップショット</h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <KpiCard
+                  label="商談中"
+                  value={pending.negotiationDeals}
+                  href="/admin/workspace?tab=deals"
+                  highlight={pending.negotiationDeals > 0}
+                />
                 <KpiCard label="本日流通額" value={formatYen(todayVolume)} />
                 <KpiCard
                   label="月間成約台数"
@@ -124,6 +130,12 @@ export default async function AdminHubPage() {
                     label: "MotoHub査定依頼",
                     count: pending.openInspectionRequests,
                     href: "/admin/inspections",
+                  },
+                  {
+                    label: "商談中（取引）",
+                    count: pending.negotiationDeals,
+                    href: "/admin/workspace?tab=deals",
+                    note: "inquiry / negotiating",
                   },
                   {
                     label: "商談・新規リード",
