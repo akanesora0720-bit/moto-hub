@@ -1,3 +1,4 @@
+/** 加盟店操作説明の正本（/help）。フロー変更時は docs/UX_FLOW_AUDIT.md も更新 */
 import type { ManualSection } from "@/lib/manual-types";
 
 export const DEALER_MANUAL_SECTIONS: ManualSection[] = [

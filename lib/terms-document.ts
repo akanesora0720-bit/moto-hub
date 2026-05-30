@@ -2,6 +2,7 @@
  * Moto-Hub 法務文書の正本（ローンチ前に集約）
  * - 利用規約・プライバシーポリシーを同一モジュールで管理
  * - 表示は /terms（プライバシーは #privacy または /privacy からリダイレクト）
+ * - 料金・フロー改定時は lib/fee-schedule.ts と docs/UX_FLOW_AUDIT.md も確認
  */
 
 export const LEGAL_EFFECTIVE_DATE = "2026年5月30日";

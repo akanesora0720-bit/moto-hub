@@ -1,3 +1,4 @@
+/** 運営操作説明の正本（/admin/help）。フロー変更時は docs/UX_FLOW_AUDIT.md も更新 */
 import type { ManualSection } from "@/lib/manual-types";
 
 export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
