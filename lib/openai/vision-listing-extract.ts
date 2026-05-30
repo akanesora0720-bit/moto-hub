@@ -1,7 +1,7 @@
 import { AI_LISTING_UNAVAILABLE_MESSAGE } from "@/lib/ai-listing-config";
 import { normalizeAiVehicle, type AiExtractedVehicle } from "@/lib/ai-listing";
 
-const MODEL = process.env.OPENAI_VISION_MODEL ?? "gpt-4o-mini";
+const MODEL = process.env.OPENAI_VISION_MODEL ?? "gpt-5.4-mini";
 
 const SYSTEM_PROMPT = `You are an expert at reading Japanese motorcycle dealer inventory screenshots (GooBike PAS, auction lists, dealer DMS, Excel exports photographed, etc.).
 

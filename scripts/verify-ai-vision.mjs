@@ -20,7 +20,7 @@ const imagePath =
 
 const buf = readFileSync(imagePath);
 const mime = imagePath.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg";
-const model = process.env.OPENAI_VISION_MODEL ?? "gpt-4o-mini";
+const model = process.env.OPENAI_VISION_MODEL ?? "gpt-5.4-mini";
 const b64 = buf.toString("base64");
 
 const res = await fetch("https://api.openai.com/v1/chat/completions", {

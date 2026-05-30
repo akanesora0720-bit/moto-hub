@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const configured = isAiListingOpenAiConfigured();
   const body: Record<string, unknown> = {
     openaiConfigured: configured,
-    visionModel: process.env.OPENAI_VISION_MODEL ?? "gpt-4o-mini",
+    visionModel: process.env.OPENAI_VISION_MODEL ?? "gpt-5.4-mini",
   };
 
   if (req.nextUrl.searchParams.get("visionProbe") === "1" && configured) {

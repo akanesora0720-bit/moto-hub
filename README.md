@@ -159,6 +159,6 @@ Vercel + Supabase の組み合わせを想定。Vercel の Environment Variables
 | `CRON_SECRET` | cron 利用時 | 定期ジョブ |
 | `SMTP_*` | メール送信時 | 通知メール |
 
-`OPENAI_API_KEY` は [OpenAI API Keys](https://platform.openai.com/api-keys) で発行し、Production / Preview に追加したあと **再デプロイ** が必要です。任意で `OPENAI_VISION_MODEL`（既定 `gpt-4o-mini`）。選定理由・月額/1枚コスト・Supabase 連携の詳細は **[docs/AI_LISTING_DESIGN.md](docs/AI_LISTING_DESIGN.md)** を参照（実装前に読む想定）。
+`OPENAI_API_KEY` は [OpenAI API Keys](https://platform.openai.com/api-keys) で発行し、Production / Preview に追加したあと **再デプロイ** が必要です。任意で `OPENAI_VISION_MODEL`（既定 `gpt-5.4-mini`）。選定理由・月額/1枚コスト・Supabase 連携の詳細は **[docs/AI_LISTING_DESIGN.md](docs/AI_LISTING_DESIGN.md)** を参照（実装前に読む想定）。
 
 ローカルは `.env.example` を `.env.local` にコピーして同様に設定してください。
