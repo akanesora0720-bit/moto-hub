@@ -4,6 +4,10 @@ import {
   AI_LISTING_MAX_BYTES,
   requireAiListingAccess,
 } from "@/lib/ai-listing-auth";
+import {
+  AI_LISTING_UNAVAILABLE_MESSAGE,
+  isAiListingOpenAiConfigured,
+} from "@/lib/ai-listing-config";
 import { extractVehiclesFromImage } from "@/lib/openai/vision-listing-extract";
 import { createClient } from "@/lib/supabase/server";
 import { randomUUID } from "crypto";
@@ -15,6 +19,10 @@ export async function POST(req: NextRequest) {
   const auth = await requireAiListingAccess();
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  if (!isAiListingOpenAiConfigured()) {
+    return NextResponse.json({ error: AI_LISTING_UNAVAILABLE_MESSAGE }, { status: 503 });
   }
 
   const form = await req.formData();

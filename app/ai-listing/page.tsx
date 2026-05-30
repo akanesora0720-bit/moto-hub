@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { AiListingImportWizard } from "@/components/AiListingImportWizard";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
+import { isAiListingOpenAiConfigured } from "@/lib/ai-listing-config";
 import { canUseDealerTradingFeatures } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getViewer } from "@/lib/viewer";
@@ -24,7 +25,7 @@ export default async function AiListingPage() {
 
   return (
     <AuthenticatedShell>
-      <AiListingImportWizard />
+      <AiListingImportWizard aiConfigured={isAiListingOpenAiConfigured()} />
     </AuthenticatedShell>
   );
 }

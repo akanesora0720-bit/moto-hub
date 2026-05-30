@@ -222,6 +222,8 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
         kind: "ul",
         items: [
           "OpenAI Vision API で解析（当社は外部サイトへアクセスしません）",
+          "本番・プレビューでは Vercel に OPENAI_API_KEY を設定し再デプロイが必要（未設定時は加盟店画面に「準備中」表示）",
+          "任意: OPENAI_VISION_MODEL（既定 gpt-4o-mini）。README・.env.example を参照",
           "解析結果は listings.status = draft の下書きとして保存（自動公開なし）",
           "加盟店は /ai-listing で利用（account_status = approved のみ）",
         ],

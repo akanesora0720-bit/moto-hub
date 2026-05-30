@@ -69,6 +69,6 @@
 |------|------|------|
 | 審査前の `/parts` | middleware でブロック | パーツ閲覧のみ許可するか |
 | **済** | `/my/payments` | 週次手数料（車両・パーツ別）・月額 |
-| **済** | `/ai-listing` | AI出品サポート |
+| **済** | `/ai-listing` | AI出品サポート（設計: [AI_LISTING_DESIGN.md](AI_LISTING_DESIGN.md)） |
 | dispute | 車両専用 | パーツはサポート経由（マニュアル記載） |
 | 取引記録書 | 車両 deals のみ | パーツは対象外（意図的） |

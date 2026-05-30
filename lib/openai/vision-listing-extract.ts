@@ -1,3 +1,4 @@
+import { AI_LISTING_UNAVAILABLE_MESSAGE } from "@/lib/ai-listing-config";
 import { normalizeAiVehicle, type AiExtractedVehicle } from "@/lib/ai-listing";
 
 const MODEL = process.env.OPENAI_VISION_MODEL ?? "gpt-4o-mini";
@@ -32,7 +33,7 @@ export async function extractVehiclesFromImage(
 ): Promise<VisionExtractResult> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is not configured");
+    throw new Error(AI_LISTING_UNAVAILABLE_MESSAGE);
   }
 
   const dataUrl = `data:${mimeType};base64,${imageBase64}`;

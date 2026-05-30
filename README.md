@@ -108,7 +108,7 @@ npm run dev
 | 管理者メール | `/admin/messages` — 個別・一括・条件指定 |
 | 請求・振込 | `/admin/billing` — 週次手数料・月額・入金確認 |
 | 手数料 | 車両: 税抜3万円以上で売主5%（引取完了で計上→週次請求・月曜発行）。パーツ: 税抜1万円以上で売主10%（発送/引渡完了で計上） |
-| AI出品 | `/ai-listing` — スクショ解析→出品下書き（加盟承認後） |
+| AI出品 | `/ai-listing` — スクショ解析→出品下書き（加盟承認後）。設計・コスト・API は [docs/AI_LISTING_DESIGN.md](docs/AI_LISTING_DESIGN.md) |
 | 車両代 | 税抜成約価格＋消費税10%を買い手が売り手へ直接支払 |
 | PDF | `/api/invoices/[id]/pdf` |
 
@@ -134,10 +134,31 @@ select public.admin_create_deal(
 );
 ```
 
+## ドキュメント
+
+| ドキュメント | 内容 |
+|-------------|------|
+| [docs/AI_LISTING_DESIGN.md](docs/AI_LISTING_DESIGN.md) | AI出品サポート（API・コスト・Supabase 連携・環境変数） |
+| [docs/UX_PRETEST.md](docs/UX_PRETEST.md) | 取引フロー・1台1商談・週次手数料・入金指示など |
+| [docs/UX_FLOW_AUDIT.md](docs/UX_FLOW_AUDIT.md) | PR 時の UI・操作説明・規約の整合チェック |
+
 ## UX プレテスト改善
 
 取引フロー・1台1商談・週次手数料・入金指示自動送信などの詳細は [docs/UX_PRETEST.md](docs/UX_PRETEST.md) を参照。
 
 ## デプロイ
 
-Vercel + Supabase の組み合わせを想定。環境変数は Vercel に `NEXT_PUBLIC_SUPABASE_*` を設定してください。
+Vercel + Supabase の組み合わせを想定。Vercel の Environment Variables に最低限以下を設定してください。
+
+| 変数 | 必須 | 用途 |
+|------|------|------|
+| `NEXT_PUBLIC_SUPABASE_URL` | はい | Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | はい | Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | はい | cron・サーバー処理 |
+| `OPENAI_API_KEY` | **AI出品を使う場合は必須** | `/ai-listing` のスクショ解析（未設定時は「解析を開始」でエラー） |
+| `CRON_SECRET` | cron 利用時 | 定期ジョブ |
+| `SMTP_*` | メール送信時 | 通知メール |
+
+`OPENAI_API_KEY` は [OpenAI API Keys](https://platform.openai.com/api-keys) で発行し、Production / Preview に追加したあと **再デプロイ** が必要です。任意で `OPENAI_VISION_MODEL`（既定 `gpt-4o-mini`）。選定理由・月額/1枚コスト・Supabase 連携の詳細は **[docs/AI_LISTING_DESIGN.md](docs/AI_LISTING_DESIGN.md)** を参照（実装前に読む想定）。
+
+ローカルは `.env.example` を `.env.local` にコピーして同様に設定してください。

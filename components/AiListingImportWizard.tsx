@@ -45,7 +45,7 @@ function ConfidenceBadge({ field, confidence }: { field: string; confidence: Rec
   );
 }
 
-export function AiListingImportWizard() {
+export function AiListingImportWizard({ aiConfigured = true }: { aiConfigured?: boolean }) {
   const router = useRouter();
   const [step, setStep] = useState<WizardStep>("upload");
   const [file, setFile] = useState<File | null>(null);
@@ -160,10 +160,23 @@ export function AiListingImportWizard() {
       <div>
         <h1 className="text-2xl font-semibold">AI出品サポート</h1>
         <p className="mt-2 text-sm text-muted">
-          GooBike等の在庫画面のスクリーンショットをアップロードすると、AIが車両情報を読み取り
+          在庫一覧画面や在庫資料のスクリーンショット（PNG/JPG）をアップロードすると、AIが車両情報を読み取り
           <strong className="text-foreground"> 出品下書き </strong>
-          を作成します。自動公開はしません。サムネイル画像は出品写真として使いません。
+          を一括作成します。自動公開はしません。サムネイル画像は出品写真として使いません。
         </p>
+        {!aiConfigured ? (
+          <p className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+            AI出品サポートは現在準備中です。運営が設定を完了するまで解析を開始できません。お急ぎの場合は
+            <Link href="/listings/new" className="mx-1 text-accent underline">
+              手動出品
+            </Link>
+            または
+            <Link href="/support" className="mx-1 text-accent underline">
+              運営サポート
+            </Link>
+            をご利用ください。
+          </p>
+        ) : null}
       </div>
 
       <ol className="flex flex-wrap gap-2 text-xs text-muted">
@@ -197,7 +210,7 @@ export function AiListingImportWizard() {
           </label>
           <button
             type="button"
-            disabled={!file || loading}
+            disabled={!aiConfigured || !file || loading}
             onClick={() => void analyze()}
             className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-50"
           >
