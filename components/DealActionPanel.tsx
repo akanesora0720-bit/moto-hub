@@ -88,9 +88,16 @@ export function DealActionPanel({
     });
 
   const markHandover = () =>
-    rpcAction("引渡完了を登録しました。", async () => {
+    run(async () => {
       const supabase = createClient();
-      return supabase.rpc("deal_mark_handover", { p_deal_id: deal.id });
+      const { error } = await supabase.rpc("deal_mark_handover", { p_deal_id: deal.id });
+      if (error) return { error: error.message };
+      router.refresh();
+      return {
+        okMessage: deal.requires_name_transfer
+          ? "引渡を登録しました。名義変更の手続きへ進みます。"
+          : "引渡完了を登録しました。",
+      };
     });
 
   const sellerConfirmPayment = () =>
@@ -174,7 +181,8 @@ export function DealActionPanel({
     (deal.status === "handover_done" || deal.status === "transfer_pending") &&
     !deal.seller_confirmed_at;
 
-  const canMarkHandover = role === "seller" && deal.status === "funded";
+  const canMarkHandover =
+    role === "seller" && deal.status === "funded" && !!deal.pickup_scheduled_at;
   const canSellerConfirmPayment =
     role === "seller" &&
     deal.status === "awaiting_payment" &&
@@ -224,7 +232,9 @@ export function DealActionPanel({
     nextStep?.primaryAction &&
     ((nextStep.primaryAction === "buyer_report_payment" && canBuyerReportPayment) ||
       (nextStep.primaryAction === "seller_confirm_payment" && canSellerConfirmPayment) ||
-      (nextStep.primaryAction === "mark_handover" && canMarkHandover) ||
+      (nextStep.primaryAction === "mark_handover" &&
+        canMarkHandover &&
+        !!deal.pickup_scheduled_at) ||
       (nextStep.primaryAction === "buyer_confirm" && canBuyerConfirm) ||
       (nextStep.primaryAction === "seller_confirm" && canSellerConfirm));
 
@@ -394,11 +404,6 @@ export function DealActionPanel({
                 買い手からの入金を確認した
               </ActionButton>
             ) : null}
-            {canMarkHandover ? (
-              <ActionButton loading={loading} loadingLabel="送信中…" onClick={markHandover}>
-                車両・書類の引渡完了（引取予定日登録後）
-              </ActionButton>
-            ) : null}
             {canBuyerConfirm ? (
               <ActionButton loading={loading} loadingLabel="送信中…" onClick={buyerConfirm}>
                 取引完了を確認（買い手）
@@ -411,7 +416,7 @@ export function DealActionPanel({
             ) : null}
           </div>
         ) : (
-          <p className="text-xs text-muted">操作ボタンは上の黄色い枠内です。</p>
+          <p className="text-xs text-muted">次の操作は上の黄色い枠内のボタンです。</p>
         )}
 
         <AsyncMessage message={message} success={success} />

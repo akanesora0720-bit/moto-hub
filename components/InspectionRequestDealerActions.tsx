@@ -152,7 +152,61 @@ export function InspectionRequestDealerActions({ request, onUpdated }: Props) {
       ) : null}
 
       {request.status === "requested" ? (
-        <p className="text-xs text-muted">スタッフがご希望日時を確認しています。</p>
+        <div className="space-y-2 rounded-lg border border-border/60 bg-zinc-950/40 p-3">
+          <p className="text-xs text-muted">
+            スタッフがご希望日時を確認しています。変更したい場合は別日時を送れます。
+          </p>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setShowCounter((v) => !v)}
+            className="rounded-lg border border-border px-3 py-2 text-xs hover:bg-zinc-900 disabled:opacity-50"
+          >
+            希望日時を変更して送る
+          </button>
+          {showCounter ? (
+            <div className="space-y-2 border-t border-border/60 pt-2">
+              <label className="block text-xs text-muted">
+                ご希望の日時
+                <input
+                  type="datetime-local"
+                  value={counterLocal}
+                  disabled={busy}
+                  onChange={(e) => {
+                    setCounterLocal(e.target.value);
+                    setHint("");
+                  }}
+                  className="mt-1 w-full rounded-lg border border-border bg-zinc-950 px-3 py-2"
+                />
+              </label>
+              <label className="block text-xs text-muted">
+                補足（任意）
+                <textarea
+                  value={counterNote}
+                  onChange={(e) => setCounterNote(e.target.value)}
+                  rows={2}
+                  className="mt-1 w-full rounded-lg border border-border bg-zinc-950 px-3 py-2"
+                />
+              </label>
+              {hint ? <p className="text-xs text-rose-300">{hint}</p> : null}
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  const iso = datetimeLocalToIso(counterLocal);
+                  if (!iso) {
+                    setHint("日時を選択してください。");
+                    return;
+                  }
+                  void respond("counter", iso, counterNote.trim() || undefined);
+                }}
+                className="rounded-lg bg-sky-500 px-3 py-2 text-xs font-semibold text-black disabled:opacity-50"
+              >
+                再提案を送る
+              </button>
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
       {request.status === "scheduled" ? (

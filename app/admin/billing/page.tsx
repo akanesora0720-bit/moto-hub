@@ -291,7 +291,7 @@ export default function AdminBillingPage() {
                       onClick={() => approveInvoices(did)}
                       className="rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-black disabled:opacity-60"
                     >
-                      {loading ? "処理中…" : "承認して送信"}
+                      {loading ? "処理中…" : "手動送信（レガシー）"}
                     </button>
                     <button
                       type="button"

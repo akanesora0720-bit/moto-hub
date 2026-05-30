@@ -32,11 +32,14 @@ export function PartSaleFulfillmentPanel({
   const [localSale, setLocalSale] = useState(partSale);
 
   const fulfillmentDone = !!(localSale.shipped_at || localSale.handover_at);
+  const paymentConfirmed = !!localSale.buyer_payment_confirmed_at;
   const canShip =
     isSeller &&
+    paymentConfirmed &&
     !fulfillmentDone &&
     (shippingBearer === "buyer" || shippingBearer === "seller" || shippingBearer === "consult");
-  const canHandover = isSeller && !fulfillmentDone && shippingBearer === "consult";
+  const canHandover =
+    isSeller && paymentConfirmed && !fulfillmentDone && shippingBearer === "consult";
 
   const runAction = async (action: "ship" | "handover" | "confirm_payment") => {
     await run(async () => {
@@ -126,15 +129,20 @@ export function PartSaleFulfillmentPanel({
       {isSeller ? (
         <div className="flex flex-wrap gap-2">
           <AsyncStatusBanner loading={loading} />
-          {!localSale.buyer_payment_confirmed_at ? (
-            <ActionButton
-              loading={loading}
-              success={success}
-              variant="secondary"
-              onClick={() => runAction("confirm_payment")}
-            >
-              入金確認済にする
-            </ActionButton>
+          {!paymentConfirmed ? (
+            <>
+              <p className="w-full text-xs text-amber-200/90">
+                先に買主の入金を確認してから、発送または引渡しを登録してください。
+              </p>
+              <ActionButton
+                loading={loading}
+                success={success}
+                variant="secondary"
+                onClick={() => runAction("confirm_payment")}
+              >
+                買主の入金を確認した
+              </ActionButton>
+            </>
           ) : null}
           {canShip ? (
             <ActionButton loading={loading} success={success} onClick={() => runAction("ship")}>

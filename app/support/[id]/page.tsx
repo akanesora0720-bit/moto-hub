@@ -72,7 +72,13 @@ export default function SupportDetailPage() {
             ) : null}
           </section>
         ) : (
-          <p className="text-sm text-muted">回答待ちです。</p>
+          <p className="text-sm text-muted">
+            回答待ちです。追加の連絡は
+            <Link href="/support/new" className="mx-1 text-accent hover:underline">
+              新規サポート
+            </Link>
+            からお願いします（この画面からの返信投稿はできません）。
+          </p>
         )}
       </div>
     </AppShell>

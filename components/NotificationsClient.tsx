@@ -189,7 +189,10 @@ export function NotificationsClient({
         ) : (
           <ul className="space-y-3">
             {items.map((n) => {
-              const href = resolveNotificationHref(n.link_url, isAdminContext);
+              const href = resolveNotificationHref(n.link_url, isAdminContext, {
+                entityType: n.entity_type,
+                entityId: n.entity_id,
+              });
               const isBusy = busyId === n.id;
               return (
                 <li

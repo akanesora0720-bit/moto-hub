@@ -58,6 +58,6 @@ export function isDealerLimitedPathAllowed(pathname: string): boolean {
 
 /** 審査待ち・仮登録向けナビ（閲覧・設定のみ） */
 export function dealerNavForLimitedAccess<T extends { href: string }>(items: T[]): T[] {
-  const allowed = new Set(["/home", "/search", "/settings", "/help"]);
+  const allowed = new Set(["/home", "/search", "/settings", "/help", "/onboarding"]);
   return items.filter((item) => allowed.has(item.href.split("?")[0]));
 }

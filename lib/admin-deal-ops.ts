@@ -19,10 +19,7 @@ export type AdminDealOpsInput = {
   transferOverdue: boolean;
 };
 
-export type AdminOpsPrimaryAction =
-  | "approve_invoices"
-  | "complete_deal"
-  | "mark_platform_fee_paid";
+export type AdminOpsPrimaryAction = "complete_deal" | "mark_platform_fee_paid";
 
 export type AdminOpsStep = {
   id: string;

@@ -93,11 +93,11 @@ function getSellerNextStep(
               "② 買い手の振込報告後、口座着金を確認したら、",
               "③ この画面の黄色いボタンをタップしてください。",
             ],
-        primaryAction: "seller_confirm_payment",
+        primaryAction: opts.buyerPaymentReported ? "seller_confirm_payment" : null,
         primaryButtonLabel: opts.buyerPaymentReported
           ? "④ 買い手からの入金を確認した"
-          : "③ 買い手からの入金を確認した",
-        waitOnly: false,
+          : null,
+        waitOnly: !opts.buyerPaymentReported,
         scrollTargetId: opts.buyerPaymentReported
           ? "deal-primary-action"
           : "deal-billing",

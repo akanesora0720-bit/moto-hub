@@ -80,24 +80,6 @@ export function AdminDealOpsPanel({
 
   const refresh = () => router.refresh();
 
-  const approveInvoices = () =>
-    run(async () => {
-      if (
-        !window.confirm(
-          "入金指示書を承認して買い手に送信します。買い手は売り手へ直接お振込みします。よろしいですか？",
-        )
-      ) {
-        return { error: null };
-      }
-      const supabase = createClient();
-      const { error } = await supabase.rpc("admin_approve_and_send_invoices", {
-        p_deal_id: dealId,
-      });
-      if (error) return { error: error.message };
-      refresh();
-      return { okMessage: "入金指示書を送信しました。" };
-    });
-
   const completeDeal = () =>
     run(async () => {
       if (
@@ -141,12 +123,12 @@ export function AdminDealOpsPanel({
   const onPrimary = () => {
     if (!current?.primaryAction) return;
     switch (current.primaryAction) {
-      case "approve_invoices":
-        return approveInvoices();
       case "complete_deal":
         return completeDeal();
       case "mark_platform_fee_paid":
         return markPlatformFeePaid();
+      default:
+        return;
     }
   };
 

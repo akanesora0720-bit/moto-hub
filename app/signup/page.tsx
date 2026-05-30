@@ -75,7 +75,7 @@ export default function SignupPage() {
       return;
     }
 
-    router.replace("/home");
+    router.replace("/onboarding");
     router.refresh();
   };
 
