@@ -170,7 +170,7 @@ export const DEALER_MANUAL_SECTIONS: ManualSection[] = [
       {
         kind: "ul",
         items: [
-          "/inspections から依頼（車名・保管場所・希望日時など）",
+          "/inspections から依頼（希望日時）→ スタッフ提案を承諾または別日時を提示して日程確定",
           "スタッフが現車確認・出品代行後、査定済バッジが付与されます",
           "料金：税抜3,000円/台（完了時に請求書PDF）",
         ],

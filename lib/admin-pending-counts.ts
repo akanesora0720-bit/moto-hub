@@ -70,7 +70,13 @@ export async function fetchAdminPendingCounts(
     supabase
       .from("inspection_requests")
       .select("id", { count: "exact", head: true })
-      .in("status", ["requested", "scheduled", "in_progress"]),
+      .in("status", [
+        "requested",
+        "awaiting_staff",
+        "awaiting_dealer",
+        "scheduled",
+        "in_progress",
+      ]),
     adminUserId
       ? supabase.rpc("count_unread_deal_messages", { p_user_id: adminUserId })
       : Promise.resolve({ data: 0, error: null }),

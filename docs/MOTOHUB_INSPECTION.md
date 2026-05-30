@@ -17,17 +17,20 @@
 
 ## フロー
 
-1. **加盟店** — `/inspections` から「Moto-Hub査定依頼」（車両名・保管場所・担当者・希望日時・備考）
-2. **DB** — `inspection_requests` 作成（`requested`）
-3. **スタッフ** — `/admin/inspections` で日程確定 → 査定開始 → 出品代行登録
-4. **完了** — RPC `complete_motohub_inspection` で `listings.inspection_badge_type = motohub_inspected`
+1. **加盟店** — `/inspections` から依頼（希望日時・備考）
+2. **スタッフ** — 希望日時で対応可能なら「承諾依頼」、難しければ別日時を提案（`awaiting_dealer`）
+3. **加盟店** — 提案を「承諾」または「別日時を提示」（`awaiting_staff`）
+4. **スタッフ** — 再提案を確認し「確定」→ `scheduled` →「査定を開始」→ 出品代行登録
+5. **完了** — `complete_motohub_inspection` でバッジ付与・請求書発行
 
 ### 依頼ステータス
 
 | status | 意味 |
 |--------|------|
-| requested | 依頼受付 |
-| scheduled | 日程確定 |
+| requested | 依頼受付（スタッフ確認待ち） |
+| awaiting_dealer | スタッフ提案 → 加盟店の承諾/再提案待ち |
+| awaiting_staff | 加盟店の再提案 → スタッフ確認待ち |
+| scheduled | 双方合意で日程確定 |
 | in_progress | 査定中 |
 | completed | 完了（出品紐付け済） |
 | cancelled | 取消 |
@@ -43,7 +46,8 @@
 - `033_motohub_inspection_service.sql`
 - `034_inspection_invoice_on_complete.sql`（請求書発行）
 - `035_admin_as_inspection_staff.sql`（管理者も査定代行可）
-- `049_inspection_notify_and_schedule.sql`（依頼時の運営通知・日程確定時の `scheduled_at`）
+- `049_inspection_notify_and_schedule.sql`（依頼時の運営通知）
+- `081_inspection_schedule_negotiation.sql`（日程調整 RPC・通知）
 
 ## 検索
 

@@ -1,20 +1,38 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
+import { InspectionRequestStaffActions } from "@/components/InspectionRequestStaffActions";
 import {
   INSPECTION_REQUEST_STATUS_LABELS,
   formatInspectionDateTime,
   type InspectionRequest,
-  type InspectionRequestStatus,
 } from "@/lib/inspection";
 import { formatYen } from "@/lib/format";
 import { createClient } from "@/lib/supabase/client";
 
-const OPEN_STATUSES: InspectionRequestStatus[] = ["requested", "scheduled", "in_progress"];
-
 export default function AdminInspectionsPage() {
+  return (
+    <Suspense fallback={<InspectionsPageFallback />}>
+      <AdminInspectionsContent />
+    </Suspense>
+  );
+}
+
+function InspectionsPageFallback() {
+  return (
+    <AppShell mode="admin">
+      <p className="text-sm text-muted">読み込み中…</p>
+    </AppShell>
+  );
+}
+
+function AdminInspectionsContent() {
+  const searchParams = useSearchParams();
+  const focusId = searchParams.get("focus");
+
   const [rows, setRows] = useState<(InspectionRequest & { invoice_id?: string | null })[]>([]);
   const [dealers, setDealers] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -55,30 +73,16 @@ export default function AdminInspectionsPage() {
     void load();
   }, [load]);
 
-  const updateRequest = async (
-    id: string,
-    patch: {
-      status?: InspectionRequestStatus;
-      scheduled_at?: string;
-    },
-  ) => {
-    setActionId(id);
-    setMessage("");
-    const supabase = createClient();
-    const { error } = await supabase.rpc("staff_update_inspection_request", {
-      p_request_id: id,
-      p_status: patch.status ?? null,
-      p_assigned_staff_id: null,
-      p_scheduled_at: patch.scheduled_at ?? null,
-      p_notes: null,
-    });
-    setActionId(null);
-    if (error) {
-      setMessage(error.message);
-      return;
-    }
-    await load();
-  };
+  useEffect(() => {
+    if (!focusId || loading) return;
+    const el = document.getElementById(`inspection-row-${focusId}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    el?.classList.add("ring-2", "ring-accent/50");
+    const t = window.setTimeout(() => {
+      el?.classList.remove("ring-2", "ring-accent/50");
+    }, 3000);
+    return () => window.clearTimeout(t);
+  }, [focusId, loading, rows.length]);
 
   return (
     <AppShell mode="admin">
@@ -89,7 +93,7 @@ export default function AdminInspectionsPage() {
           </Link>
           <h1 className="mt-2 text-2xl font-semibold">Moto-Hub査定依頼</h1>
           <p className="mt-1 text-sm text-muted">
-            スタッフのみ対応。現車確認後、出品代行登録で「Moto-Hub査定済」を付与します。
+            加盟店の希望日時を確認し、対応可能な日時を提案 → 加盟店の承諾後に「査定を開始」→ 出品代行登録で完了します。
           </p>
         </div>
 
@@ -97,20 +101,24 @@ export default function AdminInspectionsPage() {
         {message ? <p className="text-sm text-rose-300">{message}</p> : null}
 
         <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="w-full min-w-[900px] text-left text-sm">
+          <table className="w-full min-w-[960px] text-left text-sm">
             <thead className="border-b border-border bg-zinc-900/80 text-xs text-muted">
               <tr>
                 <th className="px-3 py-2">車両</th>
                 <th className="px-3 py-2">加盟店</th>
                 <th className="px-3 py-2">保管場所</th>
                 <th className="px-3 py-2">状態</th>
-                <th className="px-3 py-2">希望</th>
+                <th className="px-3 py-2">希望日時</th>
                 <th className="px-3 py-2">操作</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} className="border-b border-border/50 align-top">
+                <tr
+                  key={r.id}
+                  id={`inspection-row-${r.id}`}
+                  className="border-b border-border/50 align-top transition-shadow"
+                >
                   <td className="px-3 py-3 font-medium">{r.vehicle_name}</td>
                   <td className="px-3 py-3">{dealers[r.dealer_id] ?? "—"}</td>
                   <td className="px-3 py-3 text-xs">{r.storage_location}</td>
@@ -121,64 +129,14 @@ export default function AdminInspectionsPage() {
                     <p className="mt-1 text-xs text-muted">{formatYen(r.fee_ex_tax)} 税抜</p>
                   </td>
                   <td className="px-3 py-3 text-xs">{formatInspectionDateTime(r.preferred_at)}</td>
-                  <td className="px-3 py-3 space-y-1 text-xs">
-                    {OPEN_STATUSES.includes(r.status) ? (
-                      <>
-                        {r.status === "requested" ? (
-                          <button
-                            type="button"
-                            disabled={actionId === r.id}
-                            className="block text-sky-300 hover:underline disabled:opacity-50"
-                            onClick={() =>
-                              void updateRequest(r.id, {
-                                status: "scheduled",
-                                scheduled_at: r.preferred_at ?? undefined,
-                              })
-                            }
-                          >
-                            日程確定へ
-                          </button>
-                        ) : null}
-                        {r.status === "scheduled" ? (
-                          <button
-                            type="button"
-                            disabled={actionId === r.id}
-                            className="block text-sky-300 hover:underline disabled:opacity-50"
-                            onClick={() => void updateRequest(r.id, { status: "in_progress" })}
-                          >
-                            査定開始
-                          </button>
-                        ) : null}
-                        {r.status === "in_progress" ? (
-                          <Link
-                            href={`/admin/inspections/${r.id}/register`}
-                            className="block font-medium text-accent hover:underline"
-                          >
-                            出品代行登録 →
-                          </Link>
-                        ) : null}
-                      </>
-                    ) : (
-                      <>
-                        {r.invoice_id ? (
-                          <a
-                            href={`/api/invoices/${r.invoice_id}/pdf`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block text-accent hover:underline"
-                          >
-                            請求書PDF
-                          </a>
-                        ) : null}
-                        {r.listing_id ? (
-                          <Link href={`/listings/${r.listing_id}`} className="text-accent hover:underline">
-                            出品を見る
-                          </Link>
-                        ) : (
-                          "—"
-                        )}
-                      </>
-                    )}
+                  <td className="px-3 py-3">
+                    <InspectionRequestStaffActions
+                      request={r}
+                      busy={actionId === r.id}
+                      onBusyChange={setActionId}
+                      onMessage={setMessage}
+                      onUpdated={load}
+                    />
                   </td>
                 </tr>
               ))}
