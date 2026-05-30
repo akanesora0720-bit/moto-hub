@@ -1,6 +1,6 @@
 import { toBrandDisplay } from "@/lib/brand";
 import { renderTemplate } from "@/lib/notifications/render";
-import { sendMailMessage } from "@/lib/smtp";
+import { formatMailTransportError, sendMailMessage } from "@/lib/smtp";
 import { createServiceClient } from "@/lib/server-supabase";
 
 function adminRecipients(): string[] {
@@ -137,7 +137,7 @@ export async function processNotificationQueue(limit = 30) {
         .eq("id", item.id);
       sent++;
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = formatMailTransportError(e);
       const nextRetry = item.retry_count + 1;
       const giveUp = nextRetry >= item.max_retries;
 
