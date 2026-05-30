@@ -1,6 +1,6 @@
 export type PolicyType = "terms" | "privacy";
 
-/** 現行バージョン（ローンチ前は v1 固定。改定時のみ更新） */
+/** 現行バージョン（ローンチ前は v1。改定時のみ更新） */
 export const CURRENT_TERMS_VERSION = "v1";
 export const CURRENT_PRIVACY_VERSION = "v1";
 

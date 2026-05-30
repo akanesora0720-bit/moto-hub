@@ -5,11 +5,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { NavItem } from "@/lib/nav-config";
 
-function isActive(pathname: string, item: NavItem): boolean {
+function itemMatches(pathname: string, item: NavItem): boolean {
   if (item.matchPrefix) {
     return pathname === item.href || pathname.startsWith(`${item.href}/`);
   }
   return pathname === item.href;
+}
+
+/** 最も具体的な href だけをハイライト（例: /admin/credit と /admin/credit/adjust） */
+function isActive(pathname: string, item: NavItem, allItems: NavItem[]): boolean {
+  const matches = allItems.filter((i) => itemMatches(pathname, i));
+  if (!matches.some((m) => m.href === item.href)) return false;
+  const best = matches.reduce((a, b) => (a.href.length >= b.href.length ? a : b));
+  return best.href === item.href;
 }
 
 export function SidebarNav({
@@ -32,7 +40,7 @@ export function SidebarNav({
       </div>
       <nav className="flex gap-1 overflow-x-auto p-2 md:flex-col md:overflow-visible md:p-3">
         {items.map((item) => {
-          const active = isActive(pathname, item);
+          const active = isActive(pathname, item, items);
           const badge = item.badgeKey ? badges[item.badgeKey] ?? 0 : 0;
           return (
             <Link

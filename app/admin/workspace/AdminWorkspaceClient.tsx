@@ -129,6 +129,7 @@ export function AdminWorkspaceClient() {
     handoverPhasePending: 0,
     unresolvedDealAlerts: 0,
     adminNegotiationPending: 0,
+    dealerMembershipReviewPending: 0,
   });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [dealAlerts, setDealAlerts] = useState<
@@ -160,6 +161,7 @@ export function AdminWorkspaceClient() {
       pcBuyerPaymentReported,
       pcNegotiation,
       pcHandover,
+      pcMembershipReview,
     ] = await Promise.all([
       supabase
         .from("inquiries")
@@ -239,6 +241,12 @@ export function AdminWorkspaceClient() {
         .from("deals")
         .select("id", { count: "exact", head: true })
         .in("status", ["handover_done", "transfer_pending"]),
+      supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("member_type", "dealer")
+        .eq("account_status", "pending_review")
+        .eq("verification_status", "pending"),
     ]);
     setInquiries(
       (inq.data ?? []).map((row) => {
@@ -342,17 +350,32 @@ export function AdminWorkspaceClient() {
       handoverPhasePending: pcHandover.count ?? 0,
       unresolvedDealAlerts: actionableAlerts.length,
       adminNegotiationPending: pcNegotiation.count ?? 0,
+      dealerMembershipReviewPending: pcMembershipReview.count ?? 0,
     });
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const focusProfileId = searchParams.get("focus");
 
   const actionableDealAlerts = useMemo(
     () => filterActionableDealAlerts(dealAlerts, deals),
     [dealAlerts, deals],
   );
+
+  const sortedMembers = useMemo(() => {
+    const pendingFirst = (row: (typeof members)[number]) =>
+      row.member_type === "dealer" && row.verification_status === "pending" ? 0 : 1;
+    return [...members].sort((a, b) => pendingFirst(a) - pendingFirst(b));
+  }, [members]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    if (tab !== "members" || !focusProfileId) return;
+    const el = document.getElementById("membership-review-focus");
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [tab, focusProfileId, members]);
 
   const removeListing = async (id: string) => {
     const supabase = createClient();
@@ -616,9 +639,9 @@ export function AdminWorkspaceClient() {
           </Link>
           <Link
             href="/admin/credit"
-            className="rounded-lg border border-accent/40 px-4 py-2 text-sm text-accent hover:bg-accent/10"
+            className="rounded-lg border border-border px-4 py-2 text-sm hover:border-accent/40"
           >
-            RideWorks 信用管理 →
+            加盟店・信用
           </Link>
         </div>
 
@@ -633,7 +656,12 @@ export function AdminWorkspaceClient() {
               },
               { key: "complaints" as const, label: "クレーム", count: 0, highlight: false },
               { key: "listings" as const, label: "出品", count: 0, highlight: false },
-              { key: "members" as const, label: "会員", count: 0, highlight: false },
+              {
+                key: "members" as const,
+                label: "会員",
+                count: pending.dealerMembershipReviewPending,
+                highlight: pending.dealerMembershipReviewPending > 0,
+              },
               {
                 key: "deals" as const,
                 label: "取引・完了確認",
@@ -882,6 +910,11 @@ export function AdminWorkspaceClient() {
 
         {tab === "members" ? (
           <div className="space-y-4">
+            {pending.dealerMembershipReviewPending > 0 ? (
+              <p className="rounded-lg border border-amber-500/40 bg-amber-950/30 px-4 py-3 text-sm text-amber-100">
+                加盟審査待ちが {pending.dealerMembershipReviewPending} 件あります。古物商許可証を確認のうえ「加盟承認」または「差戻し」を行ってください。
+              </p>
+            ) : null}
           <div className="rounded-xl border border-border bg-card p-5">
             <h2 className="font-semibold">運営スタッフ招待</h2>
             <p className="mt-1 text-xs text-zinc-500">
@@ -922,8 +955,18 @@ export function AdminWorkspaceClient() {
                 </tr>
               </thead>
               <tbody>
-                {members.map((row) => (
-                  <tr key={row.id} className="border-b border-border/60">
+                {sortedMembers.map((row) => (
+                  <tr
+                    key={row.id}
+                    id={row.id === focusProfileId ? "membership-review-focus" : undefined}
+                    className={`border-b border-border/60 ${
+                      row.id === focusProfileId
+                        ? "bg-amber-950/40 ring-1 ring-inset ring-amber-500/50"
+                        : row.member_type === "dealer" && row.verification_status === "pending"
+                          ? "bg-amber-950/20"
+                          : ""
+                    }`}
+                  >
                     <td className="px-4 py-3">
                       <Link href={`/members/${row.id}`} className="font-medium hover:text-accent">
                         {row.store_name ?? "—"}

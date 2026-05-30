@@ -91,9 +91,17 @@ export async function processNotificationQueue(limit = 30) {
       continue;
     }
 
+    const adminLinkPath =
+      typeof item.payload?.admin_link === "string" ? item.payload.admin_link.trim() : "";
+    const appOrigin = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "";
     const bodyVars: Record<string, string> = {
       body: String(item.payload?.body ?? ""),
       subject: String(item.payload?.subject ?? ""),
+      admin_link: adminLinkPath
+        ? appOrigin
+          ? `${appOrigin}${adminLinkPath}`
+          : adminLinkPath
+        : "",
     };
     const subject = toBrandDisplay(
       bodyVars.subject || renderTemplate(tpl.subject_template, bodyVars),

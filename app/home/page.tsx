@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
-import { MarketStatsBar } from "@/components/MarketStatsBar";
-import { fetchMarketStats } from "@/lib/market-stats";
-import { ActionCard, StatBadge } from "@/components/layout/DashboardCard";
+import { ActionCard, ActionQueue } from "@/components/layout/DashboardCard";
+import { buildDealerActionQueue } from "@/lib/dealer-action-queue";
 import { fetchDealerActionStats } from "@/lib/dealer-action-stats";
 import { createClient } from "@/lib/supabase/server";
 import { DealerMembershipBanner } from "@/components/DealerMembershipBanner";
@@ -14,6 +13,15 @@ import type { AccountStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
+const DEALER_QUICK_LINKS = [
+  { label: "商談", href: "/deals", desc: "進行中の取引・連絡" },
+  { label: "出品する", href: "/listings/new", desc: "車両を業販に出す" },
+  { label: "車両を探す", href: "/search", desc: "全国の加盟店在庫" },
+  { label: "パーツ", href: "/parts", desc: "検索・出品・成約" },
+  { label: "設定", href: "/settings", desc: "会社情報・請求・サポート" },
+  { label: "操作説明", href: "/help", desc: "手順の確認" },
+] as const;
+
 export default async function DealerHomePage() {
   const viewer = await getViewer();
   if (!viewer) redirect("/login");
@@ -21,10 +29,9 @@ export default async function DealerHomePage() {
 
   const supabase = await createClient();
 
-  const [actions, stats, marketStats] = await Promise.all([
+  const [actions, stats] = await Promise.all([
     fetchDealerActionStats(viewer.id),
     fetchDealerDashboardStats(viewer.id).catch(() => null),
-    fetchMarketStats(supabase).catch(() => ({ listings: 0, parts: 0 })),
   ]);
   const { data: profileRow } = await supabase
     .from("profiles")
@@ -37,204 +44,126 @@ export default async function DealerHomePage() {
     member_type: "dealer",
     account_status: accountStatus,
   });
+  const actionQueue = tradingEnabled ? buildDealerActionQueue(actions) : [];
 
   return (
     <AuthenticatedShell>
-      <div className="mx-auto max-w-4xl space-y-8">
+      <div className="mx-auto max-w-3xl space-y-8">
         <DealerMembershipBanner
           accountStatus={accountStatus}
           profileCompleted={profileRow?.profile_completed ?? false}
         />
         <div>
           <h1 className="text-2xl font-semibold">ホーム</h1>
-          <p className="mt-1 text-sm text-muted">
-            {storeName} さん、今日の業務状況です。
-          </p>
-          <p className="mt-2 inline-block rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-200">
-            全国の加盟店在庫を検索できます · Moto-Hub β版運用中
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            {storeName} さん、今日は
+            <strong className="text-foreground"> 要対応</strong>
+            があるものだけ下に並びます。減点は自動記録されることがありますが、毎回の報告は不要です。
           </p>
         </div>
 
-        <section>
-          <h2 className="mb-3 text-sm font-medium text-muted">仕入れ・検索</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <ActionCard
-              hero
-              ctaLabel="在庫を見る"
-              title="車両を探す"
-              description="全国の加盟店在庫を検索・仕入れ（エリア・都道府県で引取目安）"
-              href="/search"
-            />
-            {tradingEnabled ? (
+        {tradingEnabled ? (
+          <>
+            <section className="space-y-3">
+              <h2 className="text-sm font-medium text-muted">要対応</h2>
+              <ActionQueue
+                items={actionQueue}
+                emptyMessage="今は要対応の項目はありません。車両を探す・出品は下のメニューから。"
+              />
+            </section>
+
+            <section className="space-y-3">
+              <h2 className="text-sm font-medium text-muted">よく使う</h2>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {DEALER_QUICK_LINKS.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="rounded-xl border border-border bg-card px-4 py-4 transition hover:border-accent/40"
+                  >
+                    <p className="font-medium">{link.label}</p>
+                    <p className="mt-1 text-xs text-muted">{link.desc}</p>
+                  </Link>
+                ))}
+              </div>
+            </section>
+
+            {stats ? (
+              <section className="grid gap-2 border-t border-border pt-6 sm:grid-cols-3">
+                <div className="rounded-xl border border-border bg-card px-4 py-3">
+                  <p className="text-xs text-muted">出品</p>
+                  <p className="mt-1 text-lg font-semibold tabular-nums">{stats.listing_count} 台</p>
+                </div>
+                <div className="rounded-xl border border-border bg-card px-4 py-3">
+                  <p className="text-xs text-muted">成約率</p>
+                  <p className="mt-1 text-lg font-semibold tabular-nums">{stats.completion_rate}%</p>
+                </div>
+                <div className="rounded-xl border border-border bg-card px-4 py-3">
+                  <p className="text-xs text-muted">今月売上（税抜）</p>
+                  <p className="mt-1 text-lg font-semibold tabular-nums">
+                    ¥{stats.monthly_sales_ex_tax.toLocaleString("ja-JP")}
+                  </p>
+                </div>
+              </section>
+            ) : null}
+          </>
+        ) : (
+          <section className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               <ActionCard
                 hero
-                ctaLabel="パーツを探す"
-                title="パーツを探す"
-                description="メーカー・車種・品番で検索。出品・問い合わせ・成約"
-                href="/parts"
+                ctaLabel="在庫を見る"
+                title="車両を探す"
+                description="審査完了前も閲覧できます"
+                href="/search"
               />
-            ) : (
-              <div className="flex flex-col justify-center rounded-2xl border border-dashed border-border bg-zinc-900/30 p-6 text-sm text-muted">
-                <p className="font-medium text-zinc-300">パーツを探す</p>
-                <p className="mt-2">加盟審査完了後にご利用いただけます。</p>
-              </div>
-            )}
-          </div>
-        </section>
-
-        <MarketStatsBar stats={marketStats} />
-
-        {tradingEnabled ? (
-          <section>
-            <h2 className="mb-3 text-sm font-medium text-muted">要対応</h2>
-            <div className="flex flex-wrap gap-3">
-              {actions.newInquiries > 0 ? (
-                <StatBadge
-                  count={actions.newInquiries}
-                  label="新着問い合わせ"
-                  href="/listings/mine"
-                  urgent
-                />
-              ) : null}
-              {actions.awaitingPayment > 0 ? (
-                <StatBadge
-                  count={actions.awaitingPayment}
-                  label="入金待ち"
-                  href="/deals"
-                  urgent
-                />
-              ) : null}
-              {actions.handoverPending > 0 ? (
-                <StatBadge
-                  count={actions.handoverPending}
-                  label="引取・引渡"
-                  href="/deals"
-                  urgent
-                />
-              ) : null}
-              {actions.unreadNotifications > 0 ? (
-                <StatBadge
-                  count={actions.unreadNotifications}
-                  label="運営通知"
-                  href="/notifications"
-                  urgent
-                />
-              ) : null}
-              {actions.newInquiries === 0 &&
-              actions.awaitingPayment === 0 &&
-              actions.handoverPending === 0 &&
-              actions.unreadNotifications === 0 ? (
-                <p className="text-sm text-muted">現在、要対応の項目はありません。</p>
-              ) : null}
-            </div>
-          </section>
-        ) : null}
-
-        {tradingEnabled && stats ? (
-          <section className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-border bg-card px-4 py-3">
-              <p className="text-xs text-muted">出品</p>
-              <p className="mt-1 text-xl font-semibold">{stats.listing_count} 台</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card px-4 py-3">
-              <p className="text-xs text-muted">成約率</p>
-              <p className="mt-1 text-xl font-semibold">{stats.completion_rate}%</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card px-4 py-3">
-              <p className="text-xs text-muted">今月売上（税抜）</p>
-              <p className="mt-1 text-xl font-semibold">
-                ¥{stats.monthly_sales_ex_tax.toLocaleString("ja-JP")}
-              </p>
-            </div>
-          </section>
-        ) : null}
-
-        {tradingEnabled ? (
-          <section>
-            <h2 className="mb-3 text-sm font-medium text-muted">業務メニュー</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <ActionCard
-                title="商談管理"
-                description="進行中の取引・問い合わせ"
-                href="/deals"
-                sublinks={[{ label: "自分の出品を見る", href: "/listings/mine" }]}
-              />
-              <ActionCard
-                title="出品する"
-                description="車両を登録して業販に出す"
-                href="/listings/new"
-              />
-              <ActionCard
-                title="売却済み"
-                description="成約履歴と精算確認"
-                href="/deals/history"
-                sublinks={[{ label: "月額入金報告", href: "/my/payments" }]}
-              />
-              <ActionCard
-                title="Moto-Hub査定依頼"
-                description="現車確認・出品代行（税抜¥3,000/台）"
-                href="/inspections"
-              />
-              <ActionCard
-                title="お気に入り"
-                description="ウォッチリスト（準備中）"
-                href="/favorites"
-              />
-              <ActionCard
-                title="信用ランク"
-                description="取引に基づく信用スコアと公開プロフィール"
-                href="/profile"
-                sublinks={[{ label: "詳細統計", href: "/my/dashboard" }]}
-              />
-              <ActionCard
-                title="設定"
-                description="会社情報・振込口座・本人確認"
-                href="/settings"
-                sublinks={[
-                  { label: "操作説明", href: "/help" },
-                  { label: "運営サポート", href: "/support" },
-                ]}
-              />
-            </div>
-          </section>
-        ) : (
-          <section>
-            <h2 className="mb-3 text-sm font-medium text-muted">利用可能なメニュー</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
               {!profileRow?.profile_completed ? (
                 <ActionCard
-                  title="加盟店情報の登録"
-                  description="審査に必要な会社情報・書類を入力"
+                  hero
+                  ctaLabel="登録する"
+                  title="加盟店情報"
+                  description="審査に必要な情報を入力"
                   href="/onboarding"
                 />
-              ) : null}
-              <ActionCard
-                title="操作説明"
-                description="登録・検索・審査の流れ"
+              ) : (
+                <div className="flex flex-col justify-center rounded-2xl border border-dashed border-border bg-zinc-900/30 p-6 text-sm text-muted">
+                  <p className="font-medium text-zinc-300">加盟審査中</p>
+                  <p className="mt-2">承認後に出品・商談が使えます。</p>
+                </div>
+              )}
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Link
                 href="/help"
-              />
-              <ActionCard
-                title="設定"
-                description="アカウント・会社情報"
+                className="rounded-xl border border-border bg-card px-4 py-4 hover:border-accent/40"
+              >
+                <p className="font-medium">操作説明</p>
+                <p className="mt-1 text-xs text-muted">登録・審査の流れ</p>
+              </Link>
+              <Link
                 href="/settings"
-              />
+                className="rounded-xl border border-border bg-card px-4 py-4 hover:border-accent/40"
+              >
+                <p className="font-medium">設定</p>
+                <p className="mt-1 text-xs text-muted">アカウント・会社情報</p>
+              </Link>
             </div>
           </section>
         )}
 
         <p className="text-xs text-muted">
-          {tradingEnabled ? (
-            <>
-              迷ったら <Link href="/deals" className="text-accent hover:underline">商談</Link>
-              ・
-              <Link href="/support" className="text-accent hover:underline">運営サポート</Link>
-              ・
-            </>
-          ) : null}
+          迷ったら{" "}
+          <Link href="/deals" className="text-accent hover:underline">
+            商談
+          </Link>
+          または{" "}
+          <Link href="/support" className="text-accent hover:underline">
+            運営サポート
+          </Link>
+          ・
           <Link href="/help" className="text-accent hover:underline">
             操作説明
           </Link>
-          をご覧ください。
         </p>
       </div>
     </AuthenticatedShell>

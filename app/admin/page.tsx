@@ -4,13 +4,19 @@ import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { canAccessAdmin } from "@/lib/auth";
 import { fetchAdminPendingCounts } from "@/lib/admin-pending-counts";
 import { fetchAdminKpi } from "@/lib/operations-kpi";
-import { KpiCard, ManagementSection } from "@/components/layout/DashboardCard";
-import { createServiceClient } from "@/lib/server-supabase";
-import { formatYen } from "@/lib/format";
+import { buildAdminActionQueue } from "@/lib/admin-action-queue";
+import { ActionQueue, KpiCard } from "@/components/layout/DashboardCard";
 import { getViewer } from "@/lib/viewer";
 import type { Profile } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+const QUICK_LINKS = [
+  { label: "商談・取引", href: "/admin/workspace", desc: "問い合わせ・取引・加盟審査" },
+  { label: "精算", href: "/admin/billing", desc: "請求・入金確認" },
+  { label: "加盟店・信用", href: "/admin/credit", desc: "審査・減点・BAN" },
+  { label: "操作説明", href: "/admin/help", desc: "手順の確認" },
+] as const;
 
 export default async function AdminHubPage() {
   const viewer = await getViewer();
@@ -18,50 +24,27 @@ export default async function AdminHubPage() {
 
   let kpi;
   let pending;
-  let dealerCount = 0;
-  let todayVolume = 0;
   let kpiError: string | null = null;
 
   try {
-    const service = createServiceClient();
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-
-    const [k, p, dealers, fundedToday] = await Promise.all([
+    [kpi, pending] = await Promise.all([
       fetchAdminKpi(),
       fetchAdminPendingCounts(viewer.id),
-      service
-        .from("profiles")
-        .select("id", { count: "exact", head: true })
-        .eq("member_type", "dealer")
-        .eq("is_active", true),
-      service
-        .from("deals")
-        .select("agreed_price_ex_tax")
-        .eq("status", "funded")
-        .gte("funded_at", todayStart.toISOString()),
     ]);
-
-    kpi = k;
-    pending = p;
-    dealerCount = dealers.count ?? 0;
-    todayVolume = (fundedToday.data ?? []).reduce(
-      (sum, d) => sum + (d.agreed_price_ex_tax as number),
-      0,
-    );
   } catch (e) {
     kpiError = e instanceof Error ? e.message : String(e);
   }
 
-  const dangerAccounts = kpi ? kpi.dealersRed + kpi.dealersBanned : 0;
+  const actionQueue =
+    kpi && pending ? buildAdminActionQueue(pending, kpi) : [];
 
   return (
     <AuthenticatedShell mode="admin">
-      <div className="mx-auto max-w-5xl space-y-8">
+      <div className="mx-auto max-w-3xl space-y-8">
         <div>
           <h1 className="text-2xl font-semibold">管理センター</h1>
-          <p className="mt-1 text-sm text-muted">
-            未対応を優先し、必要な画面へ最短で移動できます。
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            件数があるものだけ下に並びます。自動減点は基本そのままでよく、毎件の報告や承認は不要です。
           </p>
         </div>
 
@@ -73,26 +56,53 @@ export default async function AdminHubPage() {
 
         {kpi && pending ? (
           <>
-            <section>
-              <h2 className="mb-3 text-sm font-medium text-muted">KPI スナップショット</h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <section className="space-y-3">
+              <h2 className="text-sm font-medium text-muted">要対応</h2>
+              <ActionQueue items={actionQueue} />
+            </section>
+
+            <section className="space-y-3">
+              <h2 className="text-sm font-medium text-muted">よく使う</h2>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {QUICK_LINKS.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="rounded-xl border border-border bg-card px-4 py-4 transition hover:border-accent/40"
+                  >
+                    <p className="font-medium">{link.label}</p>
+                    <p className="mt-1 text-xs text-muted">{link.desc}</p>
+                  </Link>
+                ))}
+              </div>
+            </section>
+
+            {pending.openDealPenaltiesPending > 0 ? (
+              <p className="text-xs text-muted">
+                進行中取引の自動減点が {pending.openDealPenaltiesPending}{" "}
+                件ありますが、対応必須ではありません。戻す必要があるときだけ{" "}
+                <Link href="/admin/credit/adjust" className="text-accent hover:underline">
+                  信用管理 › 減点の調整
+                </Link>
+                から行ってください。
+              </p>
+            ) : null}
+
+            <section className="space-y-3 border-t border-border pt-6">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-sm font-medium text-muted">数字の確認</h2>
+                <Link
+                  href="/admin/dashboard"
+                  className="text-xs text-accent hover:underline"
+                >
+                  詳細 KPI →
+                </Link>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
                 <KpiCard
                   label="商談中"
                   value={pending.negotiationDeals}
                   href="/admin/workspace?tab=deals"
-                  highlight={pending.negotiationDeals > 0}
-                />
-                <KpiCard label="本日流通額" value={formatYen(todayVolume)} />
-                <KpiCard
-                  label="月間成約台数"
-                  value={kpi.dealsCompletedThisMonth}
-                  href="/admin/workspace"
-                />
-                <KpiCard
-                  label="未対応問い合わせ"
-                  value={pending.openInquiries}
-                  href="/admin/workspace"
-                  highlight={pending.openInquiries > 0}
                 />
                 <KpiCard
                   label="精算待ち"
@@ -100,172 +110,8 @@ export default async function AdminHubPage() {
                   href="/admin/billing"
                   highlight={pending.invoicesReviewPending > 0}
                 />
-                <KpiCard label="加盟店数" value={dealerCount} href="/admin/credit" />
-                <KpiCard
-                  label="危険アカウント"
-                  value={dangerAccounts}
-                  href="/admin/credit"
-                  highlight={dangerAccounts > 0}
-                />
-                <KpiCard
-                  label="名変超過"
-                  value={kpi.transferOverdueOpen}
-                  href="/admin/workspace"
-                  highlight={kpi.transferOverdueOpen > 0}
-                />
-                <KpiCard
-                  label="未解決リスク"
-                  value={kpi.openRiskFlags}
-                  href="/admin/credit"
-                  highlight={kpi.openRiskFlags > 0}
-                />
               </div>
             </section>
-
-            <div className="grid gap-6 lg:grid-cols-2">
-              <ManagementSection
-                title="① 商談監視"
-                items={[
-                  {
-                    label: "Moto-Hub査定依頼",
-                    count: pending.openInspectionRequests,
-                    href: "/admin/inspections",
-                  },
-                  {
-                    label: "商談中（取引）",
-                    count: pending.negotiationDeals,
-                    href: "/admin/workspace?tab=deals",
-                    note: "inquiry / negotiating",
-                  },
-                  {
-                    label: "商談・新規リード",
-                    count: pending.adminNegotiationPending,
-                    href: "/admin/workspace?tab=inquiries",
-                    note: "商談中の取引＋未紐づき問い合わせ",
-                  },
-                  {
-                    label: "買い手振込報告",
-                    count: pending.buyerPaymentReportedPending,
-                    href: "/admin/workspace?tab=deals",
-                  },
-                  {
-                    label: "引渡・名変フェーズ",
-                    count: pending.handoverPhasePending,
-                    href: "/admin/workspace?tab=deals",
-                  },
-                  {
-                    label: "取引完了待ち",
-                    count: pending.dealsClosurePending,
-                    href: "/admin/workspace?tab=deals",
-                  },
-                  {
-                    label: "トラブル案件",
-                    count: pending.openDisputes,
-                    href: "/admin/disputes",
-                  },
-                  {
-                    label: "名変期限超過",
-                    count: pending.transferOverdue,
-                    href: "/admin/workspace",
-                  },
-                  {
-                    label: "引取予定 入力待ち",
-                    count: pending.pickupSchedulePending,
-                    href: "/admin/workspace",
-                    note: "入金確認済・日時未登録",
-                  },
-                  {
-                    label: "取引・商談一覧",
-                    count: 0,
-                    href: "/admin/workspace",
-                    note: "詳細操作",
-                  },
-                ]}
-              />
-              <ManagementSection
-                title="② 精算管理"
-                items={[
-                  {
-                    label: "請求書確認待ち",
-                    count: pending.invoicesReviewPending,
-                    href: "/admin/billing",
-                  },
-                  {
-                    label: "入金報告未確認",
-                    count: pending.paymentReportsPending,
-                    href: "/admin/billing",
-                  },
-                ]}
-              />
-              <ManagementSection
-                title="③ 加盟店審査"
-                items={[
-                  {
-                    label: "信用・本人確認",
-                    count: kpi.dealersYellow,
-                    href: "/admin/credit",
-                    note: "Yellow 要確認",
-                  },
-                  {
-                    label: "クレーム未処理",
-                    count: kpi.complaintsOpen,
-                    href: "/admin/workspace",
-                  },
-                  {
-                    label: "運営サポート",
-                    count: pending.openSupport,
-                    href: "/admin/support",
-                  },
-                ]}
-              />
-              <ManagementSection
-                title="④ 違反監視"
-                items={[
-                  {
-                    label: "通報・dispute",
-                    count: pending.openDisputes,
-                    href: "/admin/disputes",
-                  },
-                  {
-                    label: "リスクフラグ",
-                    count: kpi.openRiskFlags,
-                    href: "/admin/credit",
-                  },
-                  {
-                    label: "BAN / Red",
-                    count: dangerAccounts,
-                    href: "/admin/credit",
-                  },
-                ]}
-              />
-            </div>
-
-            <div className="flex flex-wrap gap-3 text-sm">
-              <Link
-                href="/admin/help"
-                className="rounded-lg border border-border px-4 py-2 hover:border-accent/40"
-              >
-                運営 操作説明
-              </Link>
-              <Link
-                href="/admin/workspace"
-                className="rounded-lg bg-accent px-4 py-2 font-semibold text-black"
-              >
-                商談・取引ワークスペース →
-              </Link>
-              <Link
-                href="/admin/dashboard"
-                className="rounded-lg border border-border px-4 py-2 hover:border-accent/40"
-              >
-                詳細 KPI グラフ
-              </Link>
-              <Link
-                href="/admin/messages"
-                className="rounded-lg border border-border px-4 py-2 hover:border-accent/40"
-              >
-                メール送信
-              </Link>
-            </div>
           </>
         ) : null}
       </div>

@@ -44,6 +44,8 @@ export async function GET(req: NextRequest) {
         adminHubPending: pending.adminHubPending,
         adminWorkspacePending: pending.adminWorkspacePending,
         adminDealsPending: pending.adminDealsPending,
+        dealerMembershipReviewPending: pending.dealerMembershipReviewPending,
+        openDealPenaltiesPending: pending.openDealPenaltiesPending,
       });
     } catch {
       return NextResponse.json({});

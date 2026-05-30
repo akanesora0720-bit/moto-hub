@@ -6,9 +6,9 @@ export const PENALTY_SOURCE_LABELS: Record<PenaltySource, string> = {
 };
 
 export const AUTO_PENALTY_RULES = [
-  "車両代金入金期限超過（1営業日ごとに −5）",
-  "Moto-Hub手数料支払期限超過（1営業日ごとに −5）",
-  "名義変更期限超過（1営業日ごとに −5）",
+  "車両代金入金期限超過（営業日ごとに自動 −5・進行中取引は事後調整可）",
+  "Moto-Hub手数料支払期限超過（営業日ごとに自動 −5・進行中取引は事後調整可）",
+  "名義変更期限超過（営業日ごとに自動 −5・進行中取引は事後調整可）",
 ] as const;
 
 export const MANUAL_PENALTY_EXAMPLES = [

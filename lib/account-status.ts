@@ -1,5 +1,14 @@
 import type { AccountStatus, Profile } from "@/lib/types";
 
+type DealerMembershipProfile = Pick<
+  Profile,
+  "account_status" | "member_type" | "is_admin" | "is_active"
+>;
+
+function bypassesDealerMembershipGate(profile: DealerMembershipProfile | null): boolean {
+  return !!profile?.is_active && (profile.is_admin === true || profile.member_type === "staff");
+}
+
 export const ACCOUNT_STATUS_LABELS: Record<AccountStatus, string> = {
   pre_registered: "仮登録",
   pending_review: "加盟審査中",
@@ -13,8 +22,9 @@ export function isDealerApproved(profile: Pick<Profile, "account_status" | "memb
   return profile?.member_type === "dealer" && profile.account_status === "approved";
 }
 
-/** 仮登録または審査待ち（機能制限あり） */
-export function isDealerLimited(profile: Pick<Profile, "account_status" | "member_type"> | null): boolean {
+/** 仮登録または審査待ち（機能制限あり）。運営者は対象外 */
+export function isDealerLimited(profile: DealerMembershipProfile | null): boolean {
+  if (bypassesDealerMembershipGate(profile)) return false;
   if (profile?.member_type !== "dealer") return false;
   return profile.account_status === "pre_registered" || profile.account_status === "pending_review";
 }
@@ -33,8 +43,9 @@ export function isDealerPreRegistered(
 
 const LIMITED_DEALER_EXACT = ["/listings"] as const;
 
-/** 仮登録・審査待ちの加盟店がアクセス可能なパス */
+/** 仮登録・審査待ちの加盟店がアクセス可能なパス（運営画面は運営者のみ別判定） */
 export function isDealerLimitedPathAllowed(pathname: string): boolean {
+  if (pathname.startsWith("/admin")) return false;
   if (LIMITED_DEALER_EXACT.some((p) => pathname === p)) return true;
   if (
     pathname === "/home" ||

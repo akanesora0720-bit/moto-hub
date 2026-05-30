@@ -52,6 +52,7 @@ flowchart LR
 | クレーム | `complaint.created`, `complaint.approved`, `complaint.rejected` |
 | 信用 | `credit.badge_yellow`, `credit.badge_red`, `credit.ban`, `credit.penalty` |
 | リスク | `risk.detected` |
+| 加盟審査 | `dealer.membership_submitted` |
 
 ## 名変超過 → 自動減点
 

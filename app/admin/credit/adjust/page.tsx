@@ -1,7 +1,7 @@
 import { Suspense } from "react";
-import { AdminCreditPageClient } from "./AdminCreditPageClient";
+import { AdminCreditAdjustPageClient } from "./AdminCreditAdjustPageClient";
 
-export default function AdminCreditPage() {
+export default function AdminCreditAdjustPage() {
   return (
     <Suspense
       fallback={
@@ -10,7 +10,7 @@ export default function AdminCreditPage() {
         </div>
       }
     >
-      <AdminCreditPageClient />
+      <AdminCreditAdjustPageClient />
     </Suspense>
   );
 }

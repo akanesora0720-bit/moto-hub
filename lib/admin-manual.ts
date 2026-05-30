@@ -8,7 +8,7 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "運営画面は加盟店の商談・取引・審査・精算を一元管理します。管理者（is_admin）とスタッフ（member_type = staff）が利用できます。",
+        text: "運営画面は加盟店の商談・取引・審査・精算を一元管理します。日常は管理センター（/admin）の「要対応」だけ見れば十分です。管理者（is_admin）とスタッフ（member_type = staff）が利用できます。",
       },
       {
         kind: "callout",
@@ -26,6 +26,7 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
           ["パーツ出品 / 成約", "/admin/parts · /admin/parts/sales"],
           ["AI出品サポート", "/admin/ai-listing"],
           ["加盟店・信用", "/admin/credit"],
+          ["減点の調整（任意）", "/admin/credit/adjust"],
           ["Moto-Hub査定", "/admin/inspections"],
           ["サポート / トラブル", "/admin/support · /admin/disputes"],
         ],
@@ -38,15 +39,14 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "KPI と未対応件数のハブです。件数のある項目から該当画面へ遷移します。",
+        text: "運営の入口です。件数がある「要対応」だけが並び、よく使う画面へ進みます。自動減点は未対応扱いにしません。",
       },
       {
         kind: "ul",
         items: [
-          "① 商談監視 — 査定依頼・新規リード・振込報告・引渡フェーズ・取引完了待ち・名変超過など",
-          "② 精算管理 — 請求書確認待ち・月額入金報告の未確認",
-          "③ 加盟店審査 — 信用・クレーム・運営サポート",
-          "④ 違反監視 — dispute・リスクフラグ",
+          "要対応 — 件数がある項目のみ（加盟審査・精算・商談・トラブル等）",
+          "よく使う — 商談・取引 / 精算 / 加盟店・信用 / 操作説明",
+          "サイドバー — 上記に加えトラブル・サポート。取引連絡・パーツ・査定などは各画面から",
         ],
       },
     ],
@@ -202,9 +202,10 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
       {
         kind: "ul",
         items: [
-          "新規加盟 — ワークスペースの加盟店タブで onboarding 送信後「加盟審査を承認」→ account_status = approved（正式契約・全機能解放）",
+          "新規加盟 — onboarding 提出時に運営へメール（SMTP+Cron）と管理画面通知。ワークスペース「会員」タブの件数バッジ／加盟審査待ちから「加盟承認」→ approved",
           "否認・停止 — 審査結果に応じてステータス更新",
           "信用スコア — 手動減点（理由は加盟店に公開）、年末リセット等",
+          "減点の調整（/admin/credit/adjust）— 基本は何もしない。戻す必要があるときだけ「減点を戻す」。メモ・毎件報告は不要",
           "リスクフラグ・BAN — 重大案件の記録と利用停止",
         ],
       },

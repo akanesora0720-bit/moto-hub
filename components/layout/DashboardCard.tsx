@@ -136,6 +136,46 @@ export function KpiCard({
   return <div className={className}>{inner}</div>;
 }
 
+export function ActionQueue({
+  items,
+  emptyMessage = "今は要対応の項目はありません。",
+}: {
+  items: { label: string; count: number; href: string; urgent?: boolean }[];
+  emptyMessage?: string;
+}) {
+  if (items.length === 0) {
+    return (
+      <p className="rounded-xl border border-border bg-card px-4 py-6 text-sm text-muted">
+        {emptyMessage}
+      </p>
+    );
+  }
+
+  return (
+    <ul className="space-y-1 rounded-xl border border-border bg-card p-2">
+      {items.map((item) => (
+        <li key={`${item.href}-${item.label}`}>
+          <Link
+            href={item.href}
+            className={`flex items-center justify-between gap-3 rounded-lg px-3 py-3 text-sm transition hover:bg-zinc-900/60 ${
+              item.urgent ? "text-rose-100" : ""
+            }`}
+          >
+            <span className="font-medium">{item.label}</span>
+            <span
+              className={`min-w-[1.75rem] rounded-full px-2.5 py-0.5 text-center text-xs font-bold tabular-nums ${
+                item.urgent ? "bg-rose-500 text-white" : "bg-amber-500/25 text-amber-100"
+              }`}
+            >
+              {item.count}
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function ManagementSection({
   title,
   items,
@@ -148,7 +188,7 @@ export function ManagementSection({
       <h2 className="font-semibold">{title}</h2>
       <ul className="mt-4 space-y-2">
         {items.map((item) => (
-          <li key={item.href}>
+          <li key={`${item.href}-${item.label}`}>
             <Link
               href={item.href}
               className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm transition hover:bg-zinc-900/60"

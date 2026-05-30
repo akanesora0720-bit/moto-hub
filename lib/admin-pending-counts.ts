@@ -32,6 +32,10 @@ export type AdminPendingCounts = {
   adminWorkspacePending: number;
   /** サイドバー「取引連絡」 */
   adminDealsPending: number;
+  /** 加盟審査待ち（会員タブ） */
+  dealerMembershipReviewPending: number;
+  /** 進行中取引に紐づく未取り消しの自動減点（事後調整候補） */
+  openDealPenaltiesPending: number;
 };
 
 function sum(...values: number[]): number {
@@ -58,6 +62,8 @@ export async function fetchAdminPendingCounts(
     dealsForAlertsResult,
     handoverPhase,
     unreadNotif,
+    membershipReview,
+    openDealPenalties,
   ] = await Promise.all([
     supabase
       .from("support_tickets")
@@ -131,6 +137,19 @@ export async function fetchAdminPendingCounts(
           .eq("user_id", adminUserId)
           .is("read_at", null)
       : Promise.resolve({ count: 0, error: null }),
+    supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("member_type", "dealer")
+      .eq("account_status", "pending_review")
+      .eq("verification_status", "pending"),
+    supabase
+      .from("penalty_logs")
+      .select("id, deal_id, deals!inner(status)", { count: "exact", head: true })
+      .lt("score_delta", 0)
+      .is("reversed_at", null)
+      .not("deal_id", "is", null)
+      .not("deals.status", "in", '("completed","cancelled")'),
   ]);
 
   const unreadBoard =
@@ -154,6 +173,8 @@ export async function fetchAdminPendingCounts(
   ).length;
   const handoverPhasePending = handoverPhase.count ?? 0;
   const unreadNotifications = unreadNotif.count ?? 0;
+  const dealerMembershipReviewPending = membershipReview.count ?? 0;
+  const openDealPenaltiesPending = openDealPenalties.count ?? 0;
 
   const adminWorkspacePending = sum(
     adminNegotiationPending,
@@ -175,6 +196,7 @@ export async function fetchAdminPendingCounts(
 
   const adminHubPending = sum(
     adminWorkspacePending,
+    dealerMembershipReviewPending,
     unreadNotifications,
     support.count ?? 0,
     disputes.count ?? 0,
@@ -204,5 +226,7 @@ export async function fetchAdminPendingCounts(
     adminHubPending,
     adminWorkspacePending,
     adminDealsPending,
+    dealerMembershipReviewPending,
+    openDealPenaltiesPending,
   };
 };

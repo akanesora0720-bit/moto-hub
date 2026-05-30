@@ -47,9 +47,16 @@ export function isProfileComplete(profile: Profile | null): boolean {
   );
 }
 
-export function canAccessAdmin(profile: Profile | null): boolean {
+/** 運営者（is_admin または staff）。加盟店審査ステータスとは独立 */
+export function isPlatformOperator(
+  profile: Pick<Profile, "is_active" | "is_admin" | "member_type"> | null,
+): boolean {
   if (!profile?.is_active) return false;
-  return profile.is_admin || profile.member_type === "staff";
+  return profile.is_admin === true || profile.member_type === "staff";
+}
+
+export function canAccessAdmin(profile: Profile | null): boolean {
+  return isPlatformOperator(profile);
 }
 
 /** 査定依頼の対応・出品代行（staff または is_admin の業者管理者） */

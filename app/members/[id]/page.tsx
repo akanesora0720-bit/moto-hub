@@ -145,6 +145,11 @@ export default async function MemberProfilePage({
 
         {showCreditDetail ? (
           <>
+            {isSelf ? (
+              <p className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted">
+                期限超過などで減点が記録されることがあります。事前連絡や誠実な対応をしていれば、取引の状況に応じて運営が調整することがあります。毎回の申請や報告は不要です。
+              </p>
+            ) : null}
             <section className="space-y-3">
               <h2 className="text-lg font-semibold">減点履歴</h2>
               <PenaltyHistoryList rows={creditData.penalties} />

@@ -21,7 +21,7 @@ export default async function HelpPage() {
           </Link>
           <h1 className="mt-2 text-2xl font-semibold">加盟店 操作説明</h1>
           <p className="mt-1 text-sm text-muted">
-            Moto-Hub の基本的な使い方です。画面の表示は随時更新されます。
+            日常はホームの「要対応」だけ見れば十分です。くわしい手順はここにまとめています。
           </p>
         </div>
         <ManualView
