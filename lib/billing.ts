@@ -126,7 +126,15 @@ export function formatBankAccount(profile: {
 }
 
 export const DOCUMENT_KIND_LABELS: Record<
-  "legacy" | "payment_instruction" | "platform_fee" | "motohub_inspection" | "monthly_membership",
+  | "legacy"
+  | "payment_instruction"
+  | "platform_fee"
+  | "motohub_inspection"
+  | "monthly_membership"
+  | "part_payment_instruction"
+  | "part_platform_fee"
+  | "weekly_vehicle_platform_fee"
+  | "weekly_part_platform_fee",
   string
 > = {
   legacy: "請求書",
@@ -134,6 +142,10 @@ export const DOCUMENT_KIND_LABELS: Record<
   platform_fee: "Moto-Hub手数料請求書",
   motohub_inspection: "Moto-Hub査定",
   monthly_membership: "月額会費請求書",
+  part_payment_instruction: "パーツ入金指示書",
+  part_platform_fee: "パーツ手数料請求書",
+  weekly_vehicle_platform_fee: "車両手数料請求書（週次）",
+  weekly_part_platform_fee: "パーツ手数料請求書（週次）",
 };
 
 export const MONTHLY_PAYMENT_STATUS_LABELS: Record<

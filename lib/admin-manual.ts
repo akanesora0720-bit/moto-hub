@@ -23,6 +23,7 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
           ["精算", "/admin/billing"],
           ["取引記録", "/admin/transaction-records"],
           ["パーツ出品 / 成約", "/admin/parts · /admin/parts/sales"],
+          ["AI出品サポート", "/admin/ai-listing"],
           ["加盟店・信用", "/admin/credit"],
           ["Moto-Hub査定", "/admin/inspections"],
           ["サポート / トラブル", "/admin/support · /admin/disputes"],
@@ -83,10 +84,10 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
       {
         kind: "ul",
         items: [
-          "① 入金指示書を承認して送る — 合意（agreed）確定後、取引記録書が自動作成され、買い手が売り手へ振込できるよう入金指示 PDF を送信",
-          "② 当事者の入金・引渡・完了確認 — 売り手の入金確認、買い手の振込報告、引取日時、双方の完了ボタンを監視",
+          "① 入金指示書（自動送信）— 成約確定（admin_finalize_agreement）で取引記録書が作成され、買い手へ入金指示 PDF が自動送信される（承認操作は不要）",
+          "② 当事者の入金・引渡・完了確認 — 売り手の入金確認、買い手の振込報告、引取日時、引渡完了、双方の完了ボタンを監視",
           "③ 取引を完了にする — ステータスが「双方確認済（運営が取引完了へ）」のとき実行。車両代の送金はしない",
-          "④ Moto-Hub手数料の入金確認 — 税抜3万円以上の成約で売り手宛請求書の入金を記録",
+          "④ Moto-Hub手数料（週次）の入金確認 — 引取完了で計上 → 毎週月曜に車両/パーツ別の週次請求書を発行。/admin/billing または取引詳細で入金記録",
           "⑤ 名義変更のフォロー — 対象取引は期限・超過・完了記録を確認",
         ],
       },
@@ -94,7 +95,7 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
         kind: "table",
         headers: ["取引ステータス（運営表示）", "運営の主な作業"],
         rows: [
-          ["入金待ち（入金指示承認）", "入金指示書の承認送信"],
+          ["入金待ち", "入金指示書は成約確定時に自動送信済み。買い手の振込・売り手の入金確認をフォロー"],
           ["入金確認済〜名義変更待ち", "当事者操作のフォロー・連絡板の監視"],
           ["双方確認済（運営が取引完了へ）", "「取引を完了にする」"],
           ["完了", "記録のみ（必要なら手数料・名変の後追い）"],
@@ -129,13 +130,14 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
         items: [
           "/admin/parts — パーツ出品一覧（ステータス・メーカー・カテゴリ）",
           "/admin/parts/sales — 成約一覧・売主手数料（税抜）の確認",
-          "成約時：complete_part_sale RPC で part_sales 作成、入金指示書（買主）、1万円以上で手数料請求（売主）",
-          "手数料：税抜1万円未満0% · 1万円以上売主10% · 買主0%",
+          "成約時：complete_part_sale → 買主向け入金指示書を自動発行（即時）",
+          "発送/引渡：加盟店が mark_part_sale_shipped / mark_part_sale_handover で完了登録 → 手数料を週次計上",
+          "手数料：税抜1万円未満0% · 1万円以上売主10% · 買主0%。毎週月曜にパーツ用週次請求書を発行（車両と別）",
         ],
       },
       {
         kind: "callout",
-        text: "パーツ取引には取引記録書（transaction_records）・名変フロー・商談連絡板は紐づきません。請求は invoices.part_sale_id 経由。",
+        text: "パーツ取引には取引記録書（transaction_records）・名変フロー・商談連絡板は紐づきません。請求は invoices.part_sale_id および週次手数料請求書（weekly_part_platform_fee）。",
       },
     ],
   },
@@ -178,10 +180,12 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
       {
         kind: "ul",
         items: [
-          "入金指示書 確認待ち — 一覧からの一括承認は補助用。基本は取引詳細で承認",
-          "月額会費 — 毎月20日に自動発行（cron）。金額は発行時点の trust_rank 別（system_settings.billing.monthly_membership_fee_by_rank）。初年度は100点スタートのため多くがゴールド",
-          "月額入金報告 — 加盟店の振込報告を確認・差戻し（請求書の入金確認と連動可）",
-          "請求書一覧 — 入金指示・手数料・査定・月額会費・パーツ（入金指示/手数料）の PDF と入金確認",
+          "週次手数料 — 毎週月曜 cron で直前週（土〜金 JST）分を集計。車両用・パーツ用は別請求書。支払期限は発行日含む3営業日",
+          "入金指示書 — 成約確定時に自動送信（review_pending の一括承認はレガシー案件用）",
+          "月額会費 — 毎月20日に自動発行（cron）。金額は発行時点の trust_rank 別",
+          "月額入金報告 — 加盟店の振込報告を確認・差戻し",
+          "請求書一覧 — 入金指示・週次手数料・査定・月額・パーツ入金指示の PDF と入金確認",
+          "CSV — 取引履歴・パーツ・請求データのエクスポート（各一覧画面のリンク）",
         ],
       },
       {
@@ -206,8 +210,26 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
     ],
   },
   {
+    id: "ai-listing",
+    title: "9. AI出品サポート（/admin/ai-listing）",
+    blocks: [
+      {
+        kind: "p",
+        text: "加盟店がアップロードした在庫スクショの解析ジョブを集計表示します（解析件数・成功・失敗・作成下書き数）。",
+      },
+      {
+        kind: "ul",
+        items: [
+          "OpenAI Vision API で解析（当社は外部サイトへアクセスしません）",
+          "解析結果は listings.status = draft の下書きとして保存（自動公開なし）",
+          "加盟店は /ai-listing で利用（account_status = approved のみ）",
+        ],
+      },
+    ],
+  },
+  {
     id: "inspection",
-    title: "9. Moto-Hub査定（/admin/inspections）",
+    title: "10. Moto-Hub査定（/admin/inspections）",
     blocks: [
       {
         kind: "ul",
@@ -221,7 +243,7 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
   },
   {
     id: "support",
-    title: "10. サポート・トラブル",
+    title: "11. サポート・トラブル",
     blocks: [
       {
         kind: "ul",
@@ -244,7 +266,7 @@ export const ADMIN_MANUAL_SECTIONS: ManualSection[] = [
   },
   {
     id: "tips",
-    title: "11. 運用上の注意",
+    title: "12. 運用上の注意",
     blocks: [
       {
         kind: "ul",

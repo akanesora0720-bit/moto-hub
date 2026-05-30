@@ -5,7 +5,9 @@ import { PartImage } from "@/components/PartImage";
 import { PartInquiryChatPanel } from "@/components/PartInquiryChatPanel";
 import { PartInquiryForm } from "@/components/PartInquiryForm";
 import { PartSaleForm } from "@/components/PartSaleForm";
+import { PartSaleFulfillmentPanel } from "@/components/PartSaleFulfillmentPanel";
 import { PartSellerInquiriesPanel } from "@/components/PartSellerInquiriesPanel";
+import type { PartSale } from "@/lib/types";
 import { partModelLabel } from "@/lib/part-catalog";
 import { formatYen } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
@@ -56,6 +58,27 @@ export default async function PartDetailPage({ params }: { params: Promise<{ id:
 
   const showBuyerChat =
     buyerInquiry && buyerInquiry.status === "open" && viewer?.id === buyerInquiry.buyer_id;
+
+  const { data: partSaleRow } = await supabase
+    .from("part_sales")
+    .select(
+      "id, part_listing_id, buyer_id, seller_id, agreed_price_ex_tax, seller_fee_ex_tax, shipping_bearer, shipped_at, handover_at, buyer_payment_confirmed_at, fee_accrued_at, fulfillment_mode, completed_at",
+    )
+    .eq("part_listing_id", id)
+    .maybeSingle();
+
+  const partSale = partSaleRow as PartSale | null;
+
+  const { data: accrual } = partSale
+    ? await supabase
+        .from("platform_fee_accruals")
+        .select("status, billing_week_start, billing_week_end, weekly_invoice_id")
+        .eq("part_sale_id", partSale.id)
+        .maybeSingle()
+    : { data: null };
+
+  const isParty =
+    viewer && partSale && (viewer.id === partSale.buyer_id || viewer.id === partSale.seller_id);
 
   return (
     <AuthenticatedShell>
@@ -128,6 +151,15 @@ export default async function PartDetailPage({ params }: { params: Promise<{ id:
 
         {isOwner && part.status !== "sold" && part.status !== "archived" ? (
           <PartSaleForm partId={id} />
+        ) : null}
+
+        {partSale && isParty && viewer ? (
+          <PartSaleFulfillmentPanel
+            partSale={partSale}
+            accrual={accrual}
+            isSeller={viewer.id === partSale.seller_id}
+            shippingBearer={part.shipping_bearer as "buyer" | "seller" | "consult"}
+          />
         ) : null}
 
         {isOwner && viewer ? (

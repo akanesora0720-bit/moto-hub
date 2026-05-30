@@ -47,7 +47,9 @@ export default async function MyListingsPage() {
               key={listing.id}
               listing={listing}
               editHref={
-                listing.status === "active" ? `/listings/${listing.id}/edit` : undefined
+                listing.status === "active" || listing.status === "draft"
+                  ? `/listings/${listing.id}/edit`
+                  : undefined
               }
             />
           ))}

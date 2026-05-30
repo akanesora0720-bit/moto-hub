@@ -62,6 +62,7 @@ export default async function EditListingPage({
     <ListingEditorForm
       mode="edit"
       listingId={id}
+      listingStatus={listing.status}
       initial={initial}
       cancelHref="/listings/mine"
     />

@@ -23,6 +23,9 @@ export const FEE_SCHEDULE_ROWS = {
       label: `税抜成約価格が${FEE_FREE_MAX_PRICE_EX_TAX.toLocaleString("ja-JP")}円以上`,
       value: `売主 ${SELLER_FEE_RATE * 100}%（税抜＋消費税）`,
     },
+    { label: "請求タイミング", value: "引取完了で計上 → 毎週月曜に週次請求書発行" },
+    { label: "集計週", value: "土曜0:00〜金曜23:59（JST）" },
+    { label: "支払期限", value: "発行日を含む3営業日" },
   ],
   parts: [
     { label: "買い手手数料", value: `${PART_BUYER_FEE_RATE * 100}%（無料）` },
@@ -34,6 +37,8 @@ export const FEE_SCHEDULE_ROWS = {
       label: `税抜成約価格が${PART_FEE_THRESHOLD_EX_TAX.toLocaleString("ja-JP")}円以上`,
       value: `売主 ${PART_SELLER_FEE_RATE * 100}%（税抜＋消費税）`,
     },
+    { label: "請求タイミング", value: "発送または引渡完了で計上 → 毎週月曜に週次請求書発行" },
+    { label: "車両との請求", value: "パーツ用・車両用は別請求書" },
   ],
   membership: (Object.keys(MONTHLY_MEMBERSHIP_FEE_BY_RANK) as TrustRank[]).map((rank) => ({
     label: TRUST_RANK_LABELS[rank],

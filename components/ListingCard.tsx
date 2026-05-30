@@ -36,7 +36,13 @@ export function ListingCard({
             <MotohubInspectionBadge />
           </div>
         ) : null}
-        {listing.status === "negotiating" ? (
+        {listing.status === "draft" ? (
+          <div className="absolute right-2 top-2">
+            <span className="rounded border border-sky-500/50 bg-sky-500/20 px-2 py-0.5 text-[10px] font-semibold text-sky-100">
+              下書き
+            </span>
+          </div>
+        ) : listing.status === "negotiating" ? (
           <div className="absolute right-2 top-2">
             <span className="rounded border border-amber-500/50 bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-100">
               商談中

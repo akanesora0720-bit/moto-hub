@@ -113,18 +113,42 @@ export function AppShell({
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur md:hidden">
-        <div className="flex items-center justify-between px-4 py-3">
-          <Link href={homeHref} prefetch={false} className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-2 px-4 py-3">
+          <Link href={homeHref} prefetch={false} className="flex min-w-0 items-center gap-2">
             <MotohubLogo priority />
           </Link>
-          <button
-            type="button"
-            onClick={logout}
-            className="text-sm text-muted hover:text-foreground"
-          >
-            ログアウト
-          </button>
+          <div className="flex shrink-0 items-center gap-2 text-sm">
+            {!useAdminShell && showAdmin && !isStaff ? (
+              <Link href="/admin" className="text-accent hover:underline">
+                運営画面
+              </Link>
+            ) : null}
+            {useAdminShell && !isStaff ? (
+              <Link href="/home" className="text-muted hover:text-foreground">
+                加盟店画面
+              </Link>
+            ) : null}
+            <Link
+              href={useAdminShell ? "/admin/notifications" : "/notifications"}
+              className="text-muted hover:text-foreground"
+            >
+              通知
+              {badges.unreadNotifications ? (
+                <span className="ml-0.5 text-rose-400">({badges.unreadNotifications})</span>
+              ) : null}
+            </Link>
+            <button
+              type="button"
+              onClick={logout}
+              className="text-muted hover:text-foreground"
+            >
+              ログアウト
+            </button>
+          </div>
         </div>
+        <p className="border-t border-border/60 px-4 py-1.5 text-xs text-muted">
+          {useAdminShell ? "運営管理センター" : "加盟店ダッシュボード"}
+        </p>
       </header>
 
       <div className="mx-auto flex max-w-7xl flex-col md:flex-row">

@@ -6,7 +6,9 @@ export type AdminDealOpsInput = {
   status: DealStatus;
   agreedPriceExTax: number;
   paymentInstructionStatus: InvoiceStatus | null;
-  platformFeeStatus: InvoiceStatus | null;
+  pickupCompletedAt: string | null;
+  feeAccrualStatus: string | null;
+  weeklyFeeInvoiceStatus: InvoiceStatus | null;
   buyerPaymentReported: boolean;
   sellerPaymentConfirmed: boolean;
   buyerConfirmed: boolean;
@@ -32,42 +34,28 @@ export type AdminOpsStep = {
   primaryButtonLabel: string | null;
 };
 
-function paymentInstructionNeedsApproval(status: InvoiceStatus | null): boolean {
-  return status === "draft" || status === "review_pending";
-}
-
 function paymentInstructionWasIssued(status: InvoiceStatus | null): boolean {
   return status === "issued" || status === "paid";
 }
 
-function platformFeeNeedsPayment(
-  input: AdminDealOpsInput,
-): boolean {
+function weeklyFeeNeedsPayment(input: AdminDealOpsInput): boolean {
   const { feeWaived } = resolveDealFeeRates(input.agreedPriceExTax);
   if (feeWaived) return false;
-  return input.platformFeeStatus === "issued";
+  return input.weeklyFeeInvoiceStatus === "issued";
 }
 
 export function buildAdminDealOpsSteps(input: AdminDealOpsInput): AdminOpsStep[] {
   const { feeWaived } = resolveDealFeeRates(input.agreedPriceExTax);
 
   const step1Issued = paymentInstructionWasIssued(input.paymentInstructionStatus);
-  const step1Skipped =
-    !step1Issued &&
-    paymentInstructionNeedsApproval(input.paymentInstructionStatus) &&
-    input.status !== "awaiting_payment" &&
-    !["inquiry", "negotiating", "agreed", "cancelled"].includes(input.status);
-  const step1Done = step1Issued || step1Skipped;
-  const step1Current =
-    input.status === "awaiting_payment" &&
-    paymentInstructionNeedsApproval(input.paymentInstructionStatus);
+  const step1Done = step1Issued || input.status !== "awaiting_payment";
+  const step1Current = false;
 
   const partiesDone =
     input.status === "payout_ready" ||
     input.status === "payout_done" ||
     input.status === "completed";
   const partiesCurrent =
-    !step1Current &&
     !partiesDone &&
     !["cancelled", "dispute", "inquiry", "negotiating", "agreed"].includes(input.status);
 
@@ -77,14 +65,11 @@ export function buildAdminDealOpsSteps(input: AdminDealOpsInput): AdminOpsStep[]
 
   const step4Done =
     feeWaived ||
-    input.platformFeeStatus === "paid" ||
-    input.platformFeeStatus === "cancelled" ||
-    input.status === "inquiry" ||
-    input.status === "negotiating";
+    input.weeklyFeeInvoiceStatus === "paid" ||
+    input.weeklyFeeInvoiceStatus === "cancelled" ||
+    input.feeAccrualStatus === "waived";
   const step4Current =
-    !step4Done &&
-    platformFeeNeedsPayment(input) &&
-    (input.sellerPaymentConfirmed || ["funded", "handover_done", "transfer_pending", "payout_ready", "payout_done", "completed"].includes(input.status));
+    !step4Done && weeklyFeeNeedsPayment(input);
 
   const nameTransferOpen =
     input.requiresNameTransfer && !input.transferCompletedAt;
@@ -99,34 +84,38 @@ export function buildAdminDealOpsSteps(input: AdminDealOpsInput): AdminOpsStep[]
     ? `期限: ${formatTransferDeadline(input.transferDeadlineAt)}`
     : "期限未設定";
 
+  const feeSummary = feeWaived
+    ? "30,000円未満のため手数料対象外。"
+    : !input.pickupCompletedAt
+      ? "引取完了後に週次請求へ計上（毎週月曜発行）。"
+      : input.weeklyFeeInvoiceStatus === "paid"
+        ? "週次手数料請求書の入金を記録済み。"
+        : input.weeklyFeeInvoiceStatus === "issued"
+          ? "週次手数料請求書発行済み。売り手の入金を確認してください。"
+          : input.feeAccrualStatus === "invoiced"
+            ? "週次請求書発行済み。"
+            : "週次請求へ計上済み（翌月曜に請求書発行）。";
+
   const steps: Omit<AdminOpsStep, "number">[] = [
     {
       id: "approve_invoices",
-      title: "入金指示書を承認して送る",
+      title: "入金指示書（自動送信）",
       summary: step1Issued
-        ? "買い手へ入金指示を送信済み。車両代金は買い手→売り手へ直接振込。"
-        : step1Skipped
-          ? "※書類は未送信のままですが、取引は既に進行済みです。④⑤の記録を優先してください。"
-          : "成約後、買い手が売り手へ振込できるよう入金指示書を承認します。",
-      state: step1Skipped
-        ? "skipped"
-        : step1Issued
-          ? "done"
-          : step1Current
-            ? "current"
-            : "upcoming",
-      primaryAction: step1Current ? "approve_invoices" : null,
-      primaryButtonLabel: step1Current ? "入金指示書を承認して送信" : null,
+        ? "成約確定時に買い手へ入金指示書を自動送信済み。"
+        : "成約確定後、入金指示書が自動送信されます。",
+      state: step1Done ? "done" : step1Current ? "current" : "upcoming",
+      primaryAction: null,
+      primaryButtonLabel: null,
     },
     {
       id: "party_progress",
-      title: "当事者の入金・引渡・完了確認",
+      title: "当事者の入金・引取・完了確認",
       summary: partiesDone
         ? "双方の確認済み。次は運営が取引を閉じます。"
         : partiesCurrent
-          ? `売り手入金確認: ${input.sellerPaymentConfirmed ? "済" : "待ち"} / 買い手振込報告: ${input.buyerPaymentReported ? "あり" : "—"} / 完了確認: 買${input.buyerConfirmed ? "済" : "未"}・売${input.sellerConfirmed ? "済" : "未"}`
-          : "買い手の振込・売り手の入金確認・引渡・双方の完了確認を待ちます。",
-      state: partiesDone ? "done" : partiesCurrent ? "current" : step1Done ? "upcoming" : "upcoming",
+          ? `売り手入金確認: ${input.sellerPaymentConfirmed ? "済" : "待ち"} / 買い手振込報告: ${input.buyerPaymentReported ? "あり" : "—"} / 引取完了: ${input.pickupCompletedAt ? "済" : "未"} / 完了確認: 買${input.buyerConfirmed ? "済" : "未"}・売${input.sellerConfirmed ? "済" : "未"}`
+          : "買い手の振込・売り手の入金確認・引取完了・双方の完了確認を待ちます。",
+      state: partiesDone ? "done" : partiesCurrent ? "current" : "upcoming",
       primaryAction: null,
       primaryButtonLabel: null,
     },
@@ -135,22 +124,18 @@ export function buildAdminDealOpsSteps(input: AdminDealOpsInput): AdminOpsStep[]
       title: "取引を完了にする（運営）",
       summary: step3Done
         ? "Moto-Hub上の取引は完了です。"
-        : "車両・書類の引渡しと双方確認が済んだら、ここで取引を閉じます（車両代金の送金操作ではありません）。",
+        : "引取完了・双方確認が済んだら、ここで取引を閉じます。",
       state: step3Done ? "done" : step3Current ? "current" : "upcoming",
       primaryAction: step3Current ? "complete_deal" : null,
       primaryButtonLabel: step3Current ? "取引を完了にする" : null,
     },
     {
       id: "platform_fee",
-      title: "Moto-Hub手数料の入金確認",
-      summary: feeWaived
-        ? "30,000円未満のため手数料対象外。"
-        : step4Done
-          ? "売り手からの手数料入金を記録済み。"
-          : "売り手入金確認後に発行された手数料請求書の入金を確認します。",
+      title: "Moto-Hub手数料（週次請求）",
+      summary: feeSummary,
       state: feeWaived || step4Done ? "done" : step4Current ? "current" : "upcoming",
       primaryAction: step4Current ? "mark_platform_fee_paid" : null,
-      primaryButtonLabel: step4Current ? "手数料の入金を確認した" : null,
+      primaryButtonLabel: step4Current ? "週次手数料の入金を確認した" : null,
     },
     {
       id: "name_transfer",

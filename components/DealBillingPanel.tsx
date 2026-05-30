@@ -6,6 +6,7 @@ import {
   formatYen,
   summarizeDealBilling,
 } from "@/lib/billing";
+import { formatBillingWeekLabel } from "@/lib/billing-week";
 import { partyDealStatusBadge } from "@/lib/deal-flow";
 import { createClient } from "@/lib/supabase/server";
 import type { DealStatus, Invoice } from "@/lib/types";
@@ -18,6 +19,7 @@ export async function DealBillingPanel({
   agreedPriceExTax,
   paymentDueAt,
   platformFeeDueAt,
+  pickupCompletedAt,
 }: {
   dealId: string;
   userId: string;
@@ -26,9 +28,26 @@ export async function DealBillingPanel({
   agreedPriceExTax: number;
   paymentDueAt?: string | null;
   platformFeeDueAt?: string | null;
+  pickupCompletedAt?: string | null;
 }) {
   const supabase = await createClient();
   const summary = summarizeDealBilling(agreedPriceExTax);
+
+  const { data: accrual } = await supabase
+    .from("platform_fee_accruals")
+    .select("status, billing_week_start, billing_week_end, weekly_invoice_id, fee_inc_tax")
+    .eq("deal_id", dealId)
+    .maybeSingle();
+
+  let weeklyInvoice: Invoice | null = null;
+  if (accrual?.weekly_invoice_id) {
+    const { data: inv } = await supabase
+      .from("invoices")
+      .select("*")
+      .eq("id", accrual.weekly_invoice_id)
+      .maybeSingle();
+    weeklyInvoice = (inv as Invoice) ?? null;
+  }
 
   const { data: invoices } = await supabase
     .from("invoices")
@@ -69,9 +88,15 @@ export async function DealBillingPanel({
         <SellerBilling
           summary={summary}
           status={status}
-          platformFeeDueAt={platformFeeDueAt}
-          sellerDoc={sellerDoc}
-          docKind={docKind(sellerDoc)}
+          platformFeeDueAt={platformFeeDueAt ?? weeklyInvoice?.payment_due_at}
+          sellerDoc={weeklyInvoice ?? sellerDoc}
+          docKind={
+            weeklyInvoice
+              ? "weekly_vehicle_platform_fee"
+              : docKind(sellerDoc)
+          }
+          pickupCompletedAt={pickupCompletedAt}
+          accrual={accrual}
         />
       )}
 
@@ -147,12 +172,21 @@ function SellerBilling({
   platformFeeDueAt,
   sellerDoc,
   docKind,
+  pickupCompletedAt,
+  accrual,
 }: {
   summary: ReturnType<typeof summarizeDealBilling>;
   status: DealStatus;
   platformFeeDueAt?: string | null;
   sellerDoc?: Invoice;
   docKind: string;
+  pickupCompletedAt?: string | null;
+  accrual?: {
+    status: string;
+    billing_week_start: string;
+    billing_week_end: string;
+    fee_inc_tax: number;
+  } | null;
 }) {
   return (
     <div className="space-y-2 text-sm">
@@ -173,7 +207,7 @@ function SellerBilling({
           <Row label="手数料消費税" value={formatYen(summary.platformFeeTax)} />
           <Row label="Moto-Hub請求総額（税込）" value={formatYen(summary.platformFeeIncTax)} bold />
           <p className="text-xs text-muted">
-            Moto-Hub手数料は引渡完了後の請求書発行日から3営業日以内です。
+            Moto-Hub手数料は毎週月曜にまとめて請求書を発行します（引取完了週の翌月曜）。支払期限は発行日を含め3営業日以内です。
           </p>
           {platformFeeDueAt ? (
             <p className="text-xs text-amber-200/90">
@@ -207,7 +241,11 @@ function SellerBilling({
         <p className="text-xs text-zinc-500">
           {summary.feeWaived
             ? "手数料対象外のため、請求書の発行はありません"
-            : "引渡完了後にMoto-Hub手数料請求書を発行します"}
+            : pickupCompletedAt && accrual
+              ? accrual.status === "invoiced"
+                ? "週次手数料請求書を発行済みです（/my/payments）"
+                : `引取完了済み。週次請求対象（${formatBillingWeekLabel(accrual.billing_week_start, accrual.billing_week_end)}・翌月曜発行）`
+              : "引取完了後に週次手数料請求へ計上されます"}
         </p>
       )}
       <PaymentHint status={status} role="seller" />

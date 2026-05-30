@@ -5,6 +5,7 @@ export const LISTING_STATUS_LABELS: Record<ListingStatus, string> = {
   negotiating: "商談中",
   sold: "成約済",
   removed: "削除",
+  draft: "下書き",
 };
 
 export function isListingInquirable(status: ListingStatus): boolean {

@@ -16,6 +16,7 @@ export const dealerNavItems: NavItem[] = [
     matchPrefix: true,
   },
   { href: "/listings/new", label: "出品", matchPrefix: true, badgeKey: "newInquiries" },
+  { href: "/ai-listing", label: "AI出品サポート", matchPrefix: true },
   { href: "/deals/history", label: "成約履歴" },
   { href: "/profile", label: "信用ランク", matchPrefix: true },
   { href: "/inspections", label: "Moto-Hub査定", matchPrefix: true },
@@ -57,6 +58,7 @@ export const adminNavItems: NavItem[] = [
     badgeKey: "openInspectionRequests",
     matchPrefix: true,
   },
+  { href: "/admin/ai-listing", label: "AI出品サポート", matchPrefix: true },
   { href: "/admin/messages", label: "メール" },
   { href: "/admin/help", label: "操作説明" },
 ];

@@ -53,7 +53,7 @@ export type Profile = {
 
 export type { MileageRollbackStatus };
 
-export type ListingStatus = "active" | "negotiating" | "sold" | "removed";
+export type ListingStatus = "active" | "negotiating" | "sold" | "removed" | "draft";
 
 export type ListingGradeKey =
   | "total"
@@ -167,6 +167,7 @@ export type Deal = {
   platform_fee_invoice_issued_at?: string | null;
   platform_fee_due_at?: string | null;
   platform_fee_paid_at?: string | null;
+  platform_fee_accrued_at?: string | null;
   seller_payment_confirmed_at: string | null;
   buyer_payment_reported_at: string | null;
   pickup_scheduled_at: string | null;
@@ -386,7 +387,9 @@ export type InvoiceDocumentKind =
   | "motohub_inspection"
   | "monthly_membership"
   | "part_payment_instruction"
-  | "part_platform_fee";
+  | "part_platform_fee"
+  | "weekly_vehicle_platform_fee"
+  | "weekly_part_platform_fee";
 
 export type Invoice = {
   id: string;
@@ -394,6 +397,9 @@ export type Invoice = {
   inspection_request_id?: string | null;
   part_sale_id?: string | null;
   billing_month?: string | null;
+  billing_week_start?: string | null;
+  billing_week_end?: string | null;
+  invoice_number?: string | null;
   billing_trust_rank?: TrustRank | null;
   user_id: string;
   party: InvoiceParty;
@@ -405,6 +411,24 @@ export type Invoice = {
   issued_at: string | null;
   payment_due_at?: string | null;
   paid_at: string | null;
+};
+
+export type PartFulfillmentMode = "shipping" | "direct";
+
+export type PartSale = {
+  id: string;
+  part_listing_id: string;
+  buyer_id: string;
+  seller_id: string;
+  agreed_price_ex_tax: number;
+  seller_fee_ex_tax: number;
+  shipping_bearer: "buyer" | "seller" | "consult";
+  shipped_at: string | null;
+  handover_at: string | null;
+  buyer_payment_confirmed_at: string | null;
+  fee_accrued_at: string | null;
+  fulfillment_mode: PartFulfillmentMode | null;
+  completed_at: string;
 };
 
 export type PayoutStatus = "awaiting" | "ready" | "paid" | "cancelled";

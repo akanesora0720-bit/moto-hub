@@ -1,12 +1,12 @@
 export type PolicyType = "terms" | "privacy";
 
-/** 現行バージョン（ローンチ後の改定時のみ更新） */
+/** 現行バージョン（ローンチ前は v1 固定。改定時のみ更新） */
 export const CURRENT_TERMS_VERSION = "v1";
 export const CURRENT_PRIVACY_VERSION = "v1";
 
-/** 法務文書の正本パス（Moto-Hub 自社ホスト） */
+/** 法務文書の正本パス（利用規約・プライバシーは /terms に集約、/privacy は同ページへ誘導） */
 export const TERMS_DOCUMENT_PATH = "/terms";
-export const PRIVACY_DOCUMENT_PATH = "/privacy";
+export const PRIVACY_DOCUMENT_PATH = "/terms#privacy";
 export const PRICING_DOCUMENT_PATH = "/pricing";
 
 /** @deprecated Use PRICING_DOCUMENT_PATH */
@@ -70,7 +70,7 @@ export function isMarketingPublicPath(pathname: string): boolean {
 export function isLegalPublicPath(pathname: string): boolean {
   return (
     pathname === TERMS_DOCUMENT_PATH ||
-    pathname === PRIVACY_DOCUMENT_PATH ||
+    pathname === "/privacy" ||
     pathname === PRICING_DOCUMENT_PATH
   );
 }

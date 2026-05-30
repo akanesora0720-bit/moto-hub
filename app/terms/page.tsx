@@ -3,8 +3,8 @@ import { TermsDocumentView } from "@/components/TermsDocumentView";
 import { termsDocumentHref } from "@/lib/legal-policies";
 
 export const metadata = {
-  title: "利用規約",
-  description: "Moto-Hub 利用規約",
+  title: "利用規約・プライバシーポリシー",
+  description: "Moto-Hub 利用規約およびプライバシーポリシー",
 };
 
 export default function TermsPage() {

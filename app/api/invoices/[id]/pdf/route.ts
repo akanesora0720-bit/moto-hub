@@ -247,6 +247,49 @@ export async function GET(
       return pdfResponse(pdfBytes, `inspection-invoice-${invoice.id.slice(0, 8)}.pdf`);
     }
 
+    if (
+      documentKind === "weekly_vehicle_platform_fee" ||
+      documentKind === "weekly_part_platform_fee"
+    ) {
+      const weekStart = (invoice as { billing_week_start?: string | null }).billing_week_start;
+      const weekEnd = (invoice as { billing_week_end?: string | null }).billing_week_end;
+      const weekLabel =
+        weekStart && weekEnd
+          ? `${weekStart.replace(/-/g, "/")} 〜 ${weekEnd.replace(/-/g, "/")}`
+          : "—";
+      const paymentDueAt = invoicePaymentDueAt
+        ? new Date(invoicePaymentDueAt).toLocaleDateString("ja-JP")
+        : null;
+      const issuer = await getMotohubIssuer(supabase);
+      const invNum = (invoice as { invoice_number?: string | null }).invoice_number;
+
+      const pdfBytes = await buildInvoicePdf({
+        invoiceId: invoice.id,
+        referenceLabel: "請求番号",
+        referenceId: invNum ?? invoice.id.slice(0, 8),
+        partyLabel:
+          documentKind === "weekly_vehicle_platform_fee"
+            ? "Moto-Hub 車両手数料請求書（週次）"
+            : "Moto-Hub パーツ手数料請求書（週次）",
+        billToName: profile?.store_name ?? profile?.email ?? "—",
+        vehicleLabel: `対象期間: ${weekLabel}`,
+        items: (items ?? []).map((i) => ({
+          label: i.label,
+          amountExTax: i.amount_ex_tax,
+          taxAmount: i.tax_amount,
+          amountIncTax: i.amount_inc_tax,
+        })),
+        totalExTax: invoice.total_ex_tax,
+        totalTax: invoice.total_tax,
+        totalIncTax: invoice.total_inc_tax,
+        issuedAt,
+        issuer,
+        paymentDueAt,
+      });
+
+      return pdfResponse(pdfBytes, `weekly-fee-${invoice.id.slice(0, 8)}.pdf`);
+    }
+
     if (documentKind === "payment_instruction") {
       let seller: Record<string, string | null | undefined> | null = null;
       const extended = await supabase

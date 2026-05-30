@@ -210,16 +210,20 @@ export function AdminDealOpsPanel({
         </p>
       )}
 
-      {opsInput.paymentInstructionStatus || opsInput.platformFeeStatus ? (
+      {opsInput.paymentInstructionStatus ||
+      opsInput.weeklyFeeInvoiceStatus ||
+      opsInput.feeAccrualStatus ? (
         <p className="text-xs text-muted">
           {opsInput.paymentInstructionStatus
             ? `入金指示書: ${INVOICE_STATUS_LABELS[opsInput.paymentInstructionStatus]}`
             : null}
-          {!feeWaived && opsInput.platformFeeStatus
-            ? `${opsInput.paymentInstructionStatus ? " · " : ""}手数料請求: ${INVOICE_STATUS_LABELS[opsInput.platformFeeStatus]}（${formatYen(billing.platformFeeIncTax)}）`
-            : feeWaived
-              ? `${opsInput.paymentInstructionStatus ? " · " : ""}手数料: 対象外`
-              : null}
+          {!feeWaived && opsInput.weeklyFeeInvoiceStatus
+            ? `${opsInput.paymentInstructionStatus ? " · " : ""}週次手数料: ${INVOICE_STATUS_LABELS[opsInput.weeklyFeeInvoiceStatus]}（${formatYen(billing.platformFeeIncTax)}）`
+            : !feeWaived && opsInput.feeAccrualStatus
+              ? `${opsInput.paymentInstructionStatus ? " · " : ""}週次計上: ${opsInput.feeAccrualStatus}`
+              : feeWaived
+                ? `${opsInput.paymentInstructionStatus ? " · " : ""}手数料: 対象外`
+                : null}
         </p>
       ) : null}
 
@@ -230,7 +234,7 @@ export function AdminDealOpsPanel({
           <Link href="/admin/billing" className="mx-1 text-accent hover:underline">
             精算
           </Link>
-          も使えますが、<strong>この取引の承認・完了はこの画面で行ってください</strong>。
+          も使えますが、<strong>この取引の完了・週次手数料確認は取引詳細で行ってください</strong>。
         </p>
       </details>
 

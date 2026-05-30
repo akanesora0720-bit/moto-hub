@@ -61,12 +61,12 @@ export default async function ListingDetailPage({
           <Link href="/" className="text-sm text-muted hover:text-accent">
             ← 在庫一覧
           </Link>
-          {isOwner && listing.status === "active" ? (
+          {isOwner && (listing.status === "active" || listing.status === "draft") ? (
             <Link
               href={`/listings/${listing.id}/edit`}
               className="rounded-lg border border-border px-3 py-1.5 text-sm text-accent hover:border-accent/50"
             >
-              出品を編集
+              {listing.status === "draft" ? "下書きを編集・公開" : "出品を編集"}
             </Link>
           ) : null}
         </div>

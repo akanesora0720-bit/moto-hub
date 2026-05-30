@@ -36,14 +36,18 @@ export function AdminDealFinalizePanel({
     if (!sellerIntent || !buyerIntent) {
       return { error: "売り手・買い手の双方確認が必要です。" };
     }
-    if (!window.confirm("成約を確定します。請求書・精算書は下書きで生成され、送信は管理者承認後です。よろしいですか？")) {
+    if (
+      !window.confirm(
+        "成約を確定します。取引記録書を作成し、買い手へ入金指示書を自動送信します。よろしいですか？",
+      )
+    ) {
       return { error: null };
     }
     const supabase = createClient();
     const { error } = await supabase.rpc("admin_finalize_agreement", { p_deal_id: dealId });
     if (error) return { error: error.message };
     onUpdated();
-    return { okMessage: "成約を確定しました。請求書確認待ちです。" };
+    return { okMessage: "成約を確定しました。入金指示書を送信しました。" };
   };
 
   return (

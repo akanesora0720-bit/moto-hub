@@ -1,122 +1,19 @@
-/** Moto-Hub プライバシーポリシー v1（2026年5月26日制定）— 表示用テキスト */
+/** @deprecated 正本は lib/terms-document.ts に集約。互換のため re-export のみ */
 
-export const PRIVACY_EFFECTIVE_DATE = "2026年5月26日";
-export const PRIVACY_VERSION_LABEL = "v1";
+import {
+  PRIVACY_ARTICLES,
+  PRIVACY_EFFECTIVE_DATE,
+  PRIVACY_FOOTER,
+  type PrivacyArticle,
+} from "@/lib/terms-document";
 
-export type PrivacyArticle = {
-  number: number;
-  title: string;
-  paragraphs: string[];
-  listItems?: string[];
+export {
+  PRIVACY_ARTICLES,
+  PRIVACY_EFFECTIVE_DATE,
+  PRIVACY_FOOTER,
+  type PrivacyArticle,
 };
 
-export const PRIVACY_ARTICLES_V1: PrivacyArticle[] = [
-  {
-    number: 1,
-    title: "取得する情報",
-    paragraphs: ["当サービスは、以下の情報を取得する場合があります。"],
-    listItems: [
-      "ユーザー登録情報：氏名、会社名・屋号、住所、電話番号、メールアドレス、古物商許可情報、振込口座情報、ログイン情報",
-      "車両・パーツ・取引関連情報：車両情報、車台番号、出品情報、パーツ出品情報、商談・問い合わせ履歴、引渡・配送に関する情報、書類情報、取引履歴",
-      "システム利用情報：IPアドレス、Cookie、アクセスログ、利用端末情報、ブラウザ情報、操作履歴、エラーログ",
-    ],
-  },
-  {
-    number: 2,
-    title: "利用目的",
-    paragraphs: ["当サービスは、取得した情報を以下の目的で利用します。"],
-    listItems: [
-      "サービス提供・運営のため",
-      "本人確認・加盟店審査のため",
-      "車両売買・パーツ売買・商談管理のため",
-      "問い合わせ対応のため",
-      "代金請求・精算処理のため",
-      "不正利用防止のため",
-      "規約違反行為への対応のため",
-      "サービス改善・品質向上のため",
-      "メンテナンス・障害対応のため",
-      "利用状況分析のため",
-      "法令対応のため",
-    ],
-  },
-  {
-    number: 3,
-    title: "個人情報の第三者提供",
-    paragraphs: ["当サービスは、以下の場合を除き、ユーザーの同意なく第三者へ個人情報を提供しません。"],
-    listItems: [
-      "法令に基づく場合",
-      "人の生命・身体・財産保護のため必要な場合",
-      "公的機関から適法な要請を受けた場合",
-      "サービス運営上必要な範囲で業務委託を行う場合",
-      "ユーザー間取引遂行に必要な範囲で開示する場合",
-    ],
-  },
-  {
-    number: 4,
-    title: "Cookie等の利用",
-    paragraphs: [
-      "当サービスは、利便性向上、アクセス解析、広告配信等のため、Cookieその他類似技術を利用する場合があります。",
-      "ユーザーはブラウザ設定によりCookieを制限または拒否できますが、一部機能が利用できなくなる場合があります。",
-    ],
-  },
-  {
-    number: 5,
-    title: "アクセス解析ツール",
-    paragraphs: [
-      "当サービスは、Google Analyticsその他のアクセス解析ツールを利用する場合があります。",
-      "これらのツールではCookieを使用し、匿名のトラフィックデータを収集する場合があります。",
-    ],
-  },
-  {
-    number: 6,
-    title: "情報の管理",
-    paragraphs: [
-      "当サービスは、個人情報の漏えい、滅失、毀損等を防止するため、合理的な安全管理措置を講じます。",
-      "また、必要に応じてアクセス制御、認証、監査ログ管理等を実施します。",
-    ],
-  },
-  {
-    number: 7,
-    title: "開示・訂正・削除等",
-    paragraphs: [
-      "ユーザーは、当サービスに対し、自己の個人情報について開示、訂正、利用停止、削除等を求めることができます。",
-      "ただし、法令上保存義務がある情報、取引記録、監査目的情報等については削除できない場合があります。",
-    ],
-  },
-  {
-    number: 8,
-    title: "退会後の情報保持",
-    paragraphs: [
-      "当サービスは、不正利用防止、取引履歴管理、法令対応その他正当な理由に基づき、退会後も一定期間情報を保持する場合があります。",
-      "また、規約違反履歴、評価情報、取引履歴等は、再登録時の審査・安全管理目的で利用される場合があります。",
-    ],
-  },
-  {
-    number: 9,
-    title: "未成年者の利用",
-    paragraphs: [
-      "未成年者は、法定代理人の同意を得た上で当サービスを利用するものとします。",
-    ],
-  },
-  {
-    number: 10,
-    title: "プライバシーポリシーの変更",
-    paragraphs: [
-      "当サービスは、必要に応じて本ポリシーを変更できるものとします。",
-      "重要な変更を行う場合、当サービス上で告知または通知を行います。",
-    ],
-  },
-  {
-    number: 11,
-    title: "お問い合わせ窓口",
-    paragraphs: [
-      "本ポリシーに関するお問い合わせは、以下までお願いいたします。",
-      "運営会社：株式会社RideWorks",
-      "所在地：栃木県小山市城西1丁目4-3",
-      "メールアドレス：info@moto-hub.jp",
-    ],
-  },
-];
-
-export const PRIVACY_FOOTER_V1 =
-  `制定日：${PRIVACY_EFFECTIVE_DATE} · Moto-Hub運営事務局`;
+export const PRIVACY_VERSION_LABEL = "v1";
+export const PRIVACY_ARTICLES_V1 = PRIVACY_ARTICLES;
+export const PRIVACY_FOOTER_V1 = PRIVACY_FOOTER;

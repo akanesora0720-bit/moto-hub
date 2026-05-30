@@ -47,6 +47,13 @@ export async function GET(req: NextRequest) {
   if (mErr) results.monthlyMembershipError = mErr.message;
   else results.monthlyMembership = monthlyBilling;
 
+  const { data: weeklyBilling, error: wErr } = await supabase.rpc(
+    "run_weekly_platform_fee_billing_job",
+    { p_force: false },
+  );
+  if (wErr) results.weeklyPlatformFeeError = wErr.message;
+  else results.weeklyPlatformFee = weeklyBilling;
+
   try {
     results.notifications = await processNotificationQueue(40);
   } catch (e) {

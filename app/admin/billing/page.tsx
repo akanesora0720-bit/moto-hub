@@ -189,8 +189,8 @@ export default function AdminBillingPage() {
           <div>
             <h1 className="text-2xl font-semibold">請求・入出金</h1>
             <p className="mt-1 text-sm text-muted">
-              月額会費は毎月{MONTHLY_MEMBERSHIP_ISSUE_DAY}日に自動発行・{MONTHLY_MEMBERSHIP_DUE_DAY}
-              日までに支払い。取引ごとの承認は取引詳細で行います。
+              週次手数料は毎週月曜に発行（集計週: 土〜金 JST）。月額会費は毎月{MONTHLY_MEMBERSHIP_ISSUE_DAY}
+              日発行・{MONTHLY_MEMBERSHIP_DUE_DAY}日まで。入金指示書は成約確定時に自動送信されます。
             </p>
           </div>
           <button
@@ -218,7 +218,7 @@ export default function AdminBillingPage() {
 
         <div className="rounded-xl border border-sky-500/30 bg-sky-950/20 px-4 py-3 text-sm text-sky-100">
           <strong>取引ごとの操作はここではなく取引詳細へ。</strong>
-          入金指示の承認・取引完了・手数料入金確認は、各取引の
+          取引完了・週次手数料の入金確認は、各取引の
           <Link href="/admin/deals" className="mx-1 text-accent hover:underline">
             取引連絡
           </Link>
@@ -227,7 +227,7 @@ export default function AdminBillingPage() {
 
         <section className="space-y-3">
           <h2 className="font-medium">
-            入金指示書 確認待ち（一覧用・通常は取引詳細で承認）
+            入金指示書 確認待ち（レガシー・通常は成約時に自動送信済み）
             {reviewDealIds.length > 0 ? (
               <span className="ml-2 text-sm text-amber-200">({reviewDealIds.length} 件)</span>
             ) : null}

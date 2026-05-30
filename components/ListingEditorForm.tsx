@@ -43,6 +43,8 @@ type Props = {
   listingId?: string;
   initial?: ListingEditorInitial;
   cancelHref?: string;
+  /** 下書き出品（AI出品サポート等） */
+  listingStatus?: "draft" | "active" | "negotiating" | "sold" | "removed";
   /** スタッフ出品代行: 出品者を加盟店にする */
   sellerIdOverride?: string;
   /** 完了時に complete_motohub_inspection を呼ぶ */
@@ -62,6 +64,7 @@ export function ListingEditorForm({
   cancelHref,
   sellerIdOverride,
   inspectionRequestId,
+  listingStatus,
   embedded = false,
 }: Props) {
   const router = useRouter();
@@ -107,8 +110,9 @@ export function ListingEditorForm({
   const [loading, setLoading] = useState(false);
 
   const isCreate = mode === "create";
+  const isDraft = listingStatus === "draft";
 
-  const submit = async () => {
+  const submit = async (publishDraft = false) => {
     setMessage("");
     const core = validateListingFormCore({
       model,
@@ -121,15 +125,29 @@ export function ListingEditorForm({
         inspectionExpiryDate,
         liabilityInsuranceExpiryDate,
       },
+      requireGrades: publishDraft || !isDraft,
     });
     if (core.error) {
       setMessage(core.error);
       return;
     }
     const priceExTax = core.priceExTax!;
-    if (isCreate && (!files || files.length === 0)) {
+    const needsPhotos = (isCreate || (isDraft && publishDraft)) && (!files || files.length === 0);
+    if (needsPhotos && isCreate) {
       setMessage("写真を1枚以上添付してください。");
       return;
+    }
+    if (isDraft && publishDraft) {
+      const supabaseCheck = createClient();
+      const { count } = await supabaseCheck
+        .from("listing_images")
+        .select("id", { count: "exact", head: true })
+        .eq("listing_id", listingId!);
+      const hasNewPhotos = files && files.length > 0;
+      if (!hasNewPhotos && (count ?? 0) < 1) {
+        setMessage("公開するには写真を1枚以上追加してください。");
+        return;
+      }
     }
 
     setLoading(true);
@@ -233,9 +251,11 @@ export function ListingEditorForm({
       return;
     }
 
+    const updatePayload = publishDraft && isDraft ? { ...payload, status: "active" as const } : payload;
+
     const { error: updateError } = await supabase
       .from("listings")
-      .update(payload)
+      .update(updatePayload)
       .eq("id", listingId!)
       .eq("seller_id", userData.user.id);
 
@@ -243,6 +263,33 @@ export function ListingEditorForm({
       setLoading(false);
       setMessage(updateError.message);
       return;
+    }
+
+    if (isDraft && files && files.length > 0) {
+      const sellerId = userData.user.id;
+      const { count } = await supabase
+        .from("listing_images")
+        .select("id", { count: "exact", head: true })
+        .eq("listing_id", listingId!);
+      let sortBase = count ?? 0;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const ext = file.name.split(".").pop() ?? "jpg";
+        const path = `${sellerId}/${listingId}/${sortBase + i}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("listing-images")
+          .upload(path, file, { upsert: true });
+        if (uploadError) {
+          setLoading(false);
+          setMessage(`画像アップロード失敗: ${uploadError.message}`);
+          return;
+        }
+        await supabase.from("listing_images").insert({
+          listing_id: listingId!,
+          storage_path: path,
+          sort_order: sortBase + i,
+        });
+      }
     }
 
     setLoading(false);
@@ -276,7 +323,11 @@ export function ListingEditorForm({
           ) : null}
           <h1 className={`text-2xl font-semibold ${cancelHref ? "mt-3" : ""}`}>{title}</h1>
           <p className="mt-1 text-sm text-muted">
-            {isCreate ? "税抜の業販価格で掲載します。" : "掲載中の情報を更新します。写真の変更はできません。"}
+            {isCreate
+              ? "税抜の業販価格で掲載します。"
+              : isDraft
+                ? "下書きです。写真と評価を入力してから公開してください。"
+                : "掲載中の情報を更新します。写真の変更はできません。"}
           </p>
         </div>
 
@@ -387,9 +438,11 @@ export function ListingEditorForm({
               className="mt-1 w-full rounded-lg border border-border bg-zinc-950 px-3 py-2.5 text-sm"
             />
           </label>
-          {isCreate ? (
+          {isCreate || isDraft ? (
             <label className="block text-sm">
-              <span className="text-muted">写真（複数可）*</span>
+              <span className="text-muted">
+                写真（複数可）{isCreate || isDraft ? " *" : ""}
+              </span>
               <input
                 type="file"
                 accept="image/*"
@@ -397,6 +450,11 @@ export function ListingEditorForm({
                 onChange={(e) => setFiles(e.target.files)}
                 className="mt-2 block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-accent file:px-3 file:py-2 file:text-sm file:font-medium file:text-black"
               />
+              {isDraft ? (
+                <span className="mt-1 block text-xs text-muted">
+                  公開時は1枚以上必須です。
+                </span>
+              ) : null}
             </label>
           ) : null}
         </div>
@@ -407,14 +465,35 @@ export function ListingEditorForm({
           </p>
         ) : null}
 
-        <button
-          type="button"
-          onClick={submit}
-          disabled={loading}
-          className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60"
-        >
-          {loading ? loadingLabel : submitLabel}
-        </button>
+        {isDraft ? (
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => void submit(false)}
+              disabled={loading}
+              className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-medium disabled:opacity-60"
+            >
+              {loading ? "保存中…" : "下書きを保存"}
+            </button>
+            <button
+              type="button"
+              onClick={() => void submit(true)}
+              disabled={loading}
+              className="flex-1 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60"
+            >
+              {loading ? "公開中…" : "公開する"}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => void submit(false)}
+            disabled={loading}
+            className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60"
+          >
+            {loading ? loadingLabel : submitLabel}
+          </button>
+        )}
       </div>
   );
 

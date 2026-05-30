@@ -20,6 +20,7 @@
 
 - DB: `public.resolve_deal_fee_rates(price_ex_tax)` — 境界は `< 30000` / `>= 30000`
 - TS: `lib/billing.ts` → `resolveDealFeeRates()`
+- **請求**: 引取完了（`pickup_completed_at`）で `platform_fee_accruals` に計上。集計週（土〜金 JST）ごとに毎週月曜 `weekly_vehicle_platform_fee` を発行
 
 ### パーツ
 
@@ -30,6 +31,7 @@
 
 - DB: `public.resolve_part_fee_rates(price_ex_tax)` — 境界は `< 10000` / `>= 10000`
 - TS: `lib/part-fees.ts`
+- **請求**: 発送完了または引渡完了で計上。毎週月曜 `weekly_part_platform_fee`（車両とは別請求書）
 
 ## 1台1商談（排他）
 

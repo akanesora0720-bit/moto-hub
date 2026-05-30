@@ -166,6 +166,24 @@ export async function DealDetailPageView(
     (i) => i.party === "seller" && i.document_kind === "platform_fee",
   );
 
+  const { data: feeAccrual } = await supabase
+    .from("platform_fee_accruals")
+    .select("status, weekly_invoice_id")
+    .eq("deal_id", id)
+    .maybeSingle();
+
+  let weeklyFeeInvoiceStatus: InvoiceStatus | null = null;
+  if (feeAccrual?.weekly_invoice_id) {
+    const { data: wInv } = await supabase
+      .from("invoices")
+      .select("status")
+      .eq("id", feeAccrual.weekly_invoice_id)
+      .maybeSingle();
+    weeklyFeeInvoiceStatus = (wInv?.status as InvoiceStatus) ?? null;
+  }
+
+  const weeklyFeeInvoiceId = feeAccrual?.weekly_invoice_id ?? platformFeeInvoice?.id ?? null;
+
   const { data: transferDocRows } = showMilestones
     ? await supabase
         .from("deal_transfer_documents")
@@ -203,7 +221,9 @@ export async function DealDetailPageView(
         status: deal.status,
         agreedPriceExTax: deal.agreed_price_ex_tax,
         paymentInstructionStatus: paymentInstruction?.status ?? null,
-        platformFeeStatus: platformFeeInvoice?.status ?? null,
+        pickupCompletedAt: deal.pickup_completed_at,
+        feeAccrualStatus: feeAccrual?.status ?? null,
+        weeklyFeeInvoiceStatus,
         buyerPaymentReported: !!deal.buyer_payment_reported_at,
         sellerPaymentConfirmed: !!deal.seller_payment_confirmed_at,
         buyerConfirmed: !!deal.buyer_confirmed_at,
@@ -225,6 +245,7 @@ export async function DealDetailPageView(
         agreedPriceExTax={deal.agreed_price_ex_tax}
         paymentDueAt={deal.payment_due_at}
         platformFeeDueAt={deal.platform_fee_due_at}
+        pickupCompletedAt={deal.pickup_completed_at}
       />
     </DealCard>
   );
@@ -242,7 +263,7 @@ export async function DealDetailPageView(
     >
       {adminViewOnly ? (
         <p className="text-sm text-muted">
-          当事者の操作状況は下の連絡板・マイルストーンで確認できます。運営の承認・完了は上の「運営の手順」から行ってください。
+          当事者の操作状況は下の連絡板・マイルストーンで確認できます。運営の取引完了・週次手数料確認は上の「運営の手順」から行ってください。
         </p>
       ) : (
         <DealActionPanel deal={deal} role={role} />
@@ -299,7 +320,7 @@ export async function DealDetailPageView(
                   dealId={id}
                   status={deal.status}
                   opsInput={adminOpsInput}
-                  platformFeeInvoiceId={platformFeeInvoice?.id ?? null}
+                  platformFeeInvoiceId={weeklyFeeInvoiceId}
                 />
               </DealCard>
             ) : null}
@@ -382,7 +403,7 @@ export async function DealDetailPageView(
 
             <DealCard title="完了" step={7}>
               <p className="text-sm text-muted">
-                双方の完了確認後、Moto-Hub手数料（税抜3万円以上）の精算が行われます。
+                引取完了後、Moto-Hub手数料は週次請求（毎週月曜発行）で精算されます。
               </p>
               {deal.status === "completed" && deal.completed_at ? (
                 <p className="mt-2 text-sm text-emerald-300">

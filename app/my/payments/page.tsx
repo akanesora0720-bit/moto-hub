@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import {
+  DOCUMENT_KIND_LABELS,
   MONTHLY_MEMBERSHIP_DUE_DAY,
   MONTHLY_MEMBERSHIP_FEE_BY_RANK,
   MONTHLY_MEMBERSHIP_ISSUE_DAY,
@@ -11,6 +12,7 @@ import {
   formatYen,
   monthlyMembershipFeeIncTax,
 } from "@/lib/billing";
+import { formatBillingWeekLabel } from "@/lib/billing-week";
 import { TRUST_RANK_BANDS } from "@/lib/credit";
 import { createClient } from "@/lib/supabase/client";
 import type { Invoice, MonthlyPaymentReport, TrustRank } from "@/lib/types";
@@ -20,6 +22,19 @@ type MembershipInvoice = Pick<
   "id" | "billing_month" | "total_inc_tax" | "status" | "issued_at" | "payment_due_at"
 >;
 
+type WeeklyInvoice = Pick<
+  Invoice,
+  | "id"
+  | "document_kind"
+  | "invoice_number"
+  | "billing_week_start"
+  | "billing_week_end"
+  | "total_inc_tax"
+  | "status"
+  | "issued_at"
+  | "payment_due_at"
+>;
+
 function monthStartKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
 }
@@ -27,6 +42,7 @@ function monthStartKey(d: Date): string {
 export default function MyPaymentsPage() {
   const [reports, setReports] = useState<MonthlyPaymentReport[]>([]);
   const [invoices, setInvoices] = useState<MembershipInvoice[]>([]);
+  const [weeklyInvoices, setWeeklyInvoices] = useState<WeeklyInvoice[]>([]);
   const [billingMonth, setBillingMonth] = useState("");
   const [amount, setAmount] = useState("");
   const [paidAt, setPaidAt] = useState("");
@@ -40,7 +56,7 @@ export default function MyPaymentsPage() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    const [reportsRes, invoicesRes, profileRes] = await Promise.all([
+    const [reportsRes, invoicesRes, weeklyRes, profileRes] = await Promise.all([
       supabase
         .from("monthly_payment_reports")
         .select("*")
@@ -50,12 +66,20 @@ export default function MyPaymentsPage() {
         .select("id, billing_month, total_inc_tax, status, issued_at, payment_due_at")
         .eq("document_kind", "monthly_membership")
         .order("billing_month", { ascending: false }),
+      supabase
+        .from("invoices")
+        .select(
+          "id, document_kind, invoice_number, billing_week_start, billing_week_end, total_inc_tax, status, issued_at, payment_due_at",
+        )
+        .in("document_kind", ["weekly_vehicle_platform_fee", "weekly_part_platform_fee"])
+        .order("issued_at", { ascending: false }),
       user
         ? supabase.from("profiles").select("trust_rank").eq("id", user.id).maybeSingle()
         : Promise.resolve({ data: null }),
     ]);
     setReports((reportsRes.data ?? []) as MonthlyPaymentReport[]);
     setInvoices((invoicesRes.data ?? []) as MembershipInvoice[]);
+    setWeeklyInvoices((weeklyRes.data ?? []) as WeeklyInvoice[]);
     if (profileRes.data?.trust_rank) {
       setMyRank(profileRes.data.trust_rank as TrustRank);
     }
@@ -111,7 +135,69 @@ export default function MyPaymentsPage() {
         </div>
 
         <section className="space-y-3">
-          <h2 className="font-medium">請求書</h2>
+          <h2 className="font-medium">週次手数料請求書</h2>
+          <p className="text-xs text-muted">
+            車両・パーツの成約手数料は毎週月曜にまとめて請求します（集計週: 土曜0:00〜金曜23:59）。
+            支払期限は発行日を含め3営業日以内です。
+          </p>
+          {weeklyInvoices.length === 0 ? (
+            <p className="text-sm text-muted">発行済みの週次請求書はありません。</p>
+          ) : (
+            weeklyInvoices.map((inv) => {
+              const overdue =
+                inv.status === "issued" &&
+                inv.payment_due_at &&
+                new Date(inv.payment_due_at).getTime() < Date.now();
+              const unpaid = inv.status === "issued";
+              return (
+                <div
+                  key={inv.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm"
+                >
+                  <div>
+                    <p className="font-medium">
+                      {inv.invoice_number ?? inv.id.slice(0, 8)} ·{" "}
+                      {DOCUMENT_KIND_LABELS[inv.document_kind as keyof typeof DOCUMENT_KIND_LABELS] ??
+                        inv.document_kind}
+                    </p>
+                    <p className="mt-1 text-xs text-muted">
+                      対象期間:{" "}
+                      {inv.billing_week_start && inv.billing_week_end
+                        ? formatBillingWeekLabel(inv.billing_week_start, inv.billing_week_end)
+                        : "—"}{" "}
+                      · {formatYen(inv.total_inc_tax)}
+                    </p>
+                    <p className="mt-1 text-xs text-muted">
+                      {INVOICE_STATUS_LABELS[inv.status]}
+                      {unpaid ? "（未払い）" : ""}
+                      {overdue ? " · 期限超過" : ""}
+                      {inv.payment_due_at
+                        ? ` · 支払期限 ${new Date(inv.payment_due_at).toLocaleDateString("ja-JP")}`
+                        : null}
+                    </p>
+                  </div>
+                  <a
+                    href={`/api/invoices/${inv.id}/pdf`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-medium text-accent hover:underline"
+                  >
+                    請求書PDF
+                  </a>
+                </div>
+              );
+            })
+          )}
+          <a
+            href="/api/exports/invoices.csv"
+            className="inline-block text-xs text-accent hover:underline"
+          >
+            請求履歴CSVをダウンロード
+          </a>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="font-medium">月額会費 請求書</h2>
           {invoices.length === 0 ? (
             <p className="text-sm text-muted">
               発行済みの請求書はありません（毎月{MONTHLY_MEMBERSHIP_ISSUE_DAY}日に自動発行）。

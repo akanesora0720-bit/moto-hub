@@ -95,7 +95,9 @@ export function validateListingFormCore(input: {
   grades: ListingGrades;
   vin: ListingFormVinState;
   dates: ListingFormDateFields;
+  requireGrades?: boolean;
 }): { error: string | null; priceExTax: number | null } {
+  const requireGrades = input.requireGrades !== false;
   if (
     !input.model.trim() ||
     !input.vehicleClass ||
@@ -111,8 +113,10 @@ export function validateListingFormCore(input: {
     return { error: "税抜価格は正の整数（円）で入力してください。", priceExTax: null };
   }
 
-  const gradeError = validateListingGrades(input.grades);
-  if (gradeError) return { error: gradeError, priceExTax: null };
+  if (requireGrades) {
+    const gradeError = validateListingGrades(input.grades);
+    if (gradeError) return { error: gradeError, priceExTax: null };
+  }
 
   const vinError = validateListingVin(input.vin);
   if (vinError) return { error: vinError, priceExTax: null };

@@ -55,6 +55,12 @@ export default async function DealsHistoryPage() {
           </Link>
           <h1 className="mt-2 text-2xl font-semibold">成約履歴</h1>
           <p className="mt-1 text-sm text-muted">完了した取引と精算確認</p>
+          <a
+            href="/api/exports/deals.csv"
+            className="mt-2 inline-block text-sm text-accent hover:underline"
+          >
+            取引履歴CSVをダウンロード
+          </a>
         </div>
 
         {deals.length === 0 ? (
