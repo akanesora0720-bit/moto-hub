@@ -127,6 +127,85 @@ export function inferVehicleClassFromCc(cc: number | null): VehicleClass | "" {
   return "light_moped";
 }
 
+/** "400cc" / 400 → 400 */
+export function parseDisplacementCcFromAi(raw: unknown): number | null {
+  if (typeof raw === "number" && Number.isFinite(raw) && raw > 0 && raw < 10000) {
+    return Math.round(raw);
+  }
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  const s = raw.trim();
+  if (/未記入|不明|−|-/.test(s) && !/\d/.test(s)) return null;
+  const cc = s.match(/(\d{2,4})\s*cc/i);
+  if (cc) return parseInt(cc[1], 10);
+  const digits = s.replace(/[^\d]/g, "");
+  if (!digits) return null;
+  const n = parseInt(digits, 10);
+  return n > 0 && n < 10000 ? n : null;
+}
+
+/** "2023年" / 2023 → 2023。未記入は null */
+export function parseModelYearFromAi(raw: unknown): number | null {
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    const y = Math.round(raw);
+    if (y >= 1950 && y <= 2100) return y;
+    if (y >= 50 && y <= 99) return 1900 + y;
+    return null;
+  }
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  const s = raw.trim();
+  if (/未記入|不明/.test(s)) return null;
+  const jp = s.match(/(19|20)\d{2}\s*年?/);
+  if (jp) return parseInt(jp[0].replace(/\D/g, "").slice(0, 4), 10);
+  const digits = s.replace(/[^\d]/g, "");
+  if (digits.length === 4) {
+    const y = parseInt(digits, 10);
+    if (y >= 1950 && y <= 2100) return y;
+  }
+  return null;
+}
+
+/** "走行距離2843Km" / 2843 → 2843 */
+export function parseMileageKmFromAi(raw: unknown): number | null {
+  if (typeof raw === "number" && Number.isFinite(raw) && raw >= 0) return Math.round(raw);
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  const s = raw.trim();
+  if (/未記入|不明/.test(s) && !/\d/.test(s)) return null;
+  const labeled = s.match(/走行(?:距離)?\s*([\d,]+)\s*(?:km|Km|KM|キロ)?/i);
+  if (labeled) return parseInt(labeled[1].replace(/,/g, ""), 10);
+  const km = s.match(/([\d,]+)\s*(?:km|Km|KM)/i);
+  if (km) return parseInt(km[1].replace(/,/g, ""), 10);
+  const digits = s.replace(/[^\d]/g, "");
+  if (!digits) return null;
+  const n = parseInt(digits, 10);
+  return Number.isFinite(n) && n >= 0 && n < 10_000_000 ? n : null;
+}
+
+function pickStringField(raw: Record<string, unknown>, keys: string[]): string | null {
+  for (const k of keys) {
+    const v = raw[k];
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  return null;
+}
+
+function pickFromSpecBlob(blob: string): {
+  displacement_cc: number | null;
+  year: number | null;
+  mileage: number | null;
+  color: string | null;
+  inspection_text: string | null;
+} {
+  const displacement_cc = parseDisplacementCcFromAi(blob);
+  const year = parseModelYearFromAi(blob);
+  const mileage = parseMileageKmFromAi(blob);
+  const inspection = blob.match(/検\s*((?:19|20)\d{2}年\d{1,2}月)/);
+  const inspection_text = inspection ? inspection[0].replace(/\s+/g, "") : null;
+  let color: string | null = null;
+  const colorMatch = blob.match(/色[：:\s]+([^0-9０-９\n]+?)(?:\s+車台|車体|$)/);
+  if (colorMatch) color = colorMatch[1].trim();
+  return { displacement_cc, year, mileage, color, inspection_text };
+}
+
 export function normalizeAiVehicle(raw: Record<string, unknown>): AiExtractedVehicle {
   const confRaw = (raw.confidence ?? raw.field_confidence ?? {}) as Record<string, unknown>;
   const confidence: Record<string, number> = {};
@@ -135,29 +214,61 @@ export function normalizeAiVehicle(raw: Record<string, unknown>): AiExtractedVeh
     if (Number.isFinite(n)) confidence[k] = n;
   }
 
-  const num = (k: string) => {
-    const v = raw[k];
-    if (typeof v === "number" && Number.isFinite(v)) return Math.round(v);
-    if (typeof v === "string" && v.trim()) {
-      const n = parseInt(v.replace(/[^\d]/g, ""), 10);
-      return Number.isFinite(n) ? n : null;
-    }
-    return null;
-  };
+  const specBlob = [
+    raw.spec_line,
+    raw.specs_line,
+    raw.specs,
+    raw.details,
+    raw.description,
+    raw.subtitle,
+  ]
+    .filter((v) => typeof v === "string")
+    .join(" ");
+  const fromSpec = specBlob.trim() ? pickFromSpecBlob(specBlob) : null;
+
+  const displacement_cc =
+    parseDisplacementCcFromAi(raw.displacement_cc) ??
+    parseDisplacementCcFromAi(raw.displacement) ??
+    parseDisplacementCcFromAi(raw["排気量"]) ??
+    fromSpec?.displacement_cc ??
+    null;
+
+  const year =
+    parseModelYearFromAi(raw.year) ??
+    parseModelYearFromAi(raw["年式"]) ??
+    fromSpec?.year ??
+    null;
+
+  const mileage =
+    parseMileageKmFromAi(raw.mileage) ??
+    parseMileageKmFromAi(raw["走行距離"]) ??
+    parseMileageKmFromAi(raw.distance_km) ??
+    fromSpec?.mileage ??
+    null;
+
+  const color =
+    pickStringField(raw, ["color", "色", "カラー"]) ?? fromSpec?.color ?? null;
 
   return {
-    maker: typeof raw.maker === "string" ? raw.maker.trim() || null : null,
-    model: typeof raw.model === "string" ? raw.model.trim() || null : null,
-    displacement_cc: num("displacement_cc"),
-    year: num("year"),
-    mileage: num("mileage"),
+    maker:
+      pickStringField(raw, ["maker", "メーカー", "manufacturer"]) ??
+      (typeof raw.maker === "string" ? raw.maker.trim() || null : null),
+    model:
+      pickStringField(raw, ["model", "車種名", "車名", "model_name"]) ??
+      (typeof raw.model === "string" ? raw.model.trim() || null : null),
+    displacement_cc,
+    year,
+    mileage,
     inspection_text:
-      typeof raw.inspection_text === "string" ? raw.inspection_text.trim() || null : null,
+      pickStringField(raw, ["inspection_text", "車検", "inspection"]) ??
+      fromSpec?.inspection_text ??
+      null,
     insurance_text:
       typeof raw.insurance_text === "string" ? raw.insurance_text.trim() || null : null,
     color: typeof raw.color === "string" ? raw.color.trim() || null : null,
     frame_number:
-      typeof raw.frame_number === "string" ? raw.frame_number.trim() || null : null,
+      pickStringField(raw, ["frame_number", "車台番号", "車体番号", "chassis_number"]) ??
+      null,
     price_ex_tax: parseYenFromAi(raw.price_ex_tax),
     total_price_inc_tax: parseYenFromAi(raw.total_price_inc_tax),
     repair_history:

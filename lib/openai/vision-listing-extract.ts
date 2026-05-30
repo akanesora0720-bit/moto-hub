@@ -3,21 +3,34 @@ import { normalizeAiVehicle, type AiExtractedVehicle } from "@/lib/ai-listing";
 
 const MODEL = process.env.OPENAI_VISION_MODEL ?? "gpt-5.4-mini";
 
-const SYSTEM_PROMPT = `You are an expert at reading Japanese motorcycle dealer inventory screenshots (GooBike PAS, auction lists, dealer DMS, Excel exports photographed, etc.).
+const SYSTEM_PROMPT = `You are an expert at reading Japanese motorcycle dealer inventory screenshots (especially GooBike PAS / pas.goobike.com list views).
 
-Rules:
-- Extract EVERY distinct vehicle row/card visible in the image.
-- Do NOT treat in-row thumbnail photos as assets to export; ignore images.
-- Convert prices to integer yen. "71.7万円" → 717000. "76万円" → 760000.
-- maker: Japanese manufacturer name (カワサキ, ホンダ, スズキ, ヤマハ, etc.)
-- model: model name without maker prefix when possible
-- frame_number: 車台番号 / 車体番号 alphanumeric
-- repair_history: e.g. 修復無, 修復有
-- warranty_text / maintenance_text: tag text if shown (保証, 整備)
-- comment: extra features in title (ETC, ドラレコ, etc.)
-- For each field include confidence 0.0-1.0 in the confidence object (e.g. confidence.frame_number).
+Extract EVERY distinct vehicle listing row visible. Ignore thumbnail photos.
 
-Respond with JSON only: { "vehicles": [ { ...fields..., "confidence": { "maker": 0.95 } } ] }`;
+Required JSON fields per vehicle (use null only if truly absent; do NOT omit keys):
+- maker: メーカー (カワサキ, ホンダ, スズキ, ヤマハ, etc.)
+- model: 車種名 only, without maker prefix
+- displacement_cc: integer cc from lines like "400cc", "223cc", "1500cc"
+- year: integer Western year from "2023年", "2002年" (未記入 → null)
+- mileage: integer km from "走行距離2843Km" or "走行距離 30812Km" (strip commas)
+- color: from "色：マットブラック" / "色: 白／赤" on the line with 車台番号
+- frame_number: 車台番号 / 車体番号 (e.g. EL400A-AT2002, NC42-2010713)
+- price_ex_tax: integer yen from 本体価格. "71.7万円" → 717000
+- total_price_inc_tax: integer yen from 支払総額 if shown
+- inspection_text: e.g. "検2026年11月" from the spec line
+- insurance_text: e.g. "保険なし" if shown
+- repair_history: 修復無 / 修復有 from badges
+- warranty_text / maintenance_text: 保証 / 整備 badges if present
+- comment: title extras (ETC, ドラレコ, etc.)
+
+GooBike PAS layout hint (typical row):
+Line1: maker + model title
+Line2: "400cc 2023年 検2026年11月 走行距離2843Km" (parse all four: cc, year, inspection, mileage)
+Line3: "色：マットブラック 車台番号：EL400A-AT2002" (parse color and frame_number)
+
+confidence: 0.0-1.0 per field in a nested "confidence" object.
+
+Respond with JSON only: { "vehicles": [ { "maker", "model", "displacement_cc", "year", "mileage", "color", "frame_number", ... , "confidence": {} } ] }`;
 
 export type VisionExtractResult = {
   vehicles: AiExtractedVehicle[];
@@ -55,7 +68,7 @@ export async function extractVehiclesFromImage(
           content: [
             {
               type: "text",
-              text: "この在庫一覧スクリーンショットから掲載車両をすべて抽出してください。",
+              text: "この在庫一覧（GooBike PAS等）のスクリーンショットから、表示されている全車両を抽出してください。各行について排気量(displacement_cc)・年式(year)・走行距離(mileage)・色(color)・車台番号(frame_number)・本体価格(price_ex_tax)を必ず埋めてください。未記入の年式は year を null にしてください。",
             },
             { type: "image_url", image_url: { url: dataUrl, detail: "high" } },
           ],
