@@ -5,25 +5,25 @@ export const CREDIT_RANKS = ["S", "A", "B", "C", "D"] as const;
 
 /** 車種区分（排気量・車名と独立して登録） */
 export const VEHICLE_CLASSES = [
-  { value: "gentsuki_1", label: "原付1種" },
-  { value: "gentsuki_2", label: "原付2種" },
-  { value: "light_moped", label: "軽二輪" },
-  { value: "medium", label: "中型" },
-  { value: "large", label: "大型" },
-  { value: "three_wheel", label: "三輪" },
-  { value: "kid_bike", label: "キッドバイク" },
+  { value: "gentsuki_1", label: "原付一種（50cc以下）" },
+  { value: "gentsuki_2", label: "原付二種（51〜125cc）" },
+  { value: "medium", label: "中型（126〜400cc）" },
+  { value: "large", label: "大型（401cc以上）" },
+  { value: "three_wheel", label: "三輪（トライク）" },
+  { value: "kid_bike", label: "キットバイク" },
+  { value: "light_moped", label: "軽二輪（旧データ）" },
 ] as const;
 
 export type VehicleClass = (typeof VEHICLE_CLASSES)[number]["value"];
 
 export const VEHICLE_CLASS_LABELS: Record<VehicleClass, string> = {
-  gentsuki_1: "原付1種",
-  gentsuki_2: "原付2種",
+  gentsuki_1: "原付一種",
+  gentsuki_2: "原付二種",
   light_moped: "軽二輪",
   medium: "中型",
   large: "大型",
   three_wheel: "三輪",
-  kid_bike: "キッドバイク",
+  kid_bike: "キットバイク",
 };
 
 export const MAKERS = [

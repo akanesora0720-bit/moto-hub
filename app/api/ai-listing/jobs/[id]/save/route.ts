@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildDraftConditionComment, inferVehicleClassFromCc } from "@/lib/ai-listing";
+import { buildDraftConditionComment, resolveVehicleClass } from "@/lib/ai-listing";
 import { requireAiListingAccess } from "@/lib/ai-listing-auth";
 import { normalizeVinStrict } from "@/lib/normalize";
 import type { VehicleClass } from "@/lib/constants";
@@ -95,7 +95,15 @@ export async function POST(
         seller_id: auth.userId,
         maker: item.maker.trim(),
         model: item.model.trim(),
-        vehicle_class: item.vehicle_class || inferVehicleClassFromCc(cc) || "light_moped",
+        vehicle_class:
+          item.vehicle_class ||
+          resolveVehicleClass({
+            maker: item.maker,
+            model: item.model,
+            displacement_cc: cc,
+            comment: item.comment,
+          }) ||
+          "medium",
         displacement_cc: cc,
         year: item.year ?? null,
         mileage: item.mileage ?? null,

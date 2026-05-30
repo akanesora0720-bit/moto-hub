@@ -356,7 +356,7 @@ export function ListingEditorForm({
             ]}
             placeholder="タップして車種区分を選択"
             required
-            hint="免許・取引の区分。車名と排気量が一致しない車両も、この区分で登録してください。"
+            hint="原付一種≦50cc・原付二種51〜125cc・中型126〜400cc・大型401cc〜。三輪・キットバイクは排気量に関係なく選択。"
           />
           <div className="grid grid-cols-2 gap-3">
             <label className="block text-sm">

@@ -8,10 +8,11 @@ import {
   AI_LISTING_FIELD_LABELS,
   type AiListingDraftItemRow,
   confidencePercent,
-  inferVehicleClassFromCc,
   isLowConfidence,
+  resolveVehicleClass,
 } from "@/lib/ai-listing";
 import { VEHICLE_CLASSES, type VehicleClass } from "@/lib/constants";
+import { VEHICLE_CLASS_HINT } from "@/lib/vehicle-class";
 import { formatYen } from "@/lib/format";
 
 type WizardStep = "upload" | "processing" | "preview" | "done";
@@ -23,12 +24,44 @@ type EditableItem = AiListingDraftItemRow & {
 
 function toEditable(row: Record<string, unknown>): EditableItem {
   const r = row as AiListingDraftItemRow;
+  const raw = r.raw_extract ?? undefined;
+  const vehicle_class =
+    resolveVehicleClass({
+      maker: r.maker,
+      model: r.model,
+      displacement_cc: r.displacement_cc,
+      comment: r.comment,
+      ai_vehicle_class: raw?.vehicle_class,
+    }) || "";
   return {
     ...r,
-    vehicle_class: inferVehicleClassFromCc(r.displacement_cc),
+    vehicle_class,
     selected: true,
   };
 }
+
+function patchWithVehicleClass(
+  it: EditableItem,
+  patch: Partial<EditableItem>,
+): Partial<EditableItem> {
+  const reinfer =
+    patch.displacement_cc !== undefined ||
+    patch.maker !== undefined ||
+    patch.model !== undefined ||
+    patch.comment !== undefined;
+  if (!reinfer) return patch;
+
+  const next = { ...it, ...patch };
+  const resolved = resolveVehicleClass({
+    maker: next.maker,
+    model: next.model,
+    displacement_cc: next.displacement_cc,
+    comment: next.comment,
+  });
+  return resolved ? { ...patch, vehicle_class: resolved } : patch;
+}
+
+const AI_VEHICLE_CLASS_OPTIONS = VEHICLE_CLASSES.filter((v) => v.value !== "light_moped");
 
 function ConfidenceBadge({ field, confidence }: { field: string; confidence: Record<string, number> }) {
   const pct = confidencePercent(confidence[field]);
@@ -92,7 +125,9 @@ export function AiListingImportWizard({ aiConfigured = true }: { aiConfigured?: 
   }, [file]);
 
   const updateItem = (id: string, patch: Partial<EditableItem>) => {
-    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+    setItems((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, ...patchWithVehicleClass(it, patch) } : it)),
+    );
   };
 
   const saveDrafts = async () => {
@@ -276,12 +311,13 @@ export function AiListingImportWizard({ aiConfigured = true }: { aiConfigured?: 
                     className="mt-1 w-full rounded-lg border border-border bg-zinc-950 px-3 py-2 text-sm"
                   >
                     <option value="">選択</option>
-                    {VEHICLE_CLASSES.map((v) => (
+                    {AI_VEHICLE_CLASS_OPTIONS.map((v) => (
                       <option key={v.value} value={v.value}>
                         {v.label}
                       </option>
                     ))}
                   </select>
+                  <p className="mt-1 text-[10px] text-muted">{VEHICLE_CLASS_HINT}</p>
                 </label>
                 <label className="text-sm">
                   <span className="text-muted">排気量 cc</span>

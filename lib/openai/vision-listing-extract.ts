@@ -22,6 +22,13 @@ Required JSON fields per vehicle (use null only if truly absent; do NOT omit key
 - repair_history: 修復無 / 修復有 from badges
 - warranty_text / maintenance_text: 保証 / 整備 badges if present
 - comment: title extras (ETC, ドラレコ, etc.)
+- vehicle_class: one of exactly these enum strings (infer from cc + model name):
+  - "gentsuki_1" = 原付一種, displacement 50cc or below (listings often show "50cc")
+  - "gentsuki_2" = 原付二種, 51–125cc (often shown as "125cc" max in listings)
+  - "medium" = 中型, 126–400cc
+  - "large" = 大型, 401cc and above
+  - "three_wheel" = 三輪 / トライク / Spyder etc., regardless of cc
+  - "kid_bike" = キットバイク / assembled kit bikes, obscure kit-only makers
 
 GooBike PAS layout hint (typical row):
 Line1: maker + model title
@@ -30,7 +37,7 @@ Line3: "色：マットブラック 車台番号：EL400A-AT2002" (parse color a
 
 confidence: 0.0-1.0 per field in a nested "confidence" object.
 
-Respond with JSON only: { "vehicles": [ { "maker", "model", "displacement_cc", "year", "mileage", "color", "frame_number", ... , "confidence": {} } ] }`;
+Respond with JSON only: { "vehicles": [ { "maker", "model", "displacement_cc", "vehicle_class", "year", "mileage", "color", "frame_number", ... , "confidence": {} } ] }`;
 
 export type VisionExtractResult = {
   vehicles: AiExtractedVehicle[];
@@ -68,7 +75,7 @@ export async function extractVehiclesFromImage(
           content: [
             {
               type: "text",
-              text: "この在庫一覧（GooBike PAS等）のスクリーンショットから、表示されている全車両を抽出してください。各行について排気量(displacement_cc)・年式(year)・走行距離(mileage)・色(color)・車台番号(frame_number)・本体価格(price_ex_tax)を必ず埋めてください。未記入の年式は year を null にしてください。",
+              text: "この在庫一覧（GooBike PAS等）のスクリーンショットから、表示されている全車両を抽出してください。各行について排気量(displacement_cc)・車種区分(vehicle_class)・年式(year)・走行距離(mileage)・色(color)・車台番号(frame_number)・本体価格(price_ex_tax)を必ず埋めてください。未記入の年式は year を null にしてください。トライクは three_wheel、キットバイクは kid_bike。",
             },
             { type: "image_url", image_url: { url: dataUrl, detail: "high" } },
           ],

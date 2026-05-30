@@ -1,4 +1,11 @@
 import type { VehicleClass } from "@/lib/constants";
+import {
+  inferVehicleClassFromCc,
+  resolveVehicleClass,
+  type ResolveVehicleClassInput,
+} from "@/lib/vehicle-class";
+
+export { inferVehicleClassFromCc, resolveVehicleClass, type ResolveVehicleClassInput };
 
 /** AIが返す1台分の抽出結果 */
 export type AiExtractedVehicle = {
@@ -17,6 +24,7 @@ export type AiExtractedVehicle = {
   warranty_text: string | null;
   maintenance_text: string | null;
   comment: string | null;
+  vehicle_class: VehicleClass | null;
   confidence: Record<string, number>;
 };
 
@@ -42,6 +50,7 @@ export type AiListingDraftItemRow = {
   field_confidence: Record<string, number>;
   listing_id: string | null;
   saved_at: string | null;
+  raw_extract?: Record<string, unknown> | null;
 };
 
 export const AI_LISTING_FIELD_LABELS: Record<string, string> = {
@@ -118,13 +127,6 @@ export function buildDraftConditionComment(item: {
     parts.push(`支払総額（参考）: ${item.total_price_inc_tax.toLocaleString("ja-JP")}円`);
   }
   return parts.join("\n") || "（AI出品サポートから作成した下書き）";
-}
-
-export function inferVehicleClassFromCc(cc: number | null): VehicleClass | "" {
-  if (cc == null || cc <= 0) return "";
-  if (cc <= 50) return "gentsuki_1";
-  if (cc <= 125) return "gentsuki_2";
-  return "light_moped";
 }
 
 /** "400cc" / 400 → 400 */
@@ -249,13 +251,27 @@ export function normalizeAiVehicle(raw: Record<string, unknown>): AiExtractedVeh
   const color =
     pickStringField(raw, ["color", "色", "カラー"]) ?? fromSpec?.color ?? null;
 
+  const maker =
+    pickStringField(raw, ["maker", "メーカー", "manufacturer"]) ??
+    (typeof raw.maker === "string" ? raw.maker.trim() || null : null);
+  const model =
+    pickStringField(raw, ["model", "車種名", "車名", "model_name"]) ??
+    (typeof raw.model === "string" ? raw.model.trim() || null : null);
+  const comment =
+    typeof raw.comment === "string" ? raw.comment.trim() || null : null;
+
+  const vehicle_class =
+    resolveVehicleClass({
+      maker,
+      model,
+      displacement_cc,
+      comment,
+      ai_vehicle_class: raw.vehicle_class ?? raw["車種区分"],
+    }) || null;
+
   return {
-    maker:
-      pickStringField(raw, ["maker", "メーカー", "manufacturer"]) ??
-      (typeof raw.maker === "string" ? raw.maker.trim() || null : null),
-    model:
-      pickStringField(raw, ["model", "車種名", "車名", "model_name"]) ??
-      (typeof raw.model === "string" ? raw.model.trim() || null : null),
+    maker,
+    model,
     displacement_cc,
     year,
     mileage,
@@ -277,7 +293,8 @@ export function normalizeAiVehicle(raw: Record<string, unknown>): AiExtractedVeh
       typeof raw.warranty_text === "string" ? raw.warranty_text.trim() || null : null,
     maintenance_text:
       typeof raw.maintenance_text === "string" ? raw.maintenance_text.trim() || null : null,
-    comment: typeof raw.comment === "string" ? raw.comment.trim() || null : null,
+    comment,
+    vehicle_class,
     confidence,
   };
 }
