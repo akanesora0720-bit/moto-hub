@@ -347,6 +347,30 @@ export type SupportTicket = {
 
 export type MessageImportance = "normal" | "important" | "urgent";
 
+export type DealGeneratedDocumentKind =
+  | "sales_certificate"
+  | "invoice"
+  | "receipt"
+  | "contract"
+  | "vehicle_inspection"
+  | "name_transfer";
+
+export type DealGeneratedDocument = {
+  id: string;
+  deal_id: string;
+  document_kind: DealGeneratedDocumentKind;
+  storage_path: string;
+  file_name: string;
+  mime_type: string;
+  byte_size: number;
+  source_type: string;
+  source_id: string;
+  title: string;
+  notified_at: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+};
+
 export type UserNotification = {
   id: string;
   user_id: string;

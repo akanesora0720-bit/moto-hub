@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { formatBankAccount } from "@/lib/billing";
+import {
+  dealDocumentTitle,
+  publishDealDocumentAfterPdf,
+} from "@/lib/deal-document-after-pdf";
 import { buildInvoicePdf } from "@/lib/invoice-pdf";
 import { getMotohubIssuer } from "@/lib/motohub-issuer";
 import { buildPaymentInstructionPdf } from "@/lib/payment-instruction-pdf";
@@ -139,7 +143,7 @@ export async function GET(
           issuedAt,
         });
 
-        return pdfResponse(pdfBytes, `part-payment-${invoice.id.slice(0, 8)}.pdf`);
+        return await pdfResponse(pdfBytes, `part-payment-${invoice.id.slice(0, 8)}.pdf`);
       }
 
       const issuer = await getMotohubIssuer(supabase);
@@ -166,7 +170,7 @@ export async function GET(
           : null,
       });
 
-      return pdfResponse(pdfBytes, `part-fee-${invoice.id.slice(0, 8)}.pdf`);
+      return await pdfResponse(pdfBytes, `part-fee-${invoice.id.slice(0, 8)}.pdf`);
     }
 
     if (documentKind === "monthly_membership") {
@@ -202,7 +206,7 @@ export async function GET(
         paymentDueAt,
       });
 
-      return pdfResponse(pdfBytes, `membership-invoice-${invoice.id.slice(0, 8)}.pdf`);
+      return await pdfResponse(pdfBytes, `membership-invoice-${invoice.id.slice(0, 8)}.pdf`);
     }
 
     if (documentKind === "motohub_inspection") {
@@ -244,7 +248,7 @@ export async function GET(
         issuer,
       });
 
-      return pdfResponse(pdfBytes, `inspection-invoice-${invoice.id.slice(0, 8)}.pdf`);
+      return await pdfResponse(pdfBytes, `inspection-invoice-${invoice.id.slice(0, 8)}.pdf`);
     }
 
     if (
@@ -287,7 +291,18 @@ export async function GET(
         paymentDueAt,
       });
 
-      return pdfResponse(pdfBytes, `weekly-fee-${invoice.id.slice(0, 8)}.pdf`);
+      return await pdfResponse(
+        pdfBytes,
+        `weekly-fee-${invoice.id.slice(0, 8)}.pdf`,
+        invoice.deal_id
+          ? {
+              dealId: invoice.deal_id,
+              sourceId: invoice.id,
+              title: dealDocumentTitle("invoice", documentKind),
+              metadata: { invoice_document_kind: documentKind },
+            }
+          : undefined,
+      );
     }
 
     if (documentKind === "payment_instruction") {
@@ -337,7 +352,12 @@ export async function GET(
         issuedAt,
       });
 
-      return pdfResponse(pdfBytes, `payment-${invoice.id.slice(0, 8)}.pdf`);
+      return await pdfResponse(pdfBytes, `payment-${invoice.id.slice(0, 8)}.pdf`, {
+        dealId: invoice.deal_id,
+        sourceId: invoice.id,
+        title: dealDocumentTitle("invoice", "payment_instruction"),
+        metadata: { invoice_document_kind: "payment_instruction" },
+      });
     }
 
     const partyLabel =
@@ -382,7 +402,18 @@ export async function GET(
       paymentDueAt,
     });
 
-    return pdfResponse(pdfBytes, `invoice-${invoice.id.slice(0, 8)}.pdf`);
+    return await pdfResponse(
+      pdfBytes,
+      `invoice-${invoice.id.slice(0, 8)}.pdf`,
+      invoice.deal_id
+        ? {
+            dealId: invoice.deal_id,
+            sourceId: invoice.id,
+            title: dealDocumentTitle("invoice", documentKind),
+            metadata: { invoice_document_kind: documentKind },
+          }
+        : undefined,
+    );
   } catch (e) {
     console.error("pdf build:", e);
     const message = e instanceof Error ? e.message : "pdf generation failed";
@@ -390,7 +421,28 @@ export async function GET(
   }
 }
 
-function pdfResponse(pdfBytes: Uint8Array, filename: string) {
+async function pdfResponse(
+  pdfBytes: Uint8Array,
+  filename: string,
+  publish?: {
+    dealId: string | null | undefined;
+    sourceId: string;
+    title: string;
+    metadata?: Record<string, unknown>;
+  },
+) {
+  if (publish?.dealId) {
+    await publishDealDocumentAfterPdf({
+      dealId: publish.dealId,
+      documentKind: "invoice",
+      sourceType: "invoice",
+      sourceId: publish.sourceId,
+      title: publish.title,
+      fileName: filename,
+      pdfBytes,
+      metadata: publish.metadata,
+    });
+  }
   return new NextResponse(Buffer.from(pdfBytes), {
     headers: {
       "Content-Type": "application/pdf",

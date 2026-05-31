@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BackButton } from "@/components/BackButton";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { CreditLicenseCard } from "@/components/credit/CreditLicenseCard";
 import { PenaltyHistoryList } from "@/components/credit/PenaltyHistoryList";
@@ -89,9 +90,7 @@ export default async function MemberProfilePage({
   return (
     <AuthenticatedShell>
       <div className="mx-auto max-w-lg space-y-8">
-        <Link href="/" className="text-sm text-muted hover:text-accent">
-          ← 在庫一覧
-        </Link>
+        <BackButton fallbackHref="/search" />
 
         {showCreditDetail ? (
           <CreditLicenseCard

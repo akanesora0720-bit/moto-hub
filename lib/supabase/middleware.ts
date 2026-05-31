@@ -8,7 +8,12 @@ import type { AccountStatus } from "@/lib/types";
 
 export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  const publicPaths = ["/login", "/signup", "/api/ai-listing/health"];
+  const publicPaths = [
+    "/login",
+    "/signup",
+    "/api/ai-listing/health",
+    "/api/cron",
+  ];
   const isPublic =
     publicPaths.some((p) => path.startsWith(p)) || isPublicAppPath(path);
 

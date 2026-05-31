@@ -22,7 +22,11 @@ function drawLabelValue(
 
 export async function buildTransactionRecordPdf(
   record: TransactionRecord,
-  opts?: { viewerRole?: "seller" | "buyer" | "admin" },
+  opts?: {
+    viewerRole?: "seller" | "buyer" | "admin";
+    /** 販売証明書・契約書など用途別タイトル */
+    documentTitle?: string;
+  },
 ): Promise<Uint8Array> {
   const { doc, writer } = await createPdfWriter();
   const seller = record.seller_snapshot_json as TransactionPartySnapshot;
@@ -34,7 +38,7 @@ export async function buildTransactionRecordPdf(
   });
 
   await t.header({
-    documentTitle: "取引記録書",
+    documentTitle: opts?.documentTitle ?? "取引記録書",
     issuedAt: new Date().toLocaleDateString("ja-JP"),
     documentNo: record.id.slice(0, 8),
     dealId: record.deal_id,

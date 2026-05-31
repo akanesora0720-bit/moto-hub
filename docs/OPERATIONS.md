@@ -53,6 +53,7 @@ flowchart LR
 | 信用 | `credit.badge_yellow`, `credit.badge_red`, `credit.ban`, `credit.penalty` |
 | リスク | `risk.detected` |
 | 加盟審査 | `dealer.membership_submitted` |
+| 取引書類 | `dealer.document_ready`（メールは署名URLリンクのみ・PDF添付なし） |
 
 ## 名変超過 → 自動減点
 

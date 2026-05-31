@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { dealDocumentTitle, publishDealDocumentAfterPdf } from "@/lib/deal-document-after-pdf";
 import { buildTransactionRecordPdf } from "@/lib/transaction-record-pdf";
 import {
   canViewTransactionRecords,
@@ -61,6 +62,35 @@ export async function GET(
   try {
     const pdf = await buildTransactionRecordPdf(row, { viewerRole });
     const filename = `motohub-transaction-record-${row.deal_id.slice(0, 8)}.pdf`;
+
+    const salesPdf = await buildTransactionRecordPdf(row, {
+      viewerRole,
+      documentTitle: "販売証明書",
+    });
+    await publishDealDocumentAfterPdf({
+      dealId: row.deal_id,
+      documentKind: "sales_certificate",
+      sourceType: "transaction_record",
+      sourceId: row.id,
+      title: dealDocumentTitle("sales_certificate"),
+      fileName: `sales-certificate-${row.deal_id.slice(0, 8)}.pdf`,
+      pdfBytes: salesPdf,
+    });
+
+    const contractPdf = await buildTransactionRecordPdf(row, {
+      viewerRole,
+      documentTitle: "契約書",
+    });
+    await publishDealDocumentAfterPdf({
+      dealId: row.deal_id,
+      documentKind: "contract",
+      sourceType: "transaction_record",
+      sourceId: row.id,
+      title: dealDocumentTitle("contract"),
+      fileName: `contract-${row.deal_id.slice(0, 8)}.pdf`,
+      pdfBytes: contractPdf,
+    });
+
     return new NextResponse(Buffer.from(pdf), {
       headers: {
         "Content-Type": "application/pdf",

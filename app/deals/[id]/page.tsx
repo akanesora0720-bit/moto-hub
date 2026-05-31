@@ -22,6 +22,8 @@ import { createClient } from "@/lib/supabase/server";
 import { canAccessAdmin } from "@/lib/auth";
 import { adminDealListPath } from "@/lib/admin-deal-routes";
 import { getViewer } from "@/lib/viewer";
+import { DealDetailTabs } from "@/components/DealDetailTabs";
+import { DealDocumentsPanel } from "@/components/DealDocumentsPanel";
 import { TransactionRecordPanel } from "@/components/TransactionRecordPanel";
 import {
   canViewTransactionRecords,
@@ -279,6 +281,15 @@ export async function DealDetailPageView(
           ← {useAdminShell ? "取引連絡一覧" : "取引一覧"}
         </Link>
 
+        <DealDetailTabs
+          showDocumentsTab={!isPreAgreement}
+          documents={
+            <DealCard title="書類" step={0}>
+              <DealDocumentsPanel dealId={id} />
+            </DealCard>
+          }
+          overview={
+            <>
         <DealCard title="車両情報" step={1}>
           <p className="text-sm text-muted">{deal.listing.maker}</p>
           <p className="text-xl font-semibold">{deal.listing.model}</p>
@@ -453,6 +464,9 @@ export async function DealDetailPageView(
             </Link>
           ) : null}
         </div>
+            </>
+          }
+        />
       </div>
     </AuthenticatedShell>
   );

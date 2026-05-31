@@ -214,6 +214,17 @@ export function NotificationsClient({
                           ? ` · 既読 ${new Date(n.read_at).toLocaleString("ja-JP")}`
                           : ""}
                       </p>
+                      {n.entity_type === "deal_generated_document" && n.entity_id ? (
+                        <a
+                          href={`/api/deal-documents/${n.entity_id}/download`}
+                          onClick={() => {
+                            if (!n.read_at) void markRead(n.id);
+                          }}
+                          className="mt-2 inline-flex rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground hover:opacity-90"
+                        >
+                          PDFをダウンロード
+                        </a>
+                      ) : null}
                       {href ? (
                         <Link
                           href={href}

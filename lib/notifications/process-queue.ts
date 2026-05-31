@@ -1,4 +1,4 @@
-import { toBrandDisplay } from "@/lib/brand";
+import { absoluteAppUrl, toBrandDisplay } from "@/lib/brand";
 import { renderTemplate } from "@/lib/notifications/render";
 import { formatMailTransportError, sendMailMessage } from "@/lib/smtp";
 import { createServiceClient } from "@/lib/server-supabase";
@@ -93,15 +93,15 @@ export async function processNotificationQueue(limit = 30) {
 
     const adminLinkPath =
       typeof item.payload?.admin_link === "string" ? item.payload.admin_link.trim() : "";
-    const appOrigin = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "";
+    const downloadPath =
+      typeof item.payload?.download_url === "string"
+        ? item.payload.download_url.trim()
+        : "";
     const bodyVars: Record<string, string> = {
       body: String(item.payload?.body ?? ""),
       subject: String(item.payload?.subject ?? ""),
-      admin_link: adminLinkPath
-        ? appOrigin
-          ? `${appOrigin}${adminLinkPath}`
-          : adminLinkPath
-        : "",
+      admin_link: absoluteAppUrl(adminLinkPath),
+      download_url: absoluteAppUrl(downloadPath),
     };
     const subject = toBrandDisplay(
       bodyVars.subject || renderTemplate(tpl.subject_template, bodyVars),

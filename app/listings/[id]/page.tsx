@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BackButton } from "@/components/BackButton";
 import { AuthenticatedShell } from "@/components/AuthenticatedShell";
 import { MotohubInspectionBadge } from "@/components/MotohubInspectionBadge";
 import { isMotohubInspected } from "@/lib/inspection";
@@ -58,9 +59,7 @@ export default async function ListingDetailPage({
     <AuthenticatedShell>
       <div className="space-y-8">
         <div className="flex flex-wrap items-center gap-4">
-          <Link href="/" className="text-sm text-muted hover:text-accent">
-            ← 在庫一覧
-          </Link>
+          <BackButton fallbackHref="/search" label="← 戻る" />
           {isOwner && (listing.status === "active" || listing.status === "draft") ? (
             <Link
               href={`/listings/${listing.id}/edit`}

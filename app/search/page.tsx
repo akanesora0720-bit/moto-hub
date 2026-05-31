@@ -50,6 +50,12 @@ export default async function SearchPage({
   return (
     <AuthenticatedShell>
       <div className="space-y-6">
+        <Link
+          href="/home"
+          className="inline-flex min-h-11 items-center text-sm text-muted hover:text-accent touch-manipulation"
+        >
+          ← ホームへ戻る
+        </Link>
         <div>
           <h1 className="text-2xl font-semibold">車両を探す</h1>
           <p className="mt-1 text-sm text-muted">

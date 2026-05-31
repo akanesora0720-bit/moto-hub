@@ -1,6 +1,21 @@
-const APP_ORIGIN =
-  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ??
-  "https://moto-hub-blond.vercel.app";
+/** 本番 B2B アプリの正規オリジン（メール・cron 等で NEXT_PUBLIC_APP_URL 未設定時） */
+export const PRODUCTION_APP_ORIGIN = "https://app.moto-hub.jp";
+
+export function resolveAppOrigin(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
+  return fromEnv || PRODUCTION_APP_ORIGIN;
+}
+
+const APP_ORIGIN = resolveAppOrigin();
+
+/** 相対パスをアプリの絶対URLに（メール本文の download_url 等） */
+export function absoluteAppUrl(path: string): string {
+  const trimmed = path.trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  const origin = resolveAppOrigin();
+  return `${origin}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
+}
 
 export const BRAND = {
   productName: "Moto-Hub",
